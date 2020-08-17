@@ -100,6 +100,7 @@ let PageUntis = class PageUntis extends connect(store, LitElement) {
     _debounce(func, wait, immediate) {
         var timeout;
         return function (...args) {
+            // @ts-ignore
             var context = this;
             var later = function () {
                 timeout = null;
