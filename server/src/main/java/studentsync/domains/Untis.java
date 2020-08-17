@@ -445,6 +445,12 @@ public class Untis
         dataSource.setPort(Integer.parseInt(getConfigString("port")));
         dataSource.setUser(getConfigString("user"));
         dataSource.setPassword(getConfigString("password"));
+        try {
+            dataSource.setServerTimezone(getConfigString("timezone"));
+        }
+        catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
         return dataSource;
     }
 }
