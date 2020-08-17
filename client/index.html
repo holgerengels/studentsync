@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="Description" content="Identity Management">
+  <base href="/sync/">
+
+  <script>
+    if (typeof window.queueMicrotask !== "function") {
+      window.queueMicrotask = function (callback) {
+        Promise.resolve()
+          .then(callback)
+          .catch(e => setTimeout(() => { throw e; }));
+      };
+    }
+  </script>
+
+  <link rel="preconnect" href="https://fonts.gstatic.com/" crossorigin>
+  <link rel="preload" href="https://fonts.googleapis.com/css?family=Roboto:300,400,500" as="style">
+  <link rel="preload" href="https://fonts.googleapis.com/css?family=Material+Icons&amp;display=block" as="style">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,400,500" media="print" onload="this.media='all'">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Material+Icons&amp;display=block" media="print" onload="this.media='all'">
+
+
+  <style>
+    html, body {
+      overflow: hidden;
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      margin: 0;
+      padding: 0;
+      font-family: Robot, sans-serif;
+    }
+
+    body {
+      background-color: #ededed;
+
+      --color-primary: #0288d1;
+      --color-primary-dark: #005b9f;
+      --color-primary-light: #5eb8ff;
+      --color-primary-lighter: #e6ffff;
+      --color-secondary: #e64a19;
+      --color-secondary-dark: #ac0800;
+      --color-secondary-light: #ff7d47;
+      --color-secondary-lighter: #ffbb93;
+      --color-tertiary: #388e3c;
+      --color-tertiary-dark: #00600f;
+      --color-tertiary-light: #6abf69;
+      --color-tertiary-lighter: #d7ffd9;
+
+      --color-darkgray: #313131;
+      --color-mediumgray: #8a8a8a;
+      --color-lightgray: whitesmoke;
+      --color-green: #388e3c;
+      --color-red: #d32f2f;
+
+      --mdc-theme-primary: #005b9f;
+      --mdc-theme-on-primary: white;
+      --mdc-theme-secondary: #c49000;
+      --mdc-theme-on-secondary: white;
+    }
+  </style>
+  <title>vu-sync</title>
+</head>
+<body>
+  <vu-sync></vu-sync>
+
+  <script type="module" src="src/vu-sync.js"></script>
+  <noscript>JavaScript wird benötigt!</noscript>
+</body>
+
+</html>

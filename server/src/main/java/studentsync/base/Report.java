@@ -1,0 +1,11 @@
+package studentsync.base;
+
+import java.util.HashMap;
+
+/**
+ * Created by holger on 25.01.17.
+ */
+public class Report
+    extends HashMap<String, Object>
+{
+}

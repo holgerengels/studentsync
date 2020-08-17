@@ -1,0 +1,70 @@
+{
+  "scripts": {
+    "start:build": "npm run build && es-dev-server --root-dir dist --app-index index.html --open --compatibility none",
+    "build": "rimraf dist && tsc -p tsconfig.build.json && rollup -c rollup.config.js",
+    "start": "es-dev-server --base-path /sync --app-index index.html --node-resolve --open --watch",
+    "tsc": "tsc -w -p tsconfig.build.json"
+  },
+  "devDependencies": {
+    "@commitlint/cli": "^7.0.0",
+    "@commitlint/config-conventional": "^7.0.0",
+    "@open-wc/building-rollup": "^1.4.2",
+    "@open-wc/eslint-config": "^0.4.1",
+    "@open-wc/prettier-config": "^0.1.14",
+    "@open-wc/rollup-plugin-html": "^1.1.0",
+    "@open-wc/rollup-plugin-polyfills-loader": "^1.0.7",
+    "@open-wc/testing": "^0.12.6",
+    "@open-wc/testing-karma": "^2.0.11",
+    "@open-wc/testing-karma-bs": "^1.3.83",
+    "@rollup/plugin-node-resolve": "^7.1.3",
+    "@rollup/plugin-replace": "^2.3.3",
+    "es-dev-server": "^1.56.1",
+    "eslint-plugin-lit": "^1.2.0",
+    "http-server": "^0.12.3",
+    "husky": "^1.0.0",
+    "lint-staged": "^8.2.1",
+    "rimraf": "^2.6.3",
+    "rollup": "^2.22.1",
+    "rollup-plugin-copy": "^3.3.0",
+    "rollup-plugin-workbox": "^5.0.1",
+    "source-map-explorer": "^2.4.2",
+    "tslib": "^1.13.0",
+    "typescript": "^3.9.7"
+  },
+  "lint-staged": {
+    "*.js": [
+      "eslint --fix",
+      "prettier --write",
+      "git add"
+    ]
+  },
+  "name": "studentsync",
+  "version": "2.0.0",
+  "description": "Identity Management",
+  "license": "MIT",
+  "dependencies": {
+    "@captaincodeman/rdx": "^1.0.0-rc.6",
+    "@captaincodeman/rdx-model": "^1.0.0-rc.5",
+    "@captaincodeman/router": "^1.0.1",
+    "@material/mwc-button": "^0.17.2",
+    "@material/mwc-dialog": "^0.17.2",
+    "@material/mwc-drawer": "^0.17.2",
+    "@material/mwc-fab": "^0.17.2",
+    "@material/mwc-formfield": "^0.17.2",
+    "@material/mwc-icon-button": "^0.17.2",
+    "@material/mwc-icon-button-toggle": "^0.17.2",
+    "@material/mwc-linear-progress": "^0.17.2",
+    "@material/mwc-slider": "^0.17.2",
+    "@material/mwc-snackbar": "^0.17.2",
+    "@material/mwc-tab": "^0.17.2",
+    "@material/mwc-tab-bar": "^0.17.2",
+    "@material/mwc-textarea": "^0.17.2",
+    "@material/mwc-textfield": "^0.17.2",
+    "@material/mwc-top-app-bar": "^0.17.2",
+    "@material/mwc-top-app-bar-fixed": "^0.17.2",
+    "event-target": "^1.2.3",
+    "lit-element": "^2.3.1",
+    "lit-html": "^1.2.1",
+    "lit-virtualizer": "^0.4.2"
+  }
+}

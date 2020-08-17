@@ -1,0 +1,11 @@
+archive
+node_modules
+package-lock.json
+dist/
+target/
+.idea/
+sync-config.json
+sync-config-prod.json
+sync-settings.json
+sync-settings-prod.json
+serviceAccountKey.json
