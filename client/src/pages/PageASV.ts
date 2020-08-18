@@ -81,7 +81,7 @@ export class PageASV extends connect(store, LitElement) {
         <div slot="title" ?hidden="${!this._showFilter}"><input id="input" type="text" @input="${this._input}" @keydown="${this._keydown}"/></div>
         <mwc-icon-button icon="search" slot="actionItems" @click="${this._toggleFilter}"></mwc-icon-button>
         <a id="download"  slot="actions" href="${endpoint.list('asv') + '&file=csv&referer=' + location.origin}" download="students.csv" referrerpolicy="origin" hidden></a>
-        <mwc-icon-button icon="save_alt" slot="actions" title="ASV Download" @click="${() => this._download.click()}"></mwc-icon-button>
+        <mwc-icon-button icon="save_alt" slot="actionItems" title="ASV Download" @click="${() => this._download.click()}"></mwc-icon-button>
         <mwc-icon-button icon="refresh" slot="actionItems" @click="${store.dispatch.asv.load}"></mwc-icon-button>
       </mwc-top-app-bar>
       <div class="board">
