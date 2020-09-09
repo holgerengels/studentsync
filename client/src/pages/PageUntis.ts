@@ -1,4 +1,4 @@
-import {LitElement, html, css, property, customElement} from 'lit-element';
+import {LitElement, html, css, property, customElement, query} from 'lit-element';
 import { connect } from '@captaincodeman/rdx'
 import { store, State } from '../state/store'
 
@@ -8,6 +8,7 @@ import 'lit-virtualizer/lit-virtualizer';
 import {colorStyles, fontStyles} from "../sync-styles";
 import {Student} from "../state/state";
 import {renderStudent, helperStyles} from "./helper";
+import {endpoint} from "../state/endpoint";
 
 @customElement('page-untis')
 export class PageUntis extends connect(store, LitElement) {
@@ -23,6 +24,9 @@ export class PageUntis extends connect(store, LitElement) {
 
   @property()
   private _error: string = "";
+
+  @query('#download')
+  private _download: HTMLAnchorElement;
 
   constructor() {
     super();
@@ -76,6 +80,8 @@ export class PageUntis extends connect(store, LitElement) {
         <div slot="title" ?hidden="${this._showFilter}">Untis</div>
         <div slot="title" ?hidden="${!this._showFilter}"><input id="input" type="text" @input="${this._input}" @keydown="${this._keydown}"/></div>
         <mwc-icon-button icon="search" slot="actionItems" @click="${this._toggleFilter}"></mwc-icon-button>
+        <a id="download"  slot="actions" href="${endpoint.list('untis') + '&file=csv&referer=' + location.origin}" download="students.csv" referrerpolicy="origin" hidden></a>
+        <mwc-icon-button icon="save_alt" slot="actionItems" title="Untis Download" @click="${() => this._download.click()}"></mwc-icon-button>
         <mwc-icon-button icon="refresh" slot="actionItems" @click="${store.dispatch.untis.load}"></mwc-icon-button>
       </mwc-top-app-bar>
       <div class="board">

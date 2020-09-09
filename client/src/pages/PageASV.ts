@@ -101,9 +101,10 @@ export class PageASV extends connect(store, LitElement) {
     if (!this.shadowRoot) return;
 
     this._showFilter = !this._showFilter;
-    if (this._showFilter) { // @ts-ignore
-        this.shadowRoot.getElementById("input").focus();
-      }
+    if (this._showFilter) {
+      // @ts-ignore
+      this.shadowRoot.getElementById("input").focus();
+    }
   }
 
   _keydown(e) {

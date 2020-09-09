@@ -8,6 +8,7 @@ import 'lit-virtualizer/lit-virtualizer';
 import {colorStyles, fontStyles} from "../sync-styles";
 import {Student} from "../state/state";
 import {renderStudent, helperStyles} from "./helper";
+import {endpoint} from "../state/endpoint";
 
 @customElement('page-webuntis')
 export class PageWebUntis extends connect(store, LitElement) {
@@ -23,6 +24,9 @@ export class PageWebUntis extends connect(store, LitElement) {
 
   @property()
   private _error: string = "";
+
+  @query('#download')
+  private _download: HTMLAnchorElement;
 
   constructor() {
     super();
@@ -76,6 +80,8 @@ export class PageWebUntis extends connect(store, LitElement) {
         <div slot="title" ?hidden="${this._showFilter}">WebUntis</div>
         <div slot="title" ?hidden="${!this._showFilter}"><input id="input" type="text" @input="${this._input}" @keydown="${this._keydown}"/></div>
         <mwc-icon-button icon="search" slot="actionItems" @click="${this._toggleFilter}"></mwc-icon-button>
+        <a id="download"  slot="actions" href="${endpoint.list('webuntis') + '&file=csv&referer=' + location.origin}" download="students.csv" referrerpolicy="origin" hidden></a>
+        <mwc-icon-button icon="save_alt" slot="actionItems" title="WebUntis Download" @click="${() => this._download.click()}"></mwc-icon-button>
         <mwc-icon-button icon="refresh" slot="actionItems" @click="${store.dispatch.webuntis.load}"></mwc-icon-button>
       </mwc-top-app-bar>
       <div class="board">
