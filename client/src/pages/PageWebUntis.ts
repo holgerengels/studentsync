@@ -1,4 +1,4 @@
-import {LitElement, html, css, property, customElement} from 'lit-element';
+import {LitElement, html, css, property, customElement, query} from 'lit-element';
 import { connect } from '@captaincodeman/rdx'
 import { store, State } from '../state/store'
 
