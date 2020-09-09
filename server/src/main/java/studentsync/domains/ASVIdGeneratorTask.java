@@ -29,8 +29,8 @@ public class ASVIdGeneratorTask
     public Report execute() {
         ASV asv = DomainFactory.getInstance().getASV();
         try {
-            List<String> ids = Collections.EMPTY_LIST;
-            //List<String> ids = asv.generateIds().stream().map(s -> s.account).collect(Collectors.toList());
+            //List<String> ids = Collections.EMPTY_LIST;
+            List<String> ids = asv.generateIds().stream().map(s -> s.account).collect(Collectors.toList());
             Report report = new Report();
             report.put("ids", ids);
             return report;
