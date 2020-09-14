@@ -195,6 +195,8 @@ public class ActiveDirectory
             JsonObject object = (JsonObject)element;
             Map.Entry<String, JsonElement> line = object.entrySet().iterator().next();
             String from = line.getKey();
+            if (from.contains("class"))
+                from = from.toLowerCase();
             from = from.replaceFirst("class\\((.*)\\)", "CN=G_Schueler_VBS_$1_" + schuljahr + ",OU=FileShare");
             from = from.replaceFirst("group\\((.*)\\)", "CN=$1,OU=Active Directory");
             from = from + "," + POSTFIX;
