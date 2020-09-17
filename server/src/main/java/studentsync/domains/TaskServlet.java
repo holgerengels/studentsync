@@ -21,6 +21,7 @@ public class TaskServlet<T>
         TASKS.put("asv-id-generator", ASVIdGeneratorTask.class);
         TASKS.put("bridge-sync", SVPReviewSyncTask.class);
         TASKS.put("ad-group-mapping", ADGroupMappingTask.class);
+        TASKS.put("paedml-fixes", PaedMLFixStudentsTask.class);
     }
 
     private Map<Class, Task> tasks = new HashMap<>();
