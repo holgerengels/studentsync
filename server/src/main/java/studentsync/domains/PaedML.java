@@ -437,8 +437,8 @@ public class PaedML
 
     public List<Student> fixStudents() {
         List<Student> students = defectStudents();
-        fixStudent(students.get(0));
-        return students.subList(0, 1);
+        students.forEach(this::fixStudent);
+        return students;
     }
 
     private String userDn(String userid) {
