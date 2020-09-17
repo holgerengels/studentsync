@@ -423,18 +423,16 @@ public class PaedML
     }
 
     public void fixStudent(Student student) {
-        try {
-            LdapContext context = ldapContext.get();
-            String dn = userDn(student.getAccount());
-            List<ModificationItem> modificationItems = new ArrayList<>();
-            for (String group : student.getCourses()) {
-                modificationItems.add(new ModificationItem(DirContext.REMOVE_ATTRIBUTE, new BasicAttribute("memberOf", group)));
+        LdapContext context = ldapContext.get();
+        String dn = userDn(student.getAccount());
+        student.getCourses().forEach(course -> {
+            try {
+                context.modifyAttributes(course, new ModificationItem[] { new ModificationItem(DirContext.REMOVE_ATTRIBUTE, new BasicAttribute("member", dn)) });
             }
-            context.modifyAttributes(dn, modificationItems.toArray(new ModificationItem[0]));
-        }
-        catch (Exception e) {
-            e.printStackTrace();
-        }
+            catch (NamingException e) {
+                e.printStackTrace();
+            }
+        });
     }
 
     public List<Student> fixStudents() {
