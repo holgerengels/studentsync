@@ -1,5 +1,5 @@
 export const endpoint = {
-  path: "http://localhost:8081/server/",
+  path: "/server/",
   get: {
     method: "GET",
     mode: "cors",

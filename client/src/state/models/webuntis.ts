@@ -1,4 +1,4 @@
-import { createModel, RoutingState } from '@captaincodeman/rdx-model';
+import { createModel, RoutingState } from '@captaincodeman/rdx';
 import {Store} from '../store';
 import { Student, StudentsState } from "../state";
 import {endpoint} from "../endpoint";
@@ -48,7 +48,7 @@ export default createModel({
 
   effects: (store: Store) => ({
     async load() {
-      const dispatch = store.dispatch();
+      const dispatch = store.getDispatch();
       const state = store.getState();
 
       if (Date.now() - state.webuntis.timestamp > 3000) {
@@ -68,7 +68,7 @@ export default createModel({
     },
 
     async filter(payload: string) {
-      const dispatch = store.dispatch();
+      const dispatch = store.getDispatch();
 
       if (payload && payload.length > 2) {
         dispatch.webuntis.requestFiltered(payload);
@@ -90,8 +90,8 @@ export default createModel({
       }
     },
 
-    'routing/change': async function(payload: RoutingState) {
-      const dispatch = store.dispatch();
+    'routing/change': async function(payload: RoutingState<string>) {
+      const dispatch = store.getDispatch();
 
       switch (payload.page) {
         case 'page-webuntis':

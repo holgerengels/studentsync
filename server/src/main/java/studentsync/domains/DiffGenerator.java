@@ -4,7 +4,7 @@ import studentsync.base.Diff;
 
 import javax.json.Json;
 import javax.json.JsonWriter;
-import javax.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 
 import static studentsync.domains.JSON.json;

@@ -7,6 +7,7 @@ import studentsync.base.*;
 import javax.sql.DataSource;
 import java.io.IOException;
 import java.sql.*;
+import java.sql.Date;
 import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -397,11 +398,15 @@ public class ASV
     public static void main(String[] args) throws IOException {
         Configuration.getInstance().setConfigPath(args[0]);
         ASV asv = new ASV();
+        Map<String, Date> map = asv.readExitDates(Collections.singletonList("frank.sas12905"));
+        System.out.println("map = " + map);
+        /*
         List<Student> students = asv.readStudents();
         students.stream()
                 .filter(student -> student.clazz.startsWith("GYM0"))
                 .sorted(Comparator.comparing(Student::getClazz).thenComparing(Student::getLastName))
                 .forEach(student -> System.out.println(student.clazz + "," + student.account + "," + student.lastName + "," + student.firstName));
+         */
     }
 
     public Map<String, Object> loadStudent(String id) {
@@ -473,6 +478,46 @@ public class ASV
             stop("read student");
         }
     }
+
+    public synchronized Map<String, Date> readExitDates(List<String> students) {
+        Connection con = null;
+        Statement st = null;
+        ResultSet rs = null;
+
+        start();
+        if (students.size() > 10)
+            students = students.subList(0, 10);
+
+        try {
+            con = getConnection("asv");
+
+            st = con.createStatement();
+            rs = st.executeQuery(
+                    "select u.userid, s.austrittsdatum" +
+                            "   from asv.svp_schueler_stamm s, sync.user_id u" +
+                            "   where s.austrittsdatum <= now()" +
+                            "   and u.id = s.id" +
+                            "   and u.userid in ('" + String.join("','", students) + "')" +
+                            "   order by u.id");
+
+            HashMap<String, Date> map = new HashMap<>();
+            while (rs.next()) {
+                map.put(rs.getString(1), rs.getDate(2));
+            }
+            return map;
+        }
+        catch (SQLException e) {
+            Logger.getLogger(getClass().getSimpleName()).log(Level.SEVERE, e.getMessage(), e);
+            throw new RuntimeException(e.getMessage());
+        }
+        finally {
+            close(rs);
+            close(st);
+            close(con);
+            stop("read students");
+        }
+    }
+
     public List<Map<String, Object>> loadStudents(String... ids) {
         Connection con = null;
         PreparedStatement st = null;

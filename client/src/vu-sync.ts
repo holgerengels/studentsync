@@ -1,6 +1,6 @@
 import {LitElement, html, css, property, customElement} from 'lit-element';
 import { connect } from '@captaincodeman/rdx'
-import { RoutingState } from '@captaincodeman/rdx-model'
+import { RoutingState } from '@captaincodeman/rdx'
 import { store, State } from './state/store'
 
 import './pages/PageMain';

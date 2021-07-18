@@ -38,18 +38,18 @@ export default createModel({
     async execute() {
       const dispatch = store.getDispatch();
 
-      dispatch.paedmlfixes.request();
+      dispatch.exitdatesync.request();
       // @ts-ignore
-      const resp = await fetch(endpoint.task("paedml-fixes"), endpoint.get);
+      const resp = await fetch(endpoint.task("exitdatesync"), endpoint.get);
       if (resp.ok) {
         const json = await resp.json();
         // @ts-ignore
-        dispatch.paedmlfixes.receivedReport(json);
+        dispatch.exitdatesync.receivedReport(json);
       }
       else {
         const message = await resp.text();
         // @ts-ignore
-        dispatch.paedmlfixes.error(message);
+        dispatch.exitdatesync.error(message);
       }
     },
 
@@ -58,7 +58,7 @@ export default createModel({
 
       switch (payload.page) {
         case 'page-main':
-          dispatch.paedmlfixes.execute();
+          dispatch.exitdatesync.execute();
           break
       }
     }

@@ -2,7 +2,7 @@ package studentsync.domains;
 
 import com.google.gson.JsonObject;
 
-import javax.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 
 /**

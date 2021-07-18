@@ -1,4 +1,4 @@
-import { createModel, RoutingState } from '@captaincodeman/rdx-model';
+import { createModel, RoutingState } from '@captaincodeman/rdx';
 import {Store} from '../store';
 import {Diff, DiffState} from "../state";
 import {endpoint} from "../endpoint";
@@ -57,7 +57,7 @@ export default createModel({
 
   effects: (store: Store) => ({
     async load() {
-      const dispatch = store.dispatch();
+      const dispatch = store.getDispatch();
       const state = store.getState();
 
       if (Date.now() - state.asvpaedml.timestamp > 3000) {
@@ -77,7 +77,7 @@ export default createModel({
     },
 
     async sync() {
-      const dispatch = store.dispatch();
+      const dispatch = store.getDispatch();
 
       dispatch.asvpaedml.requestSync();
       // @ts-ignore
@@ -93,8 +93,8 @@ export default createModel({
       }
     },
 
-    'routing/change': async function(payload: RoutingState) {
-      const dispatch = store.dispatch();
+    'routing/change': async function(payload: RoutingState<string>) {
+      const dispatch = store.getDispatch();
 
       switch (payload.page) {
         case 'page-main':

@@ -2,14 +2,21 @@ package studentsync.domains;
 
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
-import org.apache.http.HttpResponse;
-import org.apache.http.NameValuePair;
-import org.apache.http.client.HttpClient;
-import org.apache.http.client.entity.UrlEncodedFormEntity;
-import org.apache.http.client.methods.HttpGet;
-import org.apache.http.client.methods.HttpPost;
-import org.apache.http.impl.client.HttpClientBuilder;
-import org.apache.http.message.BasicNameValuePair;
+import org.apache.commons.io.IOUtils;
+import org.apache.commons.io.output.WriterOutputStream;
+import org.apache.hc.client5.http.classic.HttpClient;
+import org.apache.hc.client5.http.classic.methods.HttpGet;
+import org.apache.hc.client5.http.classic.methods.HttpPost;
+import org.apache.hc.client5.http.entity.UrlEncodedFormEntity;
+import org.apache.hc.client5.http.impl.classic.CloseableHttpClient;
+import org.apache.hc.client5.http.impl.classic.CloseableHttpResponse;
+import org.apache.hc.client5.http.impl.classic.HttpClientBuilder;
+import org.apache.hc.core5.http.HttpEntity;
+import org.apache.hc.core5.http.HttpHeaders;
+import org.apache.hc.core5.http.HttpResponse;
+import org.apache.hc.core5.http.NameValuePair;
+import org.apache.hc.core5.http.io.entity.EntityUtils;
+import org.apache.hc.core5.http.message.BasicNameValuePair;
 import studentsync.base.Configuration;
 import studentsync.base.Domain;
 import studentsync.base.Student;
@@ -46,41 +53,49 @@ public class Webuntis
         String user = getConfigString("user");
         String password = getConfigString("password");
 
-        HttpClient client = HttpClientBuilder.create().build();
+        CloseableHttpClient client = HttpClientBuilder.create().build();
 
         start();
         try {
             // authentication
-            List<NameValuePair> nameValuePairs = new ArrayList<>(1);
+            List<NameValuePair> nameValuePairs = new ArrayList<>(2);
             nameValuePairs.add(new BasicNameValuePair("j_username", user));
             nameValuePairs.add(new BasicNameValuePair("j_password", password));
+
             HttpPost post = new HttpPost(url + login);
             post.setEntity(new UrlEncodedFormEntity(nameValuePairs));
-            HttpResponse response = client.execute(post);
+            try (final CloseableHttpResponse response = client.execute(post)) {}
 
             // generate report
+            String messageId;
+            String reportParams;
             HttpGet get = new HttpGet(url + report + "?" + fetchStudents);
-            response = client.execute(get);
-            JsonObject object = new Gson().fromJson(new InputStreamReader(response.getEntity().getContent()), JsonObject.class);
-            object = object.getAsJsonObject("data");
-            String messageId = object.getAsJsonPrimitive("messageId").getAsString();
-            String reportParams = object.getAsJsonPrimitive("reportParams").getAsString();
-
+            try (final CloseableHttpResponse response = client.execute(get)) {
+                HttpEntity entity = response.getEntity();
+                JsonObject object = new Gson().fromJson(new InputStreamReader(entity.getContent()), JsonObject.class);
+                object = object.getAsJsonObject("data");
+                messageId = object.getAsJsonPrimitive("messageId").getAsString();
+                reportParams = object.getAsJsonPrimitive("reportParams").getAsString();
+                EntityUtils.consume(entity);
+            }
             // fetch report
             Thread.sleep(3000);
             get = new HttpGet(url + report + "?msgId=" + messageId + "&" + reportParams);
-            response = client.execute(get);
-            LineNumberReader reader = new LineNumberReader(new InputStreamReader(response.getEntity().getContent()));
+            try (final CloseableHttpResponse response = client.execute(get)) {
+                HttpEntity entity = response.getEntity();
+                LineNumberReader reader = new LineNumberReader(new InputStreamReader(entity.getContent()));
 
-            students = new ArrayList<>(2000);
-            String line = reader.readLine();
-            while ((line = reader.readLine()) != null) {
-                //System.out.println("line = " + line);
-                String[] cols = line.split("\t");
-                if (cols.length < 6)
-                    System.out.println("CORRUPT LINE = " + line);
-                else
-                    students.add(new Student(cols[0], cols[2], cols[1], cols[3], date(cols[4]), cols[5]));
+                students = new ArrayList<>(2000);
+                String line = reader.readLine();
+                while ((line = reader.readLine()) != null) {
+                    //System.out.println("line = " + line);
+                    String[] cols = line.split("\t");
+                    if (cols.length < 6)
+                        System.out.println("CORRUPT LINE = " + line);
+                    else
+                        students.add(new Student(cols[0], cols[2], cols[1], cols[3], date(cols[4]), cols[5]));
+                }
+                EntityUtils.consume(entity);
             }
         }
         catch (IOException | InterruptedException e) {
@@ -106,6 +121,120 @@ public class Webuntis
         }
     }
 
+    // request.preventCache=1613224210817
+    // setexitdate=1
+    // exitDate=2021-02-26
+    // exitDateFilter=
+    // klasseId=133
+    // schoolyearId=-1
+    // searchString=
+    // studentsForDate=true
+    // _studentsForDate=on
+    // selId=1794
+    // _csrf=88987086-8afa-467f-83d5-24b2351e89fb
+    // <input type="hidden" name="_csrf" value="21767af5-44dd-4309-916e-136bbb0e282f">
+
+    public void writeExitDates(Map<String, Date> map) {
+        String url = Configuration.getInstance().getString("webuntis","url"); if (!url.endsWith("/")) url += "/";
+        String login = Configuration.getInstance().getString("webuntis", "login"); if (login.startsWith("/")) login = login.substring(1);
+        String exitDate = Configuration.getInstance().getString("webuntis", "exitDate"); if (exitDate.startsWith("/")) exitDate = exitDate.substring(1);
+        String user = Configuration.getInstance().getString("webuntis", "user");
+        String password = Configuration.getInstance().getString("webuntis", "password");
+
+        try (final CloseableHttpClient client = HttpClientBuilder.create()
+                .setUserAgent("Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/88.0.4324.150 Safari/537.36")
+                .build();
+        ) {
+            // authentication
+            List<NameValuePair> nameValuePairs = new ArrayList<>(2);
+            nameValuePairs.add(new BasicNameValuePair("j_username", user));
+            nameValuePairs.add(new BasicNameValuePair("j_password", password));
+            HttpPost post = new HttpPost(url + login);
+            post.setEntity(new UrlEncodedFormEntity(nameValuePairs));
+            try (final CloseableHttpResponse response = client.execute(post)) {}
+
+            String csrf;
+            HttpGet get = new HttpGet(url + exitDate);
+            try (final CloseableHttpResponse response = client.execute(get)) {
+                HttpEntity entity = response.getEntity();
+                StringWriter writer = new StringWriter();
+                WriterOutputStream out = new WriterOutputStream(writer);
+                entity.writeTo(out);
+                out.flush();
+                String string = writer.toString();
+                EntityUtils.consume(entity);
+                String _csrf = "<input type=\"hidden\" name=\"_csrf\" value=\"";
+                int start = string.indexOf(_csrf);
+                int end = string.indexOf("\" />", start + _csrf.length());
+                csrf = string.substring(start + _csrf.length(), end);
+                System.out.println("csrf = " + csrf);
+            }
+
+            for (Map.Entry<String, Date> entry : map.entrySet()) {
+                String selId;
+                post = new HttpPost(url + exitDate);
+                nameValuePairs = new ArrayList<>(4);
+                nameValuePairs.add(new BasicNameValuePair("exitDateFilter", ""));
+                nameValuePairs.add(new BasicNameValuePair("klasseId", "-1"));
+                nameValuePairs.add(new BasicNameValuePair("schoolyearId", "-1"));
+                nameValuePairs.add(new BasicNameValuePair("searchString", entry.getKey()));
+                nameValuePairs.add(new BasicNameValuePair("_studentsForDate", "on"));
+                nameValuePairs.add(new BasicNameValuePair("_csrf", csrf));
+                post.setEntity(new UrlEncodedFormEntity(nameValuePairs));
+                post.setHeader(HttpHeaders.ACCEPT, "*/*");
+                post.setHeader(HttpHeaders.ACCEPT_ENCODING, "gzip deflate br");
+                post.setHeader(HttpHeaders.ACCEPT_LANGUAGE, "de-DE,de");
+                post.setHeader(HttpHeaders.CONTENT_TYPE, "application/x-www-form-urlencoded");
+                post.setHeader(HttpHeaders.HOST, "nessa.webuntis.com");
+                post.setHeader("Origin", "https://nessa.webuntis.com");
+                post.setHeader(HttpHeaders.USER_AGENT, "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/88.0.4324.150 Safari/537.36");
+                post.setHeader("X-CSRF-TOKEN", csrf);
+                post.setHeader("X-Requested-With", "XMLHttpRequest");
+                try (final CloseableHttpResponse response = client.execute(post)) {
+                    HttpEntity entity = response.getEntity();
+                    StringWriter writer = new StringWriter();
+                    WriterOutputStream out = new WriterOutputStream(writer);
+                    entity.writeTo(out);
+                    out.flush();
+                    String string = writer.toString();
+                    EntityUtils.consume(entity);
+                    String _selId = "<input type=\"checkbox\" name=\"selId\" value=\"";
+                    int start = string.indexOf(_selId);
+                    int end = string.indexOf("\" />", start + _selId.length());
+                    selId = string.substring(start + _selId.length(), end);
+                    System.out.println("selId = " + selId);
+                }
+
+                post = new HttpPost(url + exitDate);
+                nameValuePairs = new ArrayList<>(3);
+                nameValuePairs.add(new BasicNameValuePair("setexitdate", "1"));
+                nameValuePairs.add(new BasicNameValuePair("exitDate", "" + entry.getValue()));
+                nameValuePairs.add(new BasicNameValuePair("selId", selId));
+                nameValuePairs.add(new BasicNameValuePair("_csrf", csrf));
+                post.setEntity(new UrlEncodedFormEntity(nameValuePairs));
+                post.setHeader(HttpHeaders.ACCEPT, "*/*");
+                post.setHeader(HttpHeaders.ACCEPT_ENCODING, "gzip deflate br");
+                post.setHeader(HttpHeaders.ACCEPT_LANGUAGE, "de-DE,de");
+                post.setHeader(HttpHeaders.CONTENT_TYPE, "application/x-www-form-urlencoded");
+                post.setHeader(HttpHeaders.HOST, "nessa.webuntis.com");
+                post.setHeader("Origin", "https://nessa.webuntis.com");
+                post.setHeader(HttpHeaders.USER_AGENT, "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/88.0.4324.150 Safari/537.36");
+                post.setHeader("X-CSRF-TOKEN", csrf);
+                post.setHeader("X-Requested-With", "XMLHttpRequest");
+                try (final CloseableHttpResponse response = client.execute(post)) {
+                    HttpEntity entity = response.getEntity();
+                    //IOUtils.copy(entity.getContent(), System.out);
+                    EntityUtils.consume(entity);
+                }
+            }
+        }
+        catch (IOException e) {
+
+
+        }
+    }
+
+    /*
     public static void main(String[] args) throws Exception {
         Configuration.getInstance().setConfigPath(args[0]);
         Webuntis webuntis = new Webuntis();
@@ -113,24 +242,5 @@ public class Webuntis
         List<String> list = students.stream().map(student -> Objects.toString(student, null)).collect(Collectors.toList());
         System.out.println("students = " + String.join("\n", list));
     }
-
-    /*
-    public static void main(String[] args) throws Exception {
-        HttpClient client = HttpClientBuilder.create().build();
-        HttpPost post = new HttpPost("https://webuntis.valckenburgschule.de/WebUntis/j_spring_security_check?school=VU");
-
-        List<NameValuePair> nameValuePairs = new ArrayList<>(1);
-        nameValuePairs.add(new BasicNameValuePair("j_username", "h.engels"));
-        nameValuePairs.add(new BasicNameValuePair("j_password", "3f3l@nt!"));
-        post.setEntity(new UrlEncodedFormEntity(nameValuePairs));
-        HttpResponse response = client.execute(post);
-
-        BufferedReader rd = new BufferedReader(new InputStreamReader(response.getEntity().getContent()));
-
-        HttpGet get = new HttpGet("https://webuntis.valckenburgschule.de/WebUntis/reports.do?name=Student&format=csv&klasseId=-1&studentsForDate=true");
-        response = client.execute(get);
-        rd = new BufferedReader(new InputStreamReader(response.getEntity().getContent()));
-        IOUtils.copy(rd, System.out);
-    }
-    */
+     */
 }

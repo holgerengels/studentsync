@@ -2,8 +2,8 @@ package studentsync.domains;
 
 import studentsync.base.*;
 
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.PrintStream;
@@ -17,6 +17,7 @@ public class TaskServlet<T>
 {
     private static final Map<String, Class<? extends Task>> TASKS = new HashMap<>(); static {
         TASKS.put("webuntis-external-id", WebuntisExternalIdTask.class);
+        TASKS.put("webuntis-exitdatesync", WebUntisSyncExitDateTask.class);
         TASKS.put("svp-id-generator", SVPIdGeneratorTask.class);
         TASKS.put("asv-id-generator", ASVIdGeneratorTask.class);
         TASKS.put("bridge-sync", SVPReviewSyncTask.class);

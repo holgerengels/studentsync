@@ -9,3 +9,4 @@ sync-config-prod.json
 sync-settings.json
 sync-settings-prod.json
 serviceAccountKey.json
+trustStore

@@ -1,4 +1,4 @@
-import {createModel, RoutingState} from '@captaincodeman/rdx-model';
+import {createModel, RoutingState} from '@captaincodeman/rdx';
 import {Store} from '../store';
 import {TaskReportState} from "../state";
 import {endpoint} from "../endpoint";
@@ -36,7 +36,7 @@ export default createModel({
 
   effects: (store: Store) => ({
     async execute() {
-      const dispatch = store.dispatch();
+      const dispatch = store.getDispatch();
 
       dispatch.idgenerator.request();
       // @ts-ignore
@@ -53,8 +53,8 @@ export default createModel({
       }
     },
 
-    'routing/change': async function(payload: RoutingState) {
-      const dispatch = store.dispatch();
+    'routing/change': async function(payload: RoutingState<string>) {
+      const dispatch = store.getDispatch();
 
       switch (payload.page) {
         case 'page-main':

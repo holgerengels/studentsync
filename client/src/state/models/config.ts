@@ -1,4 +1,4 @@
-import { createModel, RoutingState } from '@captaincodeman/rdx-model';
+import { createModel, RoutingState } from '@captaincodeman/rdx';
 import {Store} from '../store';
 import {ConfigState} from "../state";
 import {endpoint} from "../endpoint";
@@ -31,7 +31,7 @@ export default createModel({
 
   effects: (store: Store) => ({
     async read() {
-      const dispatch = store.dispatch();
+      const dispatch = store.getDispatch();
 
       dispatch.config.requestRead();
       // @ts-ignore
@@ -40,7 +40,7 @@ export default createModel({
       dispatch.config.receivedRead(json);
     },
     async write(payload: object) {
-      const dispatch = store.dispatch();
+      const dispatch = store.getDispatch();
 
       dispatch.config.requestWrite();
       // @ts-ignore
@@ -49,8 +49,8 @@ export default createModel({
       dispatch.config.receivedWrite();
     },
 
-    'routing/change': async function(payload: RoutingState) {
-      const dispatch = store.dispatch();
+    'routing/change': async function(payload: RoutingState<string>) {
+      const dispatch = store.getDispatch();
 
       switch (payload.page) {
         case 'page-config':
