@@ -24,7 +24,7 @@ export class VuSync extends connect(store, LitElement) {
   @property()
   private _drawerOpen: boolean = false;
 
-  set route(val: RoutingState) {
+  set route(val: RoutingState<string>) {
     if (val.page !== this._page) {
       this._page = val.page
     }
