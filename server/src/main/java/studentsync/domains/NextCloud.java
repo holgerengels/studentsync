@@ -1,7 +1,7 @@
 package studentsync.domains;
 
-import com.jcabi.ssh.SSH;
 import com.jcabi.ssh.Shell;
+import com.jcabi.ssh.Ssh;
 import org.apache.commons.io.FileUtils;
 import studentsync.base.Diff;
 import studentsync.base.Configuration;
@@ -33,7 +33,7 @@ public class NextCloud extends Domain {
         try {
             String file = getConfigString("key");
             String key = FileUtils.readFileToString(new File(file));
-            Shell shell = new SSH(getConfigString("host"), getConfigInteger("port"), getConfigString("user"), key, getConfigString("passphrase"));
+            Shell shell = new Ssh(getConfigString("host"), getConfigInteger("port"), getConfigString("user"), key, getConfigString("passphrase"));
 
             String dirs = new Shell.Plain(shell).exec("ls " + getConfigString("datadir"));
             List<String> list = new ArrayList<>(Arrays.asList(dirs.split("\n")));

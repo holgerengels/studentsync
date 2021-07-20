@@ -39,14 +39,14 @@
     <orderEntry type="library" name="Maven: mysql:mysql-connector-java:8.0.21" level="project" />
     <orderEntry type="library" name="Maven: com.google.protobuf:protobuf-java:3.11.4" level="project" />
     <orderEntry type="library" name="Maven: com.google.code.gson:gson:2.8.5" level="project" />
-    <orderEntry type="library" name="Maven: com.jcabi:jcabi-ssh:2.0-SNAPSHOT" level="project" />
-    <orderEntry type="library" name="Maven: com.jcabi:jcabi-aspects:0.22" level="project" />
-    <orderEntry type="library" name="Maven: org.aspectj:aspectjrt:1.8.4" level="project" />
+    <orderEntry type="library" name="Maven: com.jcabi:jcabi-ssh:1.6.1" level="project" />
+    <orderEntry type="library" name="Maven: com.jcabi:jcabi-aspects:0.22.5" level="project" />
+    <orderEntry type="library" name="Maven: org.aspectj:aspectjrt:1.8.7" level="project" />
     <orderEntry type="library" name="Maven: javax.validation:validation-api:1.1.0.Final" level="project" />
-    <orderEntry type="library" name="Maven: com.jcabi:jcabi-log:0.16" level="project" />
-    <orderEntry type="library" name="Maven: org.apache.commons:commons-lang3:3.4" level="project" />
-    <orderEntry type="library" name="Maven: commons-io:commons-io:2.4" level="project" />
-    <orderEntry type="library" name="Maven: com.jcraft:jsch:0.1.51" level="project" />
+    <orderEntry type="library" name="Maven: com.jcabi:jcabi-log:0.17.2" level="project" />
+    <orderEntry type="library" name="Maven: org.apache.commons:commons-lang3:3.5" level="project" />
+    <orderEntry type="library" name="Maven: org.cactoos:cactoos:0.16" level="project" />
+    <orderEntry type="library" name="Maven: com.jcraft:jsch:0.1.54" level="project" />
     <orderEntry type="library" name="Maven: org.lightcouch:lightcouch:0.2.0" level="project" />
     <orderEntry type="library" name="Maven: org.apache.httpcomponents:httpclient:4.5.3" level="project" />
     <orderEntry type="library" name="Maven: org.apache.httpcomponents:httpcore:4.4.6" level="project" />
@@ -78,6 +78,7 @@
     <orderEntry type="library" name="Maven: org.sonatype.plexus:plexus-cipher:1.4" level="project" />
     <orderEntry type="library" name="Maven: org.apache.maven:maven-archiver:3.5.0" level="project" />
     <orderEntry type="library" name="Maven: org.apache.maven.shared:maven-shared-utils:3.2.1" level="project" />
+    <orderEntry type="library" name="Maven: commons-io:commons-io:2.6" level="project" />
     <orderEntry type="library" name="Maven: org.codehaus.plexus:plexus-archiver:4.2.2" level="project" />
     <orderEntry type="library" name="Maven: org.codehaus.plexus:plexus-io:3.2.0" level="project" />
     <orderEntry type="library" name="Maven: org.apache.commons:commons-compress:1.20" level="project" />

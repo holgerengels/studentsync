@@ -118,7 +118,7 @@ public class Configuration {
             }
         }
         System.out.println("### ### ###");
-        System.out.println("config in effekt\n" + config);
+        System.out.println("config in effect\n" + config);
     }
 
     public void writeSettings(JsonObject settings) {
