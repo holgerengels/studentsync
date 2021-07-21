@@ -40,7 +40,7 @@ export default createModel({
 
       dispatch.exitdatesync.request();
       // @ts-ignore
-      const resp = await fetch(endpoint.task("exitdatesync"), endpoint.get);
+      const resp = await fetch(endpoint.task("webuntis-exitdatesync"), endpoint.get);
       if (resp.ok) {
         const json = await resp.json();
         // @ts-ignore
