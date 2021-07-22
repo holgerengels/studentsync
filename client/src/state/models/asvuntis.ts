@@ -32,6 +32,20 @@ export default createModel({
         loading: false,
       };
     },
+    requestSync(state) {
+      return { ...state, syncing: true, error: "" };
+    },
+    receivedReport(state, payload: string) {
+      return { ...state,
+        entities: [],
+        added: 0,
+        changed: 0,
+        removed: 0,
+        kept: 0,
+        report: payload,
+        syncing: false,
+      };
+    },
     error(state, message) {
       return { ...state,
         loading: false,
@@ -59,6 +73,23 @@ export default createModel({
           // @ts-ignore
           dispatch.asvuntis.error(message);
         }
+      }
+    },
+
+    async sync() {
+      const dispatch = store.getDispatch();
+
+      dispatch.asvuntis.requestSync();
+      // @ts-ignore
+      const resp = await fetch(endpoint.sync("asv", "asvuntis"), endpoint.get);
+      if (resp.ok) {
+        await resp.json();
+        dispatch.asvuntis.receivedReport("lalilu");
+      }
+      else {
+        const message = await resp.text();
+        // @ts-ignore
+        dispatch.asvuntis.error(message)
       }
     },
 

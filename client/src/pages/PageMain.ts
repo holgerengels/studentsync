@@ -82,7 +82,7 @@ export class PageMain extends connect(store, LitElement) {
         <div slot="title">Home</div>
       </mwc-top-app-bar>
       <div class="board">
-        <diff-card from="ASV" to="Untis" .diff="${this._asvuntis}" .load="${store.dispatch.asvuntis.load}" list="/sync/asvuntis" color="tertiary">
+        <diff-card from="ASV" to="Untis" .diff="${this._asvuntis}" .load="${store.dispatch.asvuntis.load}" .sync="${store.dispatch.asvuntis.sync}" list="/sync/asvuntis" color="tertiary">
             <a id="download"  slot="actions" href="${endpoint.diff('asv', 'untis') + '&file=untis-import&referer=' + location.origin}" download="added.csv" referrerpolicy="origin" hidden></a>
             <mwc-icon-button icon="save_alt" slot="actions" title="Untis Import" @click="${() => this._download.click()}"></mwc-icon-button>
         </diff-card>

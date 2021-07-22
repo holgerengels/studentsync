@@ -1,17 +1,12 @@
 package studentsync.domains;
 
 
-import com.google.gson.JsonObject;
-import studentsync.base.Configuration;
-import studentsync.base.Pair;
 import studentsync.base.Report;
 
-import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.*;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 /**
