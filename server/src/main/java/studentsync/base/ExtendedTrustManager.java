@@ -32,10 +32,12 @@ public class ExtendedTrustManager
                     }
                 }
 
+                System.out.println("Loading KeyStore from " + config.getAsJsonObject("ldap").get("trustStore").getAsString());
                 FileInputStream myKeys = new FileInputStream(config.getAsJsonObject("ldap").get("trustStore").getAsString());
                 KeyStore myTrustStore = KeyStore.getInstance(KeyStore.getDefaultType());
                 myTrustStore.load(myKeys, config.getAsJsonObject("ldap").get("trustStorePassword").getAsString().toCharArray());
                 myKeys.close();
+                System.out.println("Done loading KeyStore from " + config.getAsJsonObject("ldap").get("trustStore").getAsString());
 
                 tmf = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
                 tmf.init(myTrustStore);
@@ -56,6 +58,7 @@ public class ExtendedTrustManager
                 SSLContext sslContext = SSLContext.getInstance("TLS");
                 sslContext.init(null, new TrustManager[] { INSTANCE }, null);
                 SSLContext.setDefault(sslContext);
+                System.out.println("Extended TrustManager installed successfully");
             }
             catch (Exception e) {
                 throw new RuntimeException(e);
