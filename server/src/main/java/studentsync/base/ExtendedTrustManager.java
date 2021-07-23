@@ -4,6 +4,7 @@ import com.google.gson.JsonObject;
 
 import javax.net.ssl.*;
 import java.io.FileInputStream;
+import java.net.URLConnection;
 import java.security.KeyStore;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
@@ -57,8 +58,6 @@ public class ExtendedTrustManager
                 sslContext.init(null, new TrustManager[] { INSTANCE }, null);
                 SSLContext.setDefault(sslContext);
                 System.out.println("Extended TrustManager installed successfully");
-
-                HttpsURLConnection.setDefaultHostnameVerifier((hostname, session) -> true);
             }
             catch (Exception e) {
                 throw new RuntimeException(e);
