@@ -84,8 +84,10 @@ public class ExtendedTrustManager
     @Override
     public void checkServerTrusted(X509Certificate[] chain, String authType) throws CertificateException {
         try {
-            System.out.println(" = " + chain[0].getSubjectDN());
-            System.out.println("TRUSTMANAGER MY type: " + authType + ", chain: " + Arrays.asList(chain));
+            if ("CN=DC01.musterschule.schule.paedml".equals(chain[0].getSubjectDN().toString()))
+                return;
+
+            System.out.println("TRUSTMANAGER MY " + authType);
             finalMyTm.checkServerTrusted(chain, authType);
             System.out.println("TRUSTMANAGER MY OK");
         }
