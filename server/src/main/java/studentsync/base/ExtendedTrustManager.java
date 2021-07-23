@@ -10,6 +10,7 @@ import java.io.FileInputStream;
 import java.security.KeyStore;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
+import java.util.Arrays;
 import java.util.Map;
 
 public class ExtendedTrustManager
@@ -83,10 +84,14 @@ public class ExtendedTrustManager
     @Override
     public void checkServerTrusted(X509Certificate[] chain, String authType) throws CertificateException {
         try {
+            System.out.println("TRUSTMANAGER MY type: " + authType + ", chain: " + Arrays.asList(chain));
             finalMyTm.checkServerTrusted(chain, authType);
+            System.out.println("OK");
         }
         catch (CertificateException e) {
+            System.out.println("TRUSTMANAGER DEF type: " + authType + ", chain: " + Arrays.asList(chain));
             finalDefaultTm.checkServerTrusted(chain, authType);
+            System.out.println("OK");
         }
     }
 
