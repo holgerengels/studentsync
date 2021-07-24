@@ -2,7 +2,6 @@ package studentsync.base;
 
 import com.google.gson.*;
 import com.google.gson.stream.JsonReader;
-import com.google.gson.stream.JsonWriter;
 
 import java.io.*;
 import java.util.*;
@@ -128,6 +127,7 @@ public class Configuration {
             writer.close();
             this.settings = settings;
             applySettings();
+            ScheduleManager.getInstance().rescheduleBackgroundJobs();
         }
         catch (IOException e) {
             e.printStackTrace();

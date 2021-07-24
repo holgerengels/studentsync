@@ -1,5 +1,7 @@
 package studentsync.domains;
 
+import jakarta.servlet.ServletConfig;
+import jakarta.servlet.ServletException;
 import studentsync.base.*;
 
 import jakarta.servlet.http.HttpServletRequest;
@@ -7,6 +9,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.PrintStream;
+import java.lang.reflect.InvocationTargetException;
 import java.util.*;
 
 /**
@@ -15,32 +18,10 @@ import java.util.*;
 public class TaskServlet<T>
     extends CorsServlet
 {
-    private static final Map<String, Class<? extends Task>> TASKS = new HashMap<>(); static {
-        TASKS.put("webuntis-external-id", WebuntisExternalIdTask.class);
-        TASKS.put("webuntis-exitdatesync", WebUntisSyncExitDateTask.class);
-        TASKS.put("svp-id-generator", SVPIdGeneratorTask.class);
-        TASKS.put("asv-id-generator", ASVIdGeneratorTask.class);
-        TASKS.put("bridge-sync", SVPReviewSyncTask.class);
-        TASKS.put("ad-group-mapping", ADGroupMappingTask.class);
-        TASKS.put("paedml-fixes", PaedMLFixStudentsTask.class);
-    }
-
-    private Map<Class, Task> tasks = new HashMap<>();
-
-    public synchronized <S extends Task> S getTask(Class<S> clazz) {
-        System.out.println("task " + clazz.getSimpleName());
-        return (S)tasks.computeIfAbsent(clazz, s -> createTask(clazz));
-    }
-
-    protected <G extends Task> G createTask(Class<G> clazz) {
-        try {
-            G instance = clazz.newInstance();
-            return instance;
-        }
-        catch (IllegalAccessException | InstantiationException e) {
-            e.printStackTrace();
-            throw new RuntimeException(e);
-        }
+    @Override
+    public void init(ServletConfig config) throws ServletException {
+        super.init(config);
+        ScheduleManager.getInstance().init(config);
     }
 
     @Override
@@ -54,10 +35,10 @@ public class TaskServlet<T>
         try {
             String taskName = map.get("task");
             System.out.println("task = " + taskName);
-            Class<? extends Task> clazz = TASKS.get(taskName);
+            Class<? extends Task> clazz = ScheduleManager.TASKS.get(taskName);
             if (clazz == null)
-                System.out.println(".. not found in\n" + TASKS);
-            Task<Report> task = getTask(clazz);
+                System.out.println(".. not found in\n" + ScheduleManager.TASKS);
+            Task<Report> task = ScheduleManager.getInstance().getTask(clazz);
 
             task.setOutput(new PrintStream(new ByteArrayOutputStream()));
             Report report = task.execute();

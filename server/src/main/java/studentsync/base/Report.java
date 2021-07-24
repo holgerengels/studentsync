@@ -8,4 +8,7 @@ import java.util.HashMap;
 public class Report
     extends HashMap<String, Object>
 {
+    public Report() {
+        put("timestamp", System.currentTimeMillis());
+    }
 }

@@ -9,13 +9,15 @@
     <name>studentsync</name>
 
     <properties>
-        <maven.compiler.source>11</maven.compiler.source>
-        <maven.compiler.target>11</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <webappDirectory>${project.build.directory}/${project.build.finalName}</webappDirectory>
     </properties>
 
     <dependencies>
+        <dependency>
+            <groupId>javax</groupId>
+            <artifactId>javaee-web-api</artifactId>
+            <version>8.0.1</version>
+        </dependency>
         <dependency>
             <groupId>jakarta.servlet</groupId>
             <artifactId>jakarta.servlet-api</artifactId>
@@ -72,6 +74,11 @@
             <artifactId>slf4j-simple</artifactId>
             <version>1.7.25</version>
         </dependency>
+        <dependency>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-war-plugin</artifactId>
+            <version>3.3.1</version>
+        </dependency>
     </dependencies>
 
     <build>
@@ -79,33 +86,23 @@
 
         <plugins>
             <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-war-plugin</artifactId>
-                <version>3.3.1</version>
-                <executions>
-                    <execution>
-                        <phase>compile</phase>
-                    </execution>
-                </executions>
+                <groupId>org.eclipse.jetty</groupId>
+                <artifactId>jetty-maven-plugin</artifactId>
+                <version>11.0.0</version>
                 <configuration>
-                    <webappDirectory>${webappDirectory}</webappDirectory>
+                    <webApp>
+                        <contextPath>/server</contextPath>
+                    </webApp>
                 </configuration>
             </plugin>
-
             <plugin>
-                <groupId>org.codehaus.cargo</groupId>
-                <artifactId>cargo-maven2-plugin</artifactId>
-                <version>1.7.10</version>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <version>3.8.1</version>
                 <configuration>
-                    <container>
-                        <containerId>tomcat9x</containerId>
-                        <type>embedded</type>
-                    </container>
-                    <configuration>
-                        <properties><!-- https://codehaus-cargo.github.io/cargo/Tomcat+9.x.html -->
-                            <cargo.servlet.port>8081</cargo.servlet.port>
-                        </properties>
-                    </configuration>
+                    <release>11</release>
+                    <source>11</source>
+                    <target>11</target>
                 </configuration>
             </plugin>
         </plugins>
