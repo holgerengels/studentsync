@@ -81,7 +81,7 @@ export default createModel({
 
       dispatch.asvuntis.requestSync();
       // @ts-ignore
-      const resp = await fetch(endpoint.sync("asv", "asvuntis"), endpoint.get);
+      const resp = await fetch(endpoint.sync("asv", "untis"), endpoint.get);
       if (resp.ok) {
         await resp.json();
         dispatch.asvuntis.receivedReport("lalilu");
