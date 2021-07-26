@@ -418,7 +418,7 @@ public class Untis
         try {
             String schulid = getConfigString("schulid");
             con = getConnection("untis");
-            pst = con.prepareStatement("update Student set s.FirstName = ?, s.Longname = ?, s.BirthDate = ? where s.SCHOOL_ID = '" + schulid + "' AND s.Name = ?");
+            pst = con.prepareStatement("update Student s set s.FirstName = ?, s.Longname = ?, s.BirthDate = ? where s.SCHOOL_ID = '" + schulid + "' AND s.Name = ?");
             pst.setString(1, student.firstName);
             pst.setString(2, student.lastName);
             pst.setDate(3, student.birthday);
