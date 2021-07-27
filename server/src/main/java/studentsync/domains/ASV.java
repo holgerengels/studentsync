@@ -305,15 +305,17 @@ public class ASV
                     "   and sj.schueler_stamm_id = s.id" +
                     "   and sj.klassengruppe_id = kg.id" +
                     "   and u.id = s.id" +
-                    "   order by familienname");
+                    "   order by u.userid");
 
             HashMap<String, Student> map = new HashMap<String, Student>();
             while (rs.next()) {
                 Student student = new Student(rs.getString(1), rs.getString(2), rs.getString(3), genders.get(rs.getString(4)), rs.getDate(5), classes.get(rs.getString(6)));
                 if (student.getClazz() != null)
                     map.put(student.getAccount(), student);
+                /*
                 else
                     System.out.println("no class " + student);
+                 */
             }
 
             students = new ArrayList<Student>();
@@ -398,15 +400,11 @@ public class ASV
     public static void main(String[] args) throws IOException {
         Configuration.getInstance().setConfigPath(args[0]);
         ASV asv = new ASV();
-        Map<String, Date> map = asv.readExitDates(Collections.singletonList("frank.sas12905"));
-        System.out.println("map = " + map);
-        /*
         List<Student> students = asv.readStudents();
         students.stream()
                 .filter(student -> student.clazz.startsWith("GYM0"))
                 .sorted(Comparator.comparing(Student::getClazz).thenComparing(Student::getLastName))
                 .forEach(student -> System.out.println(student.clazz + "," + student.account + "," + student.lastName + "," + student.firstName));
-         */
     }
 
     public Map<String, Object> loadStudent(String id) {
@@ -485,8 +483,6 @@ public class ASV
         ResultSet rs = null;
 
         start();
-        if (students.size() > 10)
-            students = students.subList(0, 10);
 
         try {
             con = getConnection("asv");

@@ -8,6 +8,7 @@ import studentsync.base.Student;
 import javax.sql.DataSource;
 import java.io.IOException;
 import java.sql.*;
+import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -66,8 +67,8 @@ public class Untis
                 String lastName = rs.getString(4);
                 if (rs.getString(2) != null) {
                     String account = rs.getString(2);
-                    String gender = gender(rs.getString(5));
-                    Date birthday = date(rs.getString(6));
+                    String gender = toGender(rs.getString(5));
+                    Date birthday = toDate(rs.getString(6));
                     String clazz = classes.get(rs.getString(7));
                     Student pupil = new Student(account, firstName, lastName, gender, birthday, clazz);
                     List<String> courses = choices.get(rs.getString(1));
@@ -97,7 +98,7 @@ public class Untis
         }
     }
 
-    private String gender(String string) {
+    private String toGender(String string) {
         if (string == null)
             return null;
         else if (string.contains("M"))
@@ -108,10 +109,23 @@ public class Untis
             return null;
     }
 
-    private Date date(String string) {
+    private String fromGender(String string) {
+        if (string == null)
+            return null;
+        else if (string.equals("m"))
+            return "M";
+        else if (string.equals("w"))
+            return "W";
+        else
+            return null;
+    }
+
+    DateFormat dateFormat = new SimpleDateFormat("yyyyMMdd");
+
+    private Date toDate(String string) {
         if (string != null && !"0".equals(string)) {
             try {
-                return new Date(new SimpleDateFormat("yyyyMMdd").parse(string).getTime());
+                return new Date(dateFormat.parse(string).getTime());
             }
             catch (ParseException e) {
                 e.printStackTrace();
@@ -122,15 +136,28 @@ public class Untis
             return null;
     }
 
+    private String fromDate(Date date) {
+        if (date != null) {
+            return dateFormat.format(date);
+        }
+        else
+            return null;
+    }
+
     public static void main(String[] args) throws IOException {
         Configuration.getInstance().setConfigPath(args[0]);
         Untis untis = new Untis();
+        Student student = new Student("koese.sin", "Sinem", "Köse", "w", untis.toDate("20030102"), "lala");
+        //Student student = new Student("koese.sin", "SINEM", "Köse", "m", untis.toDate("20030123"), "lala");
+        untis.changeStudent(student);
+        /*
         System.out.println("students = " + untis.readStudents());
         System.out.println("subjects = " + untis.readSubjects());
         Map<String, List<String>> map = untis.readChoices();
         System.out.println("untis.readChoices() = " + map);
         Map<String, List<String>> courses = untis.courseList(map);
         untis.printCourseList(courses);
+         */
     }
 
     private void printCourseList(Map<String, List<String>> courses) {
@@ -418,11 +445,12 @@ public class Untis
         try {
             String schulid = getConfigString("schulid");
             con = getConnection("untis");
-            pst = con.prepareStatement("update Student s set s.FirstName = ?, s.Longname = ?, s.BirthDate = ? where s.SCHOOL_ID = '" + schulid + "' AND s.Name = ?");
+            pst = con.prepareStatement("update Student s set s.FirstName = ?, s.Longname = ?, s.Flags = ?, s.BirthDate = ? where s.SCHOOL_ID = '" + schulid + "' AND s.Name = ?");
             pst.setString(1, student.firstName);
             pst.setString(2, student.lastName);
-            pst.setDate(3, student.birthday);
-            pst.setString(4, student.account);
+            pst.setString(3, fromGender(student.gender));
+            pst.setString(4, fromDate(student.birthday));
+            pst.setString(5, student.account);
             pst.executeUpdate();
             pst.close();
         }
