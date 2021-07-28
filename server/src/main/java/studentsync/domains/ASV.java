@@ -301,7 +301,7 @@ public class ASV
                     "           select id from asv.svp_wl_schuljahr where kurzform = '" + schuljahr + "'" +
                     "       )" +
                     "   )" +
-                    "   and (s.austrittsdatum is null or s.austrittsdatum > now())" +
+                    "   and (s.austrittsdatum is null or s.austrittsdatum > date(now()))" +
                     "   and sj.schueler_stamm_id = s.id" +
                     "   and sj.klassengruppe_id = kg.id" +
                     "   and u.id = s.id" +
@@ -491,7 +491,7 @@ public class ASV
             rs = st.executeQuery(
                     "select u.userid, s.austrittsdatum" +
                             "   from asv.svp_schueler_stamm s, sync.user_id u" +
-                            "   where s.austrittsdatum <= now()" +
+                            "   where s.austrittsdatum <= date(now())" +
                             "   and u.id = s.id" +
                             "   and u.userid in ('" + String.join("','", students) + "')" +
                             "   order by u.id");
