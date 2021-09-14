@@ -37,7 +37,7 @@ public class ListTask
     
     public static void main(String[] args) throws IOException {
         Configuration.getInstance().setConfigPath(args[0]);
-        ListTask task = new ListTask("svp");
+        ListTask task = new ListTask("paedml");
         task.print(task.list());
     }
 

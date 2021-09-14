@@ -73,7 +73,7 @@ export default createModel({
       if (payload && payload.length > 2) {
         dispatch.paedml.requestFiltered(payload);
         // @ts-ignore
-        const resp = await fetch(endpoint.filter("asv", payload), endpoint.get);
+        const resp = await fetch(endpoint.filter("paedml", payload), endpoint.get);
         if (resp.ok) {
           const json = await resp.json();
           dispatch.paedml.receivedFiltered(json);
