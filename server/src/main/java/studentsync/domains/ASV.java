@@ -401,10 +401,12 @@ public class ASV
         Configuration.getInstance().setConfigPath(args[0]);
         ASV asv = new ASV();
         List<Student> students = asv.readStudents();
-        students.stream()
+        List<String> ids = students.stream()
                 .filter(student -> student.clazz.startsWith("GYM0"))
                 .sorted(Comparator.comparing(Student::getClazz).thenComparing(Student::getLastName))
-                .forEach(student -> System.out.println(student.clazz + "," + student.account + "," + student.lastName + "," + student.firstName));
+                .map(student -> student.account).collect(Collectors.toList());
+        List<Map<String, Object>> maps = asv.loadStudents(ids.toArray(new String[0]));
+        System.out.println("maps = " + maps.get(0));
     }
 
     public Map<String, Object> loadStudent(String id) {
@@ -521,9 +523,9 @@ public class ASV
 
         Map<String, String> genders = getValueList("GESCHLECHT");
         readClasses();
-        readReligions();
-        readStates();
-        readLanguages();
+        //readReligions();
+        //readStates();
+        //readLanguages();
         //readAbgebendeSchulen();
 
         start();
@@ -539,15 +541,7 @@ public class ASV
                 " f.benutzerkennung as id, sik.klasse_id as class, s.schuleintritt_am as eintritt," +
                 " s.erz1_id as parent1, s.erz2_id as parent2, " +
                 " sik.mittlere_reife_abschluss as vorbildung" +
-                "   from schueler s, schueler_eigene_felder f, schueler_in_klassen sik" +
-                "   where s.id = f.schueler_id" +
-                "   and s.id = sik.schueler_id" +
-                "   and sik.klasse_id in (" +
-                "      select id from klassen where schuljahr_id = (" +
-                "         select id from schuljahre where schuljahr = ?" +
-                "      )" +
-                "      and klassenart_id = 2" +
-                "   )" +
+                "   from svp_schueler_stamm s" +
                 "   and f.benutzerkennung = any (?)");
 
             st.setString(1, schuljahr);

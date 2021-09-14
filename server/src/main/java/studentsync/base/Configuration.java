@@ -45,7 +45,7 @@ public class Configuration {
             Pair pair = new Pair(line.getKey(), line.getValue().getAsString());
             if (!pair.identical()) {
                 pairs.add(pair);
-                pairs.add(pair.inverse());
+                //pairs.add(pair.inverse());
             }
         }
         return pairs;

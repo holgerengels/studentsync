@@ -64,6 +64,7 @@ public class SyncTask
             System.exit(1);
             return;
         }
+        Configuration.getInstance().setConfigPath(args[0]);
         SyncTask task = new SyncTask(args[1], args[2]);
         Diff diff = task.diff();
         int num = 100;
