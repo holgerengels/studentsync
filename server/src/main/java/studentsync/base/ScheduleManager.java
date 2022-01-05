@@ -21,6 +21,7 @@ public class ScheduleManager {
         ScheduleManager.TASKS.put("bridge-sync", SVPReviewSyncTask.class);
         ScheduleManager.TASKS.put("ad-group-mapping", ADGroupMappingTask.class);
         ScheduleManager.TASKS.put("paedml-fixes", PaedMLFixStudentsTask.class);
+        ScheduleManager.TASKS.put("device-report", DeviceReportTask.class);
         ScheduleManager.TASKS.put("dummy", DummyTask.class);
     }
 

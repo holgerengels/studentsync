@@ -25,9 +25,9 @@ public class ASV
     extends Domain
 {
     private List<Student> students;
+    private List<Student> teachers;
     private Map<String, Map<String,String>> valueLists = new HashMap<>();
     private Map<String, String> classes;
-    private Map<String, String> teachers;
     private Map<String, String> religions;
     private Map<String, String> states;
     private Map<String, String> languages;
@@ -133,7 +133,7 @@ public class ASV
         }
     }
 
-    private Map<String, String> readTeachers() {
+    public List<Student> readTeachers() {
         if (teachers != null)
             return teachers;
 
@@ -146,18 +146,19 @@ public class ASV
         try {
             con = getConnection("asv");
 
-            teachers = new HashMap<>();
+            teachers = new ArrayList<>();
             st = con.createStatement();
-            rs = st.executeQuery("select id, name, vorname from lehrer where ehemalig = '0'");
+            rs = st.executeQuery("select id, familienname, vornamen, wl_geschlecht_id from svp_lehrer_stamm");
             while (rs.next()) {
-                teachers.put(rs.getString(1), rs.getString(2) + ", " + rs.getString(3));
+                teachers.add(new Student(rs.getString(3).substring(0, 1).toLowerCase() + "." + UserIDs.encode(rs.getString(2)), rs.getString(3), rs.getString(2)));
             }
-            return this.teachers;
+            Collections.sort(teachers);
+            return teachers;
         }
         catch (SQLException e) {
             e.printStackTrace();
             Logger.getLogger(Untis.class.getSimpleName()).log(Level.SEVERE, e.getMessage(), e);
-            return Collections.emptyMap();
+            return Collections.emptyList();
         }
         finally {
             close(rs);
@@ -400,6 +401,8 @@ public class ASV
     public static void main(String[] args) throws IOException {
         Configuration.getInstance().setConfigPath(args[0]);
         ASV asv = new ASV();
+        List<Student> teachers = asv.readTeachers();
+        /*
         List<Student> students = asv.readStudents();
         List<String> ids = students.stream()
                 .filter(student -> student.clazz.startsWith("GYM0"))
@@ -407,6 +410,7 @@ public class ASV
                 .map(student -> student.account).collect(Collectors.toList());
         List<Map<String, Object>> maps = asv.loadStudents(ids.toArray(new String[0]));
         System.out.println("maps = " + maps.get(0));
+         */
     }
 
     public Map<String, Object> loadStudent(String id) {
@@ -746,8 +750,8 @@ public class ASV
             set.addAll(readLanguages().values());
         else if ("class".equals(type))
             set.addAll(readClasses().values());
-        else if ("teacher".equals(type))
-            set.addAll(readTeachers().values());
+        //else if ("teacher".equals(type))
+        //    set.addAll(readTeachers().values());
 
         set.remove("");
         List<String> list = new ArrayList<>();

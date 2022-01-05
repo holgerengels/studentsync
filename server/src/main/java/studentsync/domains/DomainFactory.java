@@ -1,6 +1,5 @@
 package studentsync.domains;
 
-import com.google.gson.JsonObject;
 import studentsync.base.SelfExpiringHashMap;
 import studentsync.base.Domain;
 
@@ -23,6 +22,7 @@ public class DomainFactory
         SERVERS.put("reviews", Reviews.class);
         SERVERS.put("paedml", PaedML.class);
         SERVERS.put("owncloud", NextCloud.class);
+        SERVERS.put("relution", Relution.class);
     }
     private static DomainFactory INSTANCE = null;
     private Map<Class, Domain> domains = new SelfExpiringHashMap<>(5000);
@@ -67,4 +67,5 @@ public class DomainFactory
     }
     public PaedML getPaedML() { return getDomain(PaedML.class); }
     public Bridge getBridge() { return getDomain(Bridge.class); }
+    public Relution getRelution() { return getDomain(Relution.class); }
 }
