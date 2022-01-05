@@ -59,23 +59,23 @@ public class DeviceReportTask
                     .entrySet().stream().filter(e -> e.getValue() != 1).map(Map.Entry::getKey).collect(Collectors.toList());
 
             Report report = new Report();
-            report.put("multipleDevices", multipleDevices);
+            report.put("multipleDevices", multipleDevices.stream().map(Student::getAccount).collect(Collectors.toList()));
 
             List<Student> unknownOwners = new ArrayList<>(deviceOwners);
             unknownOwners.removeAll(persons);
-            report.put("unknownOwners", unknownOwners);
+            report.put("unknownOwners", unknownOwners.stream().map(Student::getAccount).collect(Collectors.toList()));
 
             List<Student> deviceButNotTabletClass = new ArrayList<>();
             deviceButNotTabletClass.addAll(deviceOwners);
             deviceButNotTabletClass.removeAll(unknownOwners);
             deviceButNotTabletClass.removeAll(teachers);
             deviceButNotTabletClass.removeAll(tabletClassStudents);
-            report.put("deviceButNotTabletClass", deviceButNotTabletClass);
+            report.put("deviceButNotTabletClass", deviceButNotTabletClass.stream().map(Student::getAccount).collect(Collectors.toList()));
 
             List<Student> noDeviceButTabletClass = new ArrayList<>();
             noDeviceButTabletClass.addAll(tabletClassStudents);
             noDeviceButTabletClass.removeAll(deviceOwners);
-            report.put("noDeviceButTabletClass", noDeviceButTabletClass);
+            report.put("noDeviceButTabletClass", noDeviceButTabletClass.stream().map(Student::getAccount).collect(Collectors.toList()));
 
             return report;
         }
