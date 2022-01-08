@@ -1,4 +1,5 @@
-import {LitElement, html, css, property, customElement} from 'lit-element';
+import {LitElement, html, css} from 'lit';
+import {customElement, property} from "lit/decorators.js";
 
 import '@material/mwc-linear-progress';
 import {colorStyles, fontStyles} from "../sync-styles";
@@ -20,80 +21,78 @@ export class VuCard extends LitElement {
         this.style.setProperty('--color-opaque', "var(--color-primary-dark)");
         this.style.setProperty('--color-light', "var(--color-primary-light)");
         this.style.setProperty('--color-lightest', "var(--color-primary-lighter)");
-      break;
+        break;
       case "secondary":
         this.style.setProperty('--color-opaque', "var(--color-secondary-dark)");
         this.style.setProperty('--color-light', "var(--color-secondary-light)");
         this.style.setProperty('--color-lightest', "var(--color-secondary-lighter)");
-      break;
+        break;
       case "tertiary":
         this.style.setProperty('--color-opaque', "var(--color-tertiary-dark)");
         this.style.setProperty('--color-light', "var(--color-tertiary-light)");
         this.style.setProperty('--color-lightest', "var(--color-tertiary-lighter)");
-      break;
+        break;
     }
   }
 
-  static get styles() {
-    // language=CSS
-    return [
-      fontStyles,
-      colorStyles,
-      css`
-:host {
-  display: block;
-  box-sizing: border-box;
-  border-radius: 4px;
-  box-shadow: 0 2px 2px 0 rgba(0, 0, 0, 0.14),
-      0 1px 5px 0 rgba(0, 0, 0, 0.12),
-      0 3px 1px -2px rgba(0, 0, 0, 0.2);
-  color: var(--color-darkgray);
-  --color-opaque: var(--color-primary-dark);
-  --color-light: var(--color-primary-light);
-  --color-lightest: var(--color-primary-lighter);
-}
-.card-header {
-  padding: 7px 12px;
-  color: white;
-  background-color: var(--color-opaque);
-  border-top-left-radius: 4px;
-  border-top-right-radius: 4px;
-}
-.card-content {
-  padding: 8px;
-  background-color: var(--color-lightest);
-  transition: height 1s ease-in-out;
-}
-.card-footer {
-  color: var(--color-darkgray);
-  background-color: var(--color-light);
-  transition: background-color .5s ease-in-out;
-  padding: 4px 8px;
-  display: flex;
-  flex-flow: row wrap;
-  justify-content: flex-end;
-  border-bottom-left-radius: 4px;
-  border-bottom-right-radius: 4px;
-}
-        .error {
-          display: flex;
-          flex-flow: row nowrap;
-        }
-        .error mwc-icon {
-          flex: 0 0 auto;
-        }
-        .error span {
-          margin-left: 8px;
-          flex: 1 1 auto;
-          word-wrap: break-word;
-          overflow-wrap: break-word;
-          width: 200px;
-        }
-[hidden] {
-  display: none;
-}
-      `];
-    }
+  // language=CSS
+  static styles = [
+    fontStyles,
+    colorStyles,
+    css`
+      :host {
+        display: block;
+        box-sizing: border-box;
+        border-radius: 4px;
+        box-shadow: 0 2px 2px 0 rgba(0, 0, 0, 0.14),
+        0 1px 5px 0 rgba(0, 0, 0, 0.12),
+        0 3px 1px -2px rgba(0, 0, 0, 0.2);
+        color: var(--color-darkgray);
+        --color-opaque: var(--color-primary-dark);
+        --color-light: var(--color-primary-light);
+        --color-lightest: var(--color-primary-lighter);
+      }
+      .card-header {
+        padding: 7px 12px;
+        color: white;
+        background-color: var(--color-opaque);
+        border-top-left-radius: 4px;
+        border-top-right-radius: 4px;
+      }
+      .card-content {
+        padding: 8px;
+        background-color: var(--color-lightest);
+        transition: height 1s ease-in-out;
+      }
+      .card-footer {
+        color: var(--color-darkgray);
+        background-color: var(--color-light);
+        transition: background-color .5s ease-in-out;
+        padding: 4px 8px;
+        display: flex;
+        flex-flow: row wrap;
+        justify-content: flex-end;
+        border-bottom-left-radius: 4px;
+        border-bottom-right-radius: 4px;
+      }
+      .error {
+        display: flex;
+        flex-flow: row nowrap;
+      }
+      .error mwc-icon {
+        flex: 0 0 auto;
+      }
+      .error span {
+        margin-left: 8px;
+        flex: 1 1 auto;
+        word-wrap: break-word;
+        overflow-wrap: break-word;
+        width: 200px;
+      }
+      [hidden] {
+        display: none;
+      }
+  `];
 
   render() {
     return html`

@@ -1,25 +1,34 @@
-import {LitElement, html, css, property, customElement} from 'lit-element';
+import {LitElement, html, css, PropertyValues} from 'lit';
+import {customElement, query, state} from "lit/decorators.js";
+import {map} from 'lit/directives/map.js';
 import { connect } from '@captaincodeman/rdx'
 import { store, State } from '../state/store'
 
 import '@material/mwc-icon-button';
 import '@material/mwc-top-app-bar';
-import 'lit-virtualizer/lit-virtualizer';
 import {colorStyles, fontStyles} from "../sync-styles";
 import {Diff} from "../state/state";
 import {helperStyles, renderDiff} from "./mergehelper";
+import {TopAppBar} from "@material/mwc-top-app-bar";
 
 @customElement('page-asvwebuntis')
 export class PageASVWebUntis extends connect(store, LitElement) {
-  @property()
+  @state()
   // @ts-ignore
   private _loading: boolean = false;
 
-  @property()
+  @state()
   private _diffs: Diff[] = [];
 
-  @property()
+  @state()
   private _error: string = "";
+
+  @query('#bar')
+  private _bar: TopAppBar;
+
+  protected firstUpdated(_changedProperties: PropertyValues) {
+    this._bar.scrollTarget = this;
+  }
 
   mapState(state: State) {
     return {
@@ -29,31 +38,29 @@ export class PageASVWebUntis extends connect(store, LitElement) {
     }
   }
 
-  static get styles() {
-    // language=CSS
-    return [
-      fontStyles,
-      colorStyles,
-      helperStyles,
-      css`
-        :host {
-          display: flex;
-          flex-direction: column;
-        }
-        .board {
-          height: 100%;
-        }
-        .ee {
-          text-decoration: line-through;
-        }
-        [hidden] {
-          display: none;
-        }
-        .message {
-          margin: 16px;
-        }
-    `];
-  }
+  // language=CSS
+  static styles = [
+    fontStyles,
+    colorStyles,
+    helperStyles,
+    css`
+      :host {
+        display: flex;
+        flex-direction: column;
+      }
+      .board {
+        height: 100%;
+      }
+      .ee {
+        text-decoration: line-through;
+      }
+      [hidden] {
+        display: none;
+      }
+      .message {
+        margin: 16px;
+      }
+  `];
 
   render() {
     // language=HTML
@@ -64,9 +71,7 @@ export class PageASVWebUntis extends connect(store, LitElement) {
         <mwc-icon-button icon="refresh" slot="actionItems" @click="${store.dispatch.asvwebuntis.load}"></mwc-icon-button>
       </mwc-top-app-bar>
       <div class="board">
-      ${!this._error ? html`
-        <lit-virtualizer style="height: 100%" .items=${this._diffs} .renderItem="${renderDiff}"></lit-virtualizer>
-      ` : html`
+       ${!this._error ? html`${map(this._diffs, renderDiff)}` : html`
         <div class="message">
             <b>Fehlermeldung</b><br/><br/>
             ${this._error}

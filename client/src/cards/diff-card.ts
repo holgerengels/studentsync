@@ -1,4 +1,5 @@
-import {LitElement, html, css, property, customElement} from 'lit-element';
+import {LitElement, html, css} from 'lit';
+import {customElement, property, state} from "lit/decorators.js";
 import '@material/mwc-icon-button';
 import './vu-card';
 import {DiffState} from "../state/state";
@@ -17,8 +18,8 @@ export class DiffCard extends LitElement {
   @property()
   color: string = "blue";
 
-  @property()
-  _error: string = "";
+  @state()
+  private _error: string = "";
 
   @property()
   list: string = "/";
@@ -45,40 +46,38 @@ export class DiffCard extends LitElement {
   }
   _canSync: boolean = false;
 
-  static get styles() {
-    // language=CSS
-    return css`
-      :host {
-        display: block;
-      }
-      .box {
-        min-width: 60px;
-        border: 2px solid var(--color-mediumgray);
-        text-align: center;
-        padding: 4px;
-      }
-      .nobox {
-        min-width: 60px;
-        border: 2px solid var(--color-mediumgray);
-        text-align: center;
-        padding: 4px;
-      }
-      [hidden] {
-        display: none;
-      }
-      mwc-icon-button, a[slot=footer] {
-        --mdc-icon-button-size: 24px;
-        margin-left: 8px;
-      }
-      a[slot=footer] {
-        display: inline-block;
-        color: unset;
-      }
-      a[slot=footer] mwc-icon {
-        vertical-align: middle;
-      }
-      `;
+  // language=CSS
+  static styles = css`
+    :host {
+      display: block;
     }
+    .box {
+      min-width: 60px;
+      border: 2px solid var(--color-mediumgray);
+      text-align: center;
+      padding: 4px;
+    }
+    .nobox {
+      min-width: 60px;
+      border: 2px solid var(--color-mediumgray);
+      text-align: center;
+      padding: 4px;
+    }
+    [hidden] {
+      display: none;
+    }
+    mwc-icon-button, a[slot=footer] {
+      --mdc-icon-button-size: 24px;
+      margin-left: 8px;
+    }
+    a[slot=footer] {
+      display: inline-block;
+      color: unset;
+    }
+    a[slot=footer] mwc-icon {
+      vertical-align: middle;
+    }
+  `;
 
   render() {
     // language=HTML

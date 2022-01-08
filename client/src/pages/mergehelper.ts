@@ -1,4 +1,4 @@
-import {css, html} from "lit-element";
+import {css, html} from "lit";
 import {Diff} from "../state/state";
 
 export const renderDiff = (diff: Diff) => html`

@@ -1,4 +1,4 @@
-import {css, html} from "lit-element";
+import {css, html} from "lit";
 import {Student} from "../state/state";
 
 // language=HTML
@@ -22,6 +22,8 @@ export const helperStyles = css`
     padding: 8px 16px;
     box-sizing: border-box;
     border-bottom: 1px solid var(--color-mediumgray);
+      content-visibility: auto;
+      height: 52px;
   }
   .line > span:nth-of-type(3n+1) {
     flex: 2 1 50%;

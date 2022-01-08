@@ -1,4 +1,5 @@
-import {LitElement, html, css, property, customElement, query} from 'lit-element';
+import {LitElement, html, css} from 'lit';
+import {customElement, query, state} from "lit/decorators.js";
 import { connect } from '@captaincodeman/rdx'
 import { store, State } from '../state/store'
 import {DiffState} from "../state/state";
@@ -14,23 +15,23 @@ import {endpoint} from "../state/endpoint";
 
 @customElement('page-main')
 export class PageMain extends connect(store, LitElement) {
-  @property()
+  @state()
   private _asvuntis: DiffState = <DiffState>{};
-  @property()
+  @state()
   private _asvwebuntis: DiffState = <DiffState>{};
-  @property()
+  @state()
   private _asvpaedml: DiffState = <DiffState>{};
-  @property()
+  @state()
   private _idgenerator: TaskReportState = <TaskReportState>{};
-  @property()
+  @state()
   private _groupmapping: TaskReportState = <TaskReportState>{};
-  @property()
+  @state()
   private _paedmlfixes: TaskReportState = <TaskReportState>{};
-  @property()
+  @state()
   private _teacherids: TaskReportState = <TaskReportState>{};
-  @property()
+  @state()
   private _exitdatesync: TaskReportState = <TaskReportState>{};
-  @property()
+  @state()
   private _devicereport: TaskReportState = <TaskReportState>{};
 
   @query('#download')
@@ -52,30 +53,28 @@ export class PageMain extends connect(store, LitElement) {
     }
   }
 
-  static get styles() {
-    // language=CSS
-    return [
-      fontStyles,
-      colorStyles,
-      css`
-        :host {
-          display: flex;
-          flex-direction: column;
-        }
-        .board {
-          display: flex;
-          flex-flow: row wrap;
-          align-items: stretch;
-        }
-        .board > * {
-          margin: 12px;
-          width: 320px;
-        }
-        diff-card mwc-icon-button {
-          --mdc-icon-button-size: 24px;
-        }
-      `];
-  }
+  // language=CSS
+  static styles = [
+    fontStyles,
+    colorStyles,
+    css`
+      :host {
+        display: flex;
+        flex-direction: column;
+      }
+      .board {
+        display: flex;
+        flex-flow: row wrap;
+        align-items: stretch;
+      }
+      .board > * {
+        margin: 12px;
+        width: 320px;
+      }
+      diff-card mwc-icon-button {
+        --mdc-icon-button-size: 24px;
+      }
+  `];
 
   render() {
     // language=HTML

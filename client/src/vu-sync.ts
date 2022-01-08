@@ -1,4 +1,5 @@
-import {LitElement, html, css, property, customElement} from 'lit-element';
+import {LitElement, html, css} from 'lit';
+import {customElement, state} from "lit/decorators.js";
 import { connect } from '@captaincodeman/rdx'
 import { RoutingState } from '@captaincodeman/rdx'
 import { store, State } from './state/store'
@@ -19,9 +20,9 @@ import {colorStyles, fontStyles} from "./sync-styles";
 
 @customElement('vu-sync')
 export class VuSync extends connect(store, LitElement) {
-  @property()
+  @state()
   private _page: string = 'main';
-  @property()
+  @state()
   private _drawerOpen: boolean = false;
 
   set route(val: RoutingState<string>) {
@@ -36,53 +37,51 @@ export class VuSync extends connect(store, LitElement) {
     }
   }
 
-  static get styles() {
-    // language=CSS
-    return [
-      fontStyles,
-      colorStyles,
-      css`
-        :host {
-          display: contents;
-          --app-drawer-background-color: var(--app-secondary-color);
-          --app-drawer-text-color: var(--app-light-text-color);
-          --app-drawer-selected-color: #c67100;
-        }
-        nav hr {
-          border: 1px solid var(--color-mediumgray);
-          margin: 8px 16px;
-        }
-        nav a {
-          display: block;
-          margin: 12px 16px;
-          color: var(--color-primary-dark)
-        }
-        nav a[selected] {
-          color: var(--color-primary-light);
-        }
-        nav a.secondary {
-          display: block;
-          color: var(--color-secondary-dark)
-        }
-        nav a.secondary[selected] {
-          color: var(--color-secondary-light)
-        }
-        nav a.tertiary {
-          display: block;
-          color: var(--color-tertiary-dark)
-        }
-        nav a.tertiary[selected] {
-          color: var(--color-tertiary-light)
-        }
-        .main-content {
-          display: flex;
-          height: 100%;
-        }
-        .main-content > * {
-          flex: 1;
-        }
-    `];
-  }
+  // language=CSS
+  static styles = [
+    fontStyles,
+    colorStyles,
+    css`
+      :host {
+        display: contents;
+        --app-drawer-background-color: var(--app-secondary-color);
+        --app-drawer-text-color: var(--app-light-text-color);
+        --app-drawer-selected-color: #c67100;
+      }
+      nav hr {
+        border: 1px solid var(--color-mediumgray);
+        margin: 8px 16px;
+      }
+      nav a {
+        display: block;
+        margin: 12px 16px;
+        color: var(--color-primary-dark)
+      }
+      nav a[selected] {
+        color: var(--color-primary-light);
+      }
+      nav a.secondary {
+        display: block;
+        color: var(--color-secondary-dark)
+      }
+      nav a.secondary[selected] {
+        color: var(--color-secondary-light)
+      }
+      nav a.tertiary {
+        display: block;
+        color: var(--color-tertiary-dark)
+      }
+      nav a.tertiary[selected] {
+        color: var(--color-tertiary-light)
+      }
+      .main-content {
+        display: flex;
+        height: 100%;
+      }
+      .main-content > * {
+        flex: 1;
+      }
+  `];
 
   render() {
     return html`

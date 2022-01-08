@@ -1,4 +1,5 @@
-import {LitElement, html, css, property, customElement} from 'lit-element';
+import {LitElement, html, css} from 'lit';
+import {customElement, property, state} from "lit/decorators.js";
 import '@material/mwc-icon';
 import '@material/mwc-icon-button';
 import './vu-card';
@@ -12,11 +13,11 @@ export class TaskCard extends LitElement {
   @property()
   color: string = "blue";
 
-  @property()
-  _error: string = "";
+  @state()
+  private _error: string = "";
 
-  @property()
-  _lines: Object[] = [];
+  @state()
+  private _lines: Object[] = [];
 
   @property()
   _report: TaskReportState = <TaskReportState>{};
@@ -32,20 +33,18 @@ export class TaskCard extends LitElement {
   @property()
   execute: Function = function() {};
 
-  static get styles() {
-    // language=CSS
-    return css`
-      :host {
-        display: block;
-      }
-      mwc-icon-button {
-        --mdc-icon-button-size: 24px;
-      }
-      li {
-        list-style: none;
-      }
-      `;
+  // language=CSS
+  static styles = css`
+    :host {
+      display: block;
     }
+    mwc-icon-button {
+      --mdc-icon-button-size: 24px;
+    }
+    li {
+      list-style: none;
+    }
+  `;
 
   render() {
     // language=HTML

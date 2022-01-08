@@ -1,4 +1,5 @@
-import {css, customElement, html, LitElement, property} from 'lit-element';
+import {LitElement, html, css} from 'lit';
+import {customElement, state} from "lit/decorators.js";
 import {connect} from '@captaincodeman/rdx'
 import {State, store} from '../state/store'
 
@@ -12,20 +13,20 @@ import {colorStyles, fontStyles} from "../sync-styles";
 
 @customElement('page-config')
 export class PageConfig extends connect(store, LitElement) {
-  @property()
+  @state()
   // @ts-ignore
   private _loading: boolean = false;
 
-  @property()
+  @state()
   private _configKeys: string[] = [];
 
-  @property()
+  @state()
   private _configValues: string[] = [];
 
-  @property()
+  @state()
   private _activeIndex: number = 0;
 
-  @property()
+  @state()
   private _validity: boolean[];
 
   mapState(state: State) {
@@ -76,44 +77,42 @@ export class PageConfig extends connect(store, LitElement) {
     store.dispatch.config.write(config);
   }
 
-  static get styles() {
-    // language=CSS
-    return [
-      fontStyles,
-      colorStyles,
-      css`
-        :host {
-          display: flex;
-          flex-direction: column;
-        }
-        .board {
-          height: 100%;
-          padding: 16px;
-          display: flex;
-          flex-flow: column;
-        }
-        .ee {
-          text-decoration: line-through;
-        }
-        mwc-icon-button-toggle {
-          --mdc-icon-button-size: 24px;
-        }
-        mwc-textarea {
-          margin-bottom: 12px;
-        }
-        mwc-tab[icon] {
-          --mdc-tab-text-label-color-default: var(--color-secondary-dark);
-          --mdc-theme-primary: var(--color-secondary-dark);
-        }
-        [hidden] {
-          display: none;
-        }
-        .buttons {
-          display: flex;
-          justify-content: flex-end;
-        }
-    `];
-  }
+  // language=CSS
+  static styles = [
+    fontStyles,
+    colorStyles,
+    css`
+      :host {
+        display: flex;
+        flex-direction: column;
+      }
+      .board {
+        height: 100%;
+        padding: 16px;
+        display: flex;
+        flex-flow: column;
+      }
+      .ee {
+        text-decoration: line-through;
+      }
+      mwc-icon-button-toggle {
+        --mdc-icon-button-size: 24px;
+      }
+      mwc-textarea {
+        margin-bottom: 12px;
+      }
+      mwc-tab[icon] {
+        --mdc-tab-text-label-color-default: var(--color-secondary-dark);
+        --mdc-theme-primary: var(--color-secondary-dark);
+      }
+      [hidden] {
+        display: none;
+      }
+      .buttons {
+        display: flex;
+        justify-content: flex-end;
+      }
+  `];
 
   render() {
     // language=HTML
