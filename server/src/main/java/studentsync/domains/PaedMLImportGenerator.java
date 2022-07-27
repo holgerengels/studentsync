@@ -27,7 +27,7 @@ public class PaedMLImportGenerator extends Generator<Diff> {
             writer.print(',');
             writer.print("V8lcke9burg"); // Kennwort
             writer.print(',');
-            writer.print(nocomma(student.clazz)); // Klasse
+            writer.print(nocomma(student.clazz.toLowerCase())); // Klasse
             writer.print("\n");
         }
         writer.close();

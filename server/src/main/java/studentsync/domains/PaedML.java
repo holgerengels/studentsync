@@ -99,10 +99,10 @@ public class PaedML
                         String givenname = attribute(attributes, "givenname");
                         String sn = attribute(attributes, "sn");
                         String department = attribute(attributes, "department");
-                        if (cn == null || givenname == null || sn == null)
+                        if (cn == null || givenname == null || sn == null || department == null)
                             continue;
                         List<String> groups = groups(attributes);
-                        Student student = new Student(cn.toLowerCase(), givenname, sn, null, null, department);
+                        Student student = new Student(cn.toLowerCase(), givenname, sn, null, null, department.toUpperCase());
                         if (groups.size() > 1) {
                             groups.remove(0);
                             student.setCourses(groups);
@@ -239,7 +239,7 @@ public class PaedML
         objClasses.add("user");
 
         Attribute employeeType = new BasicAttribute("employeeType", "Student");
-        Attribute department = new BasicAttribute("department", student.clazz);
+        Attribute department = new BasicAttribute("department", student.clazz.toLowerCase());
         Attribute company = new BasicAttribute("company", getConfigString("schoolType"));
         Attribute division = new BasicAttribute("division");
         division.add(getConfigString("schoolTypeAbbrev"));
@@ -321,7 +321,7 @@ public class PaedML
                 new ModificationItem(DirContext.REPLACE_ATTRIBUTE, new BasicAttribute("givenName", student.getFirstName())),
                 new ModificationItem(DirContext.REPLACE_ATTRIBUTE, new BasicAttribute("sn", student.getLastName())),
                 new ModificationItem(DirContext.REPLACE_ATTRIBUTE, new BasicAttribute("displayName", student.getFirstName() + " " + student.getLastName())),
-                new ModificationItem(DirContext.REPLACE_ATTRIBUTE, new BasicAttribute("department", student.getClazz()))
+                new ModificationItem(DirContext.REPLACE_ATTRIBUTE, new BasicAttribute("department", student.getClazz().toLowerCase()))
             });
         }
         catch (Exception e) {
@@ -358,12 +358,12 @@ public class PaedML
                         String givenname = attribute(attributes, "givenname");
                         String sn = attribute(attributes, "sn");
                         String department = attribute(attributes, "department");
-                        if (cn == null || givenname == null || sn == null)
+                        if (cn == null || givenname == null || sn == null || department == null)
                             continue;
                         List<String> groups = classGroups(attributes);
-                        groups.removeIf(g -> g.toUpperCase().contains(department));
+                        groups.removeIf(g -> g.toUpperCase().contains(department.toUpperCase()));
                         if (!groups.isEmpty()) {
-                            Student student = new Student(cn.toLowerCase(), givenname, sn, null, null, department);
+                            Student student = new Student(cn.toLowerCase(), givenname, sn, null, null, department.toUpperCase());
                             student.setCourses(groups);
                             students.add(student);
                         }
