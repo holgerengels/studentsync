@@ -446,11 +446,11 @@ public class Untis
             String schulid = getConfigString("schulid");
             con = getConnection("untis");
             pst = con.prepareStatement("update Student s set s.FirstName = ?, s.Longname = ?, s.Flags = ?, s.BirthDate = ? where s.SCHOOL_ID = '" + schulid + "' AND s.Name = ?");
-            pst.setString(1, student.firstName);
-            pst.setString(2, student.lastName);
-            pst.setString(3, fromGender(student.gender));
-            pst.setString(4, fromDate(student.birthday));
-            pst.setString(5, student.account);
+            pst.setString(1, student.getFirstName());
+            pst.setString(2, student.getLastName());
+            pst.setString(3, fromGender(student.getGender()));
+            pst.setString(4, fromDate(student.getBirthday()));
+            pst.setString(5, student.getAccount());
             pst.executeUpdate();
             pst.close();
         }
