@@ -351,7 +351,7 @@ public class PaedML
                 if (results != null) {
                     int subcounter = 0;
                     while (results.hasMoreElements()) {
-                        SearchResult searchResult = (SearchResult)results.nextElement();
+                        SearchResult searchResult = (SearchResult) results.nextElement();
                         Attributes attributes = searchResult.getAttributes();
                         //System.out.println("attributes = " + attributes);
                         String cn = attribute(attributes, "cn");
@@ -360,11 +360,27 @@ public class PaedML
                         String department = attribute(attributes, "department");
                         if (cn == null || givenname == null || sn == null || department == null)
                             continue;
-                        List<String> groups = classGroups(attributes);
-                        groups.removeIf(g -> g.toUpperCase().contains(department.toUpperCase()));
-                        if (!groups.isEmpty()) {
-                            Student student = new Student(cn.toLowerCase(), givenname, sn, null, null, department.toUpperCase());
-                            student.setCourses(groups);
+
+                        List<String> required = new ArrayList<>(Arrays.asList(
+                                "CN=G_Schueler,OU=Active Directory,OU=Sicherheitsgruppen,DC=musterschule,DC=schule,DC=paedml",
+                                "CN=G_Schueler_VBS,OU=FileShare,OU=Sicherheitsgruppen,DC=musterschule,DC=schule,DC=paedml",
+                                "CN=G_Schueler_VBS_" + department + "_" + schuljahr + ",OU=FileShare,OU=Sicherheitsgruppen,DC=musterschule,DC=schule,DC=paedml"));
+                        List<String> present = new ArrayList<>(4);
+                        Attribute attribute = attributes.get("memberof");
+                        if (attribute != null) {
+                            NamingEnumeration<?> enumeration = attribute.getAll();
+                            while (enumeration.hasMoreElements()) {
+                                String value = (String) enumeration.nextElement();
+                                present.add(value);
+                            }
+                        }
+                        required.removeAll(present);
+                        if (!present.contains("CN=OCTO_VBS_" + department + ",OU=Firewall,OU=Sicherheitsgruppen,DC=musterschule,DC=schule,DC=paedml")
+                                && !present.contains("CN=OCTO_VBS_" + department.toUpperCase() + ",OU=Firewall,OU=Sicherheitsgruppen,DC=musterschule,DC=schule,DC=paedml"))
+                            required.add("CN=OCTO_VBS_" + department + ",OU=Firewall,OU=Sicherheitsgruppen,DC=musterschule,DC=schule,DC=paedml");
+                        if (!required.isEmpty()) {
+                            Student student = new Student(cn.toLowerCase(), givenname, sn, null, null, department);
+                            student.setCourses(required);
                             students.add(student);
                         }
                     }
@@ -392,6 +408,7 @@ public class PaedML
         }
     }
 
+    /*
     private List<String> classGroups(Attributes attributes) throws NamingException {
         List<String> courses = new ArrayList<String>();
         Attribute attribute = attributes.get("memberof");
@@ -421,13 +438,15 @@ public class PaedML
         }
         return courses;
     }
+     */
 
     public void fixStudent(Student student) {
         LdapContext context = ldapContext.get();
         String dn = userDn(student.getAccount());
+
         student.getCourses().forEach(course -> {
             try {
-                context.modifyAttributes(course, new ModificationItem[] { new ModificationItem(DirContext.REMOVE_ATTRIBUTE, new BasicAttribute("member", dn)) });
+                context.modifyAttributes(course, new ModificationItem[] { new ModificationItem(DirContext.ADD_ATTRIBUTE, new BasicAttribute("member", dn)) });
             }
             catch (NamingException e) {
                 e.printStackTrace();
@@ -449,8 +468,17 @@ public class PaedML
         Configuration.getInstance().setConfigPath(args[0]);
         PaedML paedML = new PaedML();
         List<Student> students = paedML.defectStudents();
-        Student.listStudents(System.out, students);
-        paedML.fixStudent(students.get(0));
+        //Student.listStudents(System.out, students);
+        students.forEach(s -> {
+            StringBuffer buffer = new StringBuffer(s.account).append(": ");
+            for (String c : s.getCourses()) {
+                buffer.append(c, 0, c.indexOf(",")).append(" ");
+            }
+            System.out.println(buffer);
+        });
+        System.out.println("students = " + students.size());
+        students.forEach(paedML::fixStudent);
+
 
         /*
         List<Student> students = paedML.readStudents();
