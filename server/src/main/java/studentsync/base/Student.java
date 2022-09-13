@@ -16,6 +16,7 @@ public class Student
     public String lastName;
     public String gender;
     public Date birthday;
+    public String eMail;
     public String clazz;
     List<String> courses = new ArrayList<String>();
 
@@ -61,6 +62,14 @@ public class Student
 
     public Date getBirthday() {
         return birthday;
+    }
+
+    public String getEMail() {
+        return eMail;
+    }
+
+    public void setEMail(String eMail) {
+        this.eMail = eMail;
     }
 
     public String getClazz() {

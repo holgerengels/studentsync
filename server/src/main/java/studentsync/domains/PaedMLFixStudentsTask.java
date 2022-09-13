@@ -28,10 +28,14 @@ public class PaedMLFixStudentsTask
     public Report execute() {
         PaedML paedML = DomainFactory.getInstance().getPaedML();
         try {
-            //List<String> ids = Collections.EMPTY_LIST;
-            List<String> ids = paedML.fixStudents().stream().map(s -> s.account).collect(Collectors.toList());
+            List<Student> groupsMissing = paedML.studentsWithGroupsMissing();
+            groupsMissing.forEach(paedML::fixStudentsGroups);
+            List<Student> emailMissing = paedML.studentsWithEMailMissing();
+            emailMissing.forEach(paedML::fixStudentsEMail);
+
             Report report = new Report();
-            report.put("ids", ids);
+            report.put("groupsMissing", groupsMissing.stream().map(s -> s.account).collect(Collectors.toList()));
+            report.put("emailMissing", emailMissing.stream().map(s -> s.account).collect(Collectors.toList()));
             return report;
         }
         finally {
