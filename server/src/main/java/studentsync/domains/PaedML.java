@@ -485,11 +485,84 @@ public class PaedML
         }
     }
 
+    public synchronized List<Student> studentsWithFakeEMail() {
+        LdapContext context = null;
+        try {
+            context = ldapContext.get();
+            context.setRequestControls(new Control[]{ new PagedResultsControl(100, false) });
+            String searchFilter = "(&(objectClass=User))";
+
+            SearchControls searchControls = new SearchControls();
+            String[] resultAttributes = { "cn", "sn", "givenName", "memberof", "department", "mail" };
+            searchControls.setReturningAttributes(resultAttributes);
+            searchControls.setSearchScope(SearchControls.SUBTREE_SCOPE);
+            searchControls.setCountLimit(2000);
+
+            List<Student> students = new ArrayList<Student>();
+
+            byte[] b = null;
+            do {
+                NamingEnumeration results = context.search(getConfigString("studentUserbase"), searchFilter, searchControls);
+
+                if (results != null) {
+                    int subcounter = 0;
+                    while (results.hasMoreElements()) {
+                        SearchResult searchResult = (SearchResult) results.nextElement();
+                        Attributes attributes = searchResult.getAttributes();
+                        //System.out.println("attributes = " + attributes);
+                        String cn = attribute(attributes, "cn");
+                        String givenname = attribute(attributes, "givenname");
+                        String sn = attribute(attributes, "sn");
+                        String department = attribute(attributes, "department");
+                        String email = attribute(attributes, "mail");
+                        if (cn == null || givenname == null || sn == null || department == null)
+                            continue;
+
+                        if ("schueler@valckenburgschule.de".equals(email)) {
+                            Student student = new Student(cn.toLowerCase(), givenname, sn, null, null, department);
+                            students.add(student);
+                        }
+                    }
+                }
+                else
+                    System.out.println("did not match with any!!!");
+
+                b = ((PagedResultsResponseControl)context.getResponseControls()[0]).getCookie();
+
+                if (b != null) {
+                    System.out.println("--------NEW PAGE----------");
+                    context.setRequestControls(new Control[]{ new PagedResultsControl(100, b, Control.CRITICAL) });
+                }
+
+            } while (b != null);
+
+            Collections.sort(students);
+            return students;
+        }
+        catch (NamingException | IOException e) {
+            Logger.getLogger(getClass().getSimpleName()).log(Level.SEVERE, e.getMessage(), e);
+            throw new RuntimeException(e.getMessage());
+        }
+        finally {
+        }
+    }
+
     public void fixStudentsEMail(Student student) {
         LdapContext context = ldapContext.get();
         String dn = userDn(student.getAccount());
         try {
             context.modifyAttributes(dn, new ModificationItem[] { new ModificationItem(DirContext.ADD_ATTRIBUTE, new BasicAttribute("mail", student.getEMail())) });
+        }
+        catch (NamingException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public void removeStudentsFakeEMail(Student student) {
+        LdapContext context = ldapContext.get();
+        String dn = userDn(student.getAccount());
+        try {
+            context.modifyAttributes(dn, new ModificationItem[] { new ModificationItem(DirContext.REMOVE_ATTRIBUTE, new BasicAttribute("mail")) });
         }
         catch (NamingException e) {
             e.printStackTrace();
@@ -503,17 +576,15 @@ public class PaedML
     public List<Student> fixStudents() {
         List<Student> groupsMissing = studentsWithGroupsMissing();
         groupsMissing.forEach(this::fixStudentsGroups);
-        List<Student> emailMissing = studentsWithEMailMissing();
-        emailMissing.forEach(this::fixStudentsEMail);
         return groupsMissing;
     }
 
     public static void main(String[] args) throws IOException, ParseException {
         Configuration.getInstance().setConfigPath(args[0]);
         PaedML paedML = new PaedML();
-        List<Student> students = paedML.studentsWithEMailMissing();
+        List<Student> students = paedML.studentsWithFakeEMail();
         Student.listStudents(System.out, students);
-        students.forEach(paedML::fixStudentsEMail);
+        students.forEach(paedML::removeStudentsFakeEMail);
 
         //List<Student> students = paedML.studentsWithGroupsMissing();
         //Student.listStudents(System.out, students);

@@ -30,12 +30,12 @@ public class PaedMLFixStudentsTask
         try {
             List<Student> groupsMissing = paedML.studentsWithGroupsMissing();
             groupsMissing.forEach(paedML::fixStudentsGroups);
-            List<Student> emailMissing = paedML.studentsWithEMailMissing();
-            emailMissing.forEach(paedML::fixStudentsEMail);
+            //List<Student> emailMissing = paedML.studentsWithEMailMissing();
+            //emailMissing.forEach(paedML::fixStudentsEMail);
 
             Report report = new Report();
             report.put("groupsMissing", groupsMissing.stream().map(s -> s.account).collect(Collectors.toList()));
-            report.put("emailMissing", emailMissing.stream().map(s -> s.account).collect(Collectors.toList()));
+            //report.put("emailMissing", emailMissing.stream().map(s -> s.account).collect(Collectors.toList()));
             return report;
         }
         finally {
