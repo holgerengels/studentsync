@@ -364,7 +364,9 @@ public class PaedML
                         List<String> required = new ArrayList<>(Arrays.asList(
                                 "CN=G_Schueler,OU=Active Directory,OU=Sicherheitsgruppen,DC=musterschule,DC=schule,DC=paedml",
                                 "CN=G_Schueler_VBS,OU=FileShare,OU=Sicherheitsgruppen,DC=musterschule,DC=schule,DC=paedml",
-                                "CN=G_Schueler_VBS_" + department + "_" + schuljahr + ",OU=FileShare,OU=Sicherheitsgruppen,DC=musterschule,DC=schule,DC=paedml"));
+                                "CN=G_Schueler_VBS_" + department + "_" + schuljahr + ",OU=FileShare,OU=Sicherheitsgruppen,DC=musterschule,DC=schule,DC=paedml",
+                                "CN=G_Schueler_VBS_" + department + "_" + schuljahr + "_lesend,OU=FileShare,OU=Sicherheitsgruppen,DC=musterschule,DC=schule,DC=paedml"
+                        ));
                         List<String> present = new ArrayList<>(4);
                         Attribute attribute = attributes.get("memberof");
                         if (attribute != null) {
