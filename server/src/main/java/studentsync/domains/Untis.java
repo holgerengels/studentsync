@@ -147,9 +147,7 @@ public class Untis
     public static void main(String[] args) throws IOException {
         Configuration.getInstance().setConfigPath(args[0]);
         Untis untis = new Untis();
-        Student student = new Student("koese.sin", "Sinem", "Köse", "w", untis.toDate("20030102"), "lala");
-        //Student student = new Student("koese.sin", "SINEM", "Köse", "m", untis.toDate("20030123"), "lala");
-        untis.changeStudent(student);
+        untis.teacherExternalIds();
         /*
         System.out.println("students = " + untis.readStudents());
         System.out.println("subjects = " + untis.readSubjects());
@@ -374,7 +372,7 @@ public class Untis
             con = getConnection("untis");
             st = con.createStatement();
 
-            return st.executeUpdate("update Teacher set foreignkey = left(email, length(email) - 20) where email like '%vbs.ul.bw.schule.de' and foreignkey is null");
+            return st.executeUpdate("update Teacher set foreignkey = left(email, length(email) - 20) where email like '%vbs.ul.bw.schule.de' and foreignkey != left(email, length(email) - 20)");
         }
         catch (SQLException e) {
             Logger.getLogger(getClass().getSimpleName()).log(Level.SEVERE, e.getMessage(), e);
