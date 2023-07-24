@@ -14,6 +14,7 @@ public class ScheduleManager {
     public static final Map<String, Class<? extends Task>> TASKS = new HashMap<>();
     static {
         ScheduleManager.TASKS.put("untis-sync", UntisSyncTask.class);
+        ScheduleManager.TASKS.put("schulkonsole-sync", SchulkonsoleSyncTask.class);
         ScheduleManager.TASKS.put("webuntis-external-id", WebuntisExternalIdTask.class);
         ScheduleManager.TASKS.put("webuntis-exitdatesync", WebUntisSyncExitDateTask.class);
         ScheduleManager.TASKS.put("svp-id-generator", SVPIdGeneratorTask.class);
