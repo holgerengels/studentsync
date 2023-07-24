@@ -71,6 +71,7 @@ public class PaedML
         if (students != null)
             return students;
 
+        start();
         LdapContext context = null;
         try {
             context = ldapContext.get();
@@ -130,14 +131,7 @@ public class PaedML
             throw new RuntimeException(e.getMessage());
         }
         finally {
-            /*
-            try {
-                context.close();
-            }
-            catch (NamingException e) {
-                e.printStackTrace();
-            }
-            */
+            stop("read students");
         }
     }
 

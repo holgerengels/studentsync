@@ -3,8 +3,8 @@ package studentsync.domains;
 import com.google.gson.JsonObject;
 import studentsync.base.*;
 
-import javax.json.Json;
-import javax.json.JsonWriter;
+import jakarta.json.Json;
+import jakarta.json.JsonWriter;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.BufferedReader;

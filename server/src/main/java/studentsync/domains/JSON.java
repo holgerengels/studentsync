@@ -1,9 +1,10 @@
 package studentsync.domains;
 
+import com.google.gson.JsonPrimitive;
 import studentsync.base.Diff;
 import studentsync.base.Student;
 
-import javax.json.*;
+import jakarta.json.*;
 import java.sql.Date;
 import java.util.List;
 
@@ -119,5 +120,10 @@ public class JSON
 
     private static String format(Date birthday) {
         return "" + birthday;
+    }
+
+    public static String string(com.google.gson.JsonObject topic, String name) {
+        JsonPrimitive primitive = topic.getAsJsonPrimitive(name);
+        return primitive != null ? primitive.getAsString() : null;
     }
 }

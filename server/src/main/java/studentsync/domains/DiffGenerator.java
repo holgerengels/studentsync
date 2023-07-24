@@ -1,10 +1,10 @@
 package studentsync.domains;
 
+import jakarta.servlet.http.HttpServletResponse;
 import studentsync.base.Diff;
 
-import javax.json.Json;
-import javax.json.JsonWriter;
-import jakarta.servlet.http.HttpServletResponse;
+import jakarta.json.Json;
+import jakarta.json.JsonWriter;
 import java.io.IOException;
 
 import static studentsync.domains.JSON.json;

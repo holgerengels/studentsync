@@ -32,10 +32,10 @@ public class NextCloud extends Domain {
 
         try {
             String file = getConfigString("key");
-            String key = FileUtils.readFileToString(new File(file));
+            String key = FileUtils.readFileToString(new File(file), "UTF-8");
             Shell shell = new Ssh(getConfigString("host"), getConfigInteger("port"), getConfigString("user"), key, getConfigString("passphrase"));
 
-            String dirs = new Shell.Plain(shell).exec("ls " + getConfigString("datadir"));
+            String dirs = new Shell.Plain(shell).exec("sudo ls " + getConfigString("datadir"));
             List<String> list = new ArrayList<>(Arrays.asList(dirs.split("\n")));
             list.remove("files");
             list.remove("files_external");

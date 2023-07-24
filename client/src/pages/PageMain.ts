@@ -22,6 +22,8 @@ export class PageMain extends connect(store, LitElement) {
   @state()
   private _asvpaedml: DiffState = <DiffState>{};
   @state()
+  private _asvschulkonsole: DiffState = <DiffState>{};
+  @state()
   private _idgenerator: TaskReportState = <TaskReportState>{};
   @state()
   private _groupmapping: TaskReportState = <TaskReportState>{};
@@ -44,6 +46,7 @@ export class PageMain extends connect(store, LitElement) {
       _asvuntis: state.asvuntis,
       _asvwebuntis: state.asvwebuntis,
       _asvpaedml: state.asvpaedml,
+      _asvschulkonsole: state.asvschulkonsole,
       _idgenerator: state.idgenerator,
       _groupmapping: state.groupmapping,
       _paedmlfixes: state.paedmlfixes,
@@ -90,6 +93,7 @@ export class PageMain extends connect(store, LitElement) {
         </diff-card>
         <diff-card from="ASV" to="WebUntis" .diff="${this._asvwebuntis}" .load="${store.dispatch.asvwebuntis.load}" list="/sync/asvwebuntis" color="tertiary"></diff-card>
         <diff-card from="ASV" to="PaedML" .diff="${this._asvpaedml}" .load="${store.dispatch.asvpaedml.load}" .sync="${store.dispatch.asvpaedml.sync}" list="/sync/asvpaedml" color="tertiary"></diff-card>
+        <diff-card from="ASV" to="Schulkonsole" .diff="${this._asvschulkonsole}" .load="${store.dispatch.asvschulkonsole.load}" .sync="${store.dispatch.asvschulkonsole.sync}" list="/sync/asvschulkonsole" color="tertiary"></diff-card>
         <task-card name="ASV ID-Generator" .report="${this._idgenerator}" .execute="${store.dispatch.idgenerator.execute}" color="secondary"></task-card>
         <task-card name="PaedML Gruppenzuordnung" .report="${this._groupmapping}" .execute="${store.dispatch.groupmapping.execute}" color="secondary"></task-card>
         <task-card name="PaedML Fixes" .report="${this._paedmlfixes}" .execute="${store.dispatch.paedmlfixes.execute}" color="secondary"></task-card>

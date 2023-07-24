@@ -1,20 +1,18 @@
 package studentsync.base;
 
 import com.google.gson.JsonObject;
+import org.apache.hc.client5.http.ssl.SSLConnectionSocketFactory;
 
 import javax.net.ssl.*;
 import java.io.FileInputStream;
-import java.net.URLConnection;
 import java.security.KeyStore;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
-import java.util.Arrays;
-import java.util.Map;
 
 public class ExtendedTrustManager
     implements X509TrustManager
 {
-    private static ExtendedTrustManager INSTANCE;
+    public static ExtendedTrustManager INSTANCE;
 
     public static synchronized ExtendedTrustManager getInstance(JsonObject config) {
         if (INSTANCE == null) {
@@ -52,12 +50,12 @@ public class ExtendedTrustManager
                 final X509TrustManager finalDefaultTm = defaultTm;
                 final X509TrustManager finalMyTm = myTm;
 
-                INSTANCE = new ExtendedTrustManager(finalDefaultTm, finalMyTm);
-
                 SSLContext sslContext = SSLContext.getInstance("TLS");
-                sslContext.init(null, new TrustManager[] { INSTANCE }, null);
+                sslContext.init(null, new TrustManager[] { INSTANCE }, new java.security.SecureRandom());
                 SSLContext.setDefault(sslContext);
                 System.out.println("Extended TrustManager installed successfully");
+
+                INSTANCE = new ExtendedTrustManager(finalDefaultTm, finalMyTm);
             }
             catch (Exception e) {
                 throw new RuntimeException(e);
@@ -90,7 +88,7 @@ public class ExtendedTrustManager
             System.out.println("TRUSTMANAGER MY OK");
         }
         catch (CertificateException e) {
-            finalDefaultTm.checkServerTrusted(chain, authType);
+            //finalDefaultTm.checkServerTrusted(chain, authType);
         }
     }
 

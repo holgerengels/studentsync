@@ -8,9 +8,11 @@ import './pages/PageMain';
 import './pages/PageASV';
 import './pages/PageUntis';
 import './pages/PagePaedML';
+import './pages/PageSchulkonsole';
 import './pages/PageWebUntis';
 import './pages/PageASVUntis';
 import './pages/PageASVPaedML';
+import './pages/PageASVSchulkonsole';
 import './pages/PageASVWebUntis';
 import './pages/PageConfig';
 import './sync-styles'
@@ -95,10 +97,12 @@ export class VuSync extends connect(store, LitElement) {
         <a ?selected="${this._page === 'page-untis'}" href="/sync/untis">Untis</a>
         <a ?selected="${this._page === 'page-webuntis'}" href="/sync/webuntis">WebUntis</a>
         <a ?selected="${this._page === 'page-paedml'}" href="/sync/paedml">PaedML</a>
+        <a ?selected="${this._page === 'page-schulkonsole'}" href="/sync/schulkonsole">Schulkonsole</a>
         <hr/>
         <a ?selected="${this._page === 'page-asvuntis'}" href="/sync/asvuntis" class="tertiary">ASV → Untis</a>
         <a ?selected="${this._page === 'page-asvwebuntis'}" href="/sync/asvwebuntis" class="tertiary">ASV → WebUntis</a>
         <a ?selected="${this._page === 'page-asvpaedml'}" href="/sync/asvpaedml" class="tertiary">ASV → PaedML</a>
+        <a ?selected="${this._page === 'page-asvschulkonsole'}" href="/sync/asvschulkonsole" class="tertiary">ASV → Schulkonsole</a>
         <hr/>
         <a ?selected="${this._page === 'page-config'}" href="/sync/config" class="secondary">Konfiguration</a>
       </nav>
@@ -133,6 +137,10 @@ export class VuSync extends connect(store, LitElement) {
         return html`
           <page-paedml></page-paedml>
         `;
+      case 'page-schulkonsole':
+        return html`
+          <page-schulkonsole></page-schulkonsole>
+        `;
       case 'page-asvuntis':
         return html`
           <page-asvuntis></page-asvuntis>
@@ -144,6 +152,10 @@ export class VuSync extends connect(store, LitElement) {
       case 'page-asvpaedml':
         return html`
           <page-asvpaedml></page-asvpaedml>
+        `;
+      case 'page-asvschulkonsole':
+        return html`
+          <page-asvschulkonsole></page-asvschulkonsole>
         `;
       case 'page-config':
         return html`

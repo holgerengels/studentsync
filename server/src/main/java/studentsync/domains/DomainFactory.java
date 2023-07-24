@@ -21,6 +21,7 @@ public class DomainFactory
         SERVERS.put("bridge", Bridge.class);
         SERVERS.put("reviews", Reviews.class);
         SERVERS.put("paedml", PaedML.class);
+        SERVERS.put("schulkonsole", Schulkonsole.class);
         SERVERS.put("owncloud", NextCloud.class);
         SERVERS.put("relution", Relution.class);
     }
@@ -66,6 +67,7 @@ public class DomainFactory
         return getDomain(Webuntis.class);
     }
     public PaedML getPaedML() { return getDomain(PaedML.class); }
+    public Schulkonsole getSchulkonsole() { return getDomain(Schulkonsole.class); }
     public Bridge getBridge() { return getDomain(Bridge.class); }
     public Relution getRelution() { return getDomain(Relution.class); }
 }
