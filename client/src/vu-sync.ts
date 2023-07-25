@@ -96,12 +96,10 @@ export class VuSync extends connect(store, LitElement) {
         <a ?selected="${this._page === 'page-asv'}" href="/sync/asv">ASV</a>
         <a ?selected="${this._page === 'page-untis'}" href="/sync/untis">Untis</a>
         <a ?selected="${this._page === 'page-webuntis'}" href="/sync/webuntis">WebUntis</a>
-        <a ?selected="${this._page === 'page-paedml'}" href="/sync/paedml">PaedML</a>
         <a ?selected="${this._page === 'page-schulkonsole'}" href="/sync/schulkonsole">Schulkonsole</a>
         <hr/>
         <a ?selected="${this._page === 'page-asvuntis'}" href="/sync/asvuntis" class="tertiary">ASV → Untis</a>
         <a ?selected="${this._page === 'page-asvwebuntis'}" href="/sync/asvwebuntis" class="tertiary">ASV → WebUntis</a>
-        <a ?selected="${this._page === 'page-asvpaedml'}" href="/sync/asvpaedml" class="tertiary">ASV → PaedML</a>
         <a ?selected="${this._page === 'page-asvschulkonsole'}" href="/sync/asvschulkonsole" class="tertiary">ASV → Schulkonsole</a>
         <hr/>
         <a ?selected="${this._page === 'page-config'}" href="/sync/config" class="secondary">Konfiguration</a>
@@ -114,6 +112,9 @@ export class VuSync extends connect(store, LitElement) {
     </mwc-drawer>
     `;
   }
+
+  // <a ?selected="${this._page === 'page-paedml'}" href="/sync/paedml">PaedML</a>
+  // <a ?selected="${this._page === 'page-asvpaedml'}" href="/sync/asvpaedml" class="tertiary">ASV → PaedML</a>
 
   _renderPage() {
     switch (this._page) {
