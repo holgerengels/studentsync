@@ -11,8 +11,8 @@ import org.apache.hc.client5.http.entity.EntityBuilder;
 import org.apache.hc.client5.http.impl.classic.CloseableHttpClient;
 import org.apache.hc.client5.http.impl.classic.CloseableHttpResponse;
 import org.apache.hc.client5.http.impl.classic.HttpClientBuilder;
+import org.apache.hc.client5.http.impl.io.PoolingHttpClientConnectionManager;
 import org.apache.hc.client5.http.impl.io.PoolingHttpClientConnectionManagerBuilder;
-import org.apache.hc.client5.http.io.HttpClientConnectionManager;
 import org.apache.hc.client5.http.ssl.SSLConnectionSocketFactory;
 import org.apache.hc.core5.http.ContentType;
 import org.apache.hc.core5.http.HttpEntity;
@@ -26,6 +26,7 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
+import java.security.SecureRandom;
 import java.util.*;
 
 import static studentsync.domains.JSON.string;
@@ -40,18 +41,41 @@ public class Schulkonsole
     private Map<String, Integer> ids;
     private Map<String, Integer> classes;
     private String authorization;
-    private CloseableHttpClient client;
 
+    static ThreadLocal<PoolingHttpClientConnectionManager> connectionManager = ThreadLocal.withInitial(() -> {
+        ExtendedTrustManager.getInstance(Configuration.getInstance().getConfig());
+
+        try {
+            SSLContext sslContext = SSLContext.getInstance("TLSv1.1");
+            sslContext.init(null, new TrustManager[]{ExtendedTrustManager.INSTANCE}, new SecureRandom());
+
+            SSLConnectionSocketFactory sslConnectionSocketFactory = new SSLConnectionSocketFactory(sslContext, new String[]
+                    {"TLSv1.1"}, null, (hostname, session) -> true);
+
+            return PoolingHttpClientConnectionManagerBuilder.create()
+                    .setSSLSocketFactory(sslConnectionSocketFactory)
+                    .build();
+        }
+        catch (NoSuchAlgorithmException | KeyManagementException e) {
+            throw new RuntimeException(e);
+        }
+    });
+
+    ThreadLocal<CloseableHttpClient> client = ThreadLocal.withInitial(() -> HttpClientBuilder.create().setConnectionManager(connectionManager.get()).build());
 
     public Schulkonsole() {
         super("schulkonsole");
-        ExtendedTrustManager.getInstance(Configuration.getInstance().getConfig());
     }
+
+    @Override
+    public void release() {
+    }
+
     @Override
     public int getFields() {
         return Diff.COMPARE_CLASS | Diff.COMPARE_FIRST_NAME | Diff.COMPARE_LAST_NAME;
     }
-    private String authorize(String user, String password, CloseableHttpClient client) throws IOException {
+    private String authorize(String user, String password) throws IOException {
         HttpEntity entity = EntityBuilder.create().setParameters(
                 new BasicNameValuePair("grant_type", "password"),
                 new BasicNameValuePair("username", user),
@@ -62,7 +86,7 @@ public class Schulkonsole
         HttpPost post = new HttpPost(tokenURL);
         post.setEntity(entity);
         HttpEntity responseEntity;
-        try (final CloseableHttpResponse response = client.execute(post)) {
+        try (final CloseableHttpResponse response = client.get().execute(post)) {
             responseEntity = response.getEntity();
             JsonObject token = new Gson().fromJson(new InputStreamReader(responseEntity.getContent()), JsonObject.class);
             EntityUtils.consume(responseEntity);
@@ -83,25 +107,13 @@ public class Schulkonsole
 
         start();
         try {
-            SSLContext sslContext = SSLContext.getInstance("TLSv1.1");
-            sslContext.init(null, new TrustManager[]{ExtendedTrustManager.INSTANCE}, new java.security.SecureRandom());
-
-            SSLConnectionSocketFactory sslConnectionSocketFactory = new SSLConnectionSocketFactory(sslContext, new String[]
-                    {"TLSv1.1"}, null, (hostname, session) -> true);
-
-            final HttpClientConnectionManager cm = PoolingHttpClientConnectionManagerBuilder.create()
-                    .setSSLSocketFactory(sslConnectionSocketFactory)
-                    .build();
-
-            client = HttpClientBuilder.create().setConnectionManager(cm).build();
-
-            authorization = authorize(user, password, client);
+            authorization = authorize(user, password);
             HttpEntity responseEntity;
 
             String apiURL = getConfigString("apiURL"); if (!apiURL.endsWith("/")) apiURL += "/";
             HttpGet get = new HttpGet(apiURL + "students");
             get.setHeader("Authorization", authorization);
-            try (final CloseableHttpResponse response = client.execute(get)) {
+            try (final CloseableHttpResponse response = client.get().execute(get)) {
                 responseEntity = response.getEntity();
                 JsonArray jsonArray = new Gson().fromJson(new InputStreamReader(responseEntity.getContent()), JsonArray.class);
                 EntityUtils.consume(responseEntity);
@@ -119,7 +131,7 @@ public class Schulkonsole
             }
             get = new HttpGet(apiURL + "school/schoolClasses");
             get.setHeader("Authorization", authorization);
-            try (final CloseableHttpResponse response = client.execute(get)) {
+            try (final CloseableHttpResponse response = client.get().execute(get)) {
                 responseEntity = response.getEntity();
                 JsonArray jsonArray = new Gson().fromJson(new InputStreamReader(responseEntity.getContent()), JsonArray.class);
                 jsonArray.forEach(jsonElement -> {
@@ -130,7 +142,7 @@ public class Schulkonsole
             Collections.sort(students);
             return students;
         }
-        catch (NoSuchAlgorithmException | IOException | KeyManagementException e) {
+        catch (IOException e) {
             throw new RuntimeException(e);
         }
         finally {
@@ -161,7 +173,7 @@ public class Schulkonsole
                 .setText(object.toString()).build();
         post.setEntity(entity);
 
-        try (final CloseableHttpResponse response = client.execute(post)) {
+        try (final CloseableHttpResponse response = client.get().execute(post)) {
             HttpEntity responseEntity = response.getEntity();
             JsonObject jsonObject = new Gson().fromJson(new InputStreamReader(responseEntity.getContent()), JsonObject.class);
             EntityUtils.consume(responseEntity);
@@ -184,7 +196,7 @@ public class Schulkonsole
                 .setText(array.toString()).build();
         delete.setEntity(entity);
 
-        try (final CloseableHttpResponse response = client.execute(delete)) {
+        try (final CloseableHttpResponse response = client.get().execute(delete)) {
             HttpEntity responseEntity = response.getEntity();
             JsonObject jsonObject = new Gson().fromJson(new InputStreamReader(responseEntity.getContent()), JsonObject.class);
             EntityUtils.consume(responseEntity);
@@ -220,7 +232,7 @@ public class Schulkonsole
                 .setText(object.toString()).build();
         put.setEntity(entity);
 
-        try (final CloseableHttpResponse response = client.execute(put)) {
+        try (final CloseableHttpResponse response = client.get().execute(put)) {
             HttpEntity responseEntity = response.getEntity();
             JsonObject jsonObject = new Gson().fromJson(new InputStreamReader(responseEntity.getContent()), JsonObject.class);
             EntityUtils.consume(responseEntity);

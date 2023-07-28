@@ -1,6 +1,5 @@
 package studentsync.domains;
 
-import studentsync.base.Diff;
 import studentsync.base.Student;
 
 import jakarta.servlet.http.HttpServletResponse;
@@ -19,14 +18,27 @@ public class CSVGenerator extends Generator<List<Student>> {
         resp.setHeader("Content-Disposition","attachment; filename=export.csv");
 
         PrintWriter writer = resp.getWriter();
+        write(writer, students);
+    }
+
+    public void write(PrintWriter writer, List<Student> students) {
         for (Student student : students) {
-            writer.print("\"" + student.account + "\",");
-            writer.print("\"" + student.firstName + "\",");
-            writer.print("\"" + student.lastName + "\",");
-            writer.print("\"" + student.gender + "\",");
-            writer.print("\"" + student.birthday + "\",");
-            writer.print("\"" + student.clazz + "\"\n");
+            writer.print(escape(student.account) + ", ");
+            writer.print(escape(student.firstName) + ", ");
+            writer.print(escape(student.lastName) + ", ");
+            writer.print(escape(student.gender) + ", ");
+            writer.print(escape("" + student.birthday) + ", ");
+            writer.print(escape(student.clazz) + "\n");
         }
         writer.close();
+    }
+
+    public String escape(String data) {
+        String escapedData = data.replaceAll("\\R", " ");
+        if (data.contains(",") || data.contains("\"") || data.contains("'")) {
+            data = data.replace("\"", "\"\"");
+            escapedData = "\"" + data + "\"";
+        }
+        return escapedData;
     }
 }

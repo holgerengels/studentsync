@@ -6,6 +6,7 @@ import studentsync.base.*;
 
 import javax.sql.DataSource;
 import java.io.IOException;
+import java.io.PrintWriter;
 import java.sql.*;
 import java.sql.Date;
 import java.util.*;
@@ -280,7 +281,7 @@ public class ASV
             return students;
 
         Map<String, String> genders = getValueList("GESCHLECHT");
-        genders = genders.entrySet().stream().collect(Collectors.toMap(e -> e.getKey(), e -> e.getValue().toLowerCase()));
+        genders = genders.entrySet().stream().collect(Collectors.toMap(Map.Entry::getKey, e -> e.getValue().toLowerCase()));
         readClasses();
 
         Connection con = null;
@@ -401,16 +402,16 @@ public class ASV
     public static void main(String[] args) throws IOException {
         Configuration.getInstance().setConfigPath(args[0]);
         ASV asv = new ASV();
-        List<Student> teachers = asv.readTeachers();
-        /*
+        // List<Student> teachers = asv.readTeachers();
+
         List<Student> students = asv.readStudents();
+        new CSVGenerator().write(new PrintWriter(System.out), students);
         List<String> ids = students.stream()
-                .filter(student -> student.clazz.startsWith("GYM0"))
+                //.filter(student -> student.clazz.startsWith("GYM0"))
                 .sorted(Comparator.comparing(Student::getClazz).thenComparing(Student::getLastName))
                 .map(student -> student.account).collect(Collectors.toList());
-        List<Map<String, Object>> maps = asv.loadStudents(ids.toArray(new String[0]));
-        System.out.println("maps = " + maps.get(0));
-         */
+        //List<Map<String, Object>> maps = asv.loadStudents(ids.toArray(new String[0]));
+
     }
 
     public Map<String, Object> loadStudent(String id) {

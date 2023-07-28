@@ -45,14 +45,14 @@ public class ActiveDirectory
         }
     });
 
-    public void release() {
-        System.out.println("ActiceDirectory: closing connection");
-        ldapContext.remove();
-    }
-
     public ActiveDirectory() {
         super("ldap");
         schuljahr = getConfigString("schuljahr");
+    }
+
+    public void release() {
+        System.out.println("ActiceDirectory: closing connection");
+        ldapContext.remove();
     }
 
     public synchronized HashMap<String, List<String>> readUsers() {

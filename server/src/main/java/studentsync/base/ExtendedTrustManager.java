@@ -1,7 +1,6 @@
 package studentsync.base;
 
 import com.google.gson.JsonObject;
-import org.apache.hc.client5.http.ssl.SSLConnectionSocketFactory;
 
 import javax.net.ssl.*;
 import java.io.FileInputStream;
