@@ -23,6 +23,7 @@ public class UserIDs {
         name = name.replaceAll("'", "");
         name = name.replaceAll("`", "");
         name = name.replaceAll("´", "");
+        name = name.replaceAll("‘", "");
         name = name.replaceAll("-", "");
         return Normalizer.normalize(name, Normalizer.Form.NFD).chars()
             .filter(c -> Character.getType(c) != Character.NON_SPACING_MARK)
