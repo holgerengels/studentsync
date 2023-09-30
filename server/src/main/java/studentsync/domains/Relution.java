@@ -75,8 +75,68 @@ public class Relution
             post.setEntity(new StringEntity(auth.toString()));
             try (final CloseableHttpResponse response = client.execute(post)) {}
 
-            HttpGet get = new HttpGet(url + devices);
-            try (final CloseableHttpResponse response = client.execute(get)) {
+            post = new HttpPost(url + devices);
+            post.setHeader(new BasicHeader("Content-Type", "application/json"));
+            String json = "{\n" +
+                    "  \"limit\": 3000,\n" +
+                    "  \"offset\": 0,\n" +
+                    "  \"getNonpagedCount\": true,\n" +
+                    "  \"sortOrder\": {\n" +
+                    "    \"sortFields\": [\n" +
+                    "      {\n" +
+                    "        \"name\": \"userName\",\n" +
+                    "        \"ascending\": true\n" +
+                    "      }\n" +
+                    "    ]\n" +
+                    "  },\n" +
+                    "  \"filter\": {\n" +
+                    "    \"type\": \"logOp\",\n" +
+                    "    \"operation\": \"AND\",\n" +
+                    "    \"filters\": [\n" +
+                    "      {\n" +
+                    "        \"type\": \"stringEnum\",\n" +
+                    "        \"fieldName\": \"platform\",\n" +
+                    "        \"values\": [\n" +
+                    "          \"ANDROID\",\n" +
+                    "          \"ANDROID_ENTERPRISE\",\n" +
+                    "          \"CHROMEOS\",\n" +
+                    "          \"IOS\",\n" +
+                    "          \"TVOS\",\n" +
+                    "          \"MACOS\",\n" +
+                    "          \"WINDOWS\"\n" +
+                    "        ]\n" +
+                    "      },\n" +
+                    "      {\n" +
+                    "        \"type\": \"stringEnum\",\n" +
+                    "        \"fieldName\": \"status\",\n" +
+                    "        \"values\": [\n" +
+                    "          \"COMPLIANT\",\n" +
+                    "          \"INACTIVE\",\n" +
+                    "          \"NONCOMPLIANT\"\n" +
+                    "        ]\n" +
+                    "      },\n" +
+                    "      {\n" +
+                    "        \"type\": \"stringEnum\",\n" +
+                    "        \"fieldName\": \"ownership\",\n" +
+                    "        \"values\": [\n" +
+                    "          \"UNKNOWN\",\n" +
+                    "          \"COD\",\n" +
+                    "          \"BYOD\"\n" +
+                    "        ]\n" +
+                    "      },\n" +
+                    "      {\n" +
+                    "        \"type\": \"stringEnum\",\n" +
+                    "        \"fieldName\": \"deviceConnectionState\",\n" +
+                    "        \"values\": [\n" +
+                    "          \"NORMAL\",\n" +
+                    "          \"NOT_NOW\"\n" +
+                    "        ]\n" +
+                    "      }\n" +
+                    "    ]\n" +
+                    "  }\n" +
+                    "}";
+            post.setEntity(new StringEntity(json));
+            try (final CloseableHttpResponse response = client.execute(post)) {
                 HttpEntity entity = response.getEntity();
                 JsonObject object = new Gson().fromJson(new InputStreamReader(entity.getContent()), JsonObject.class);
                 JsonArray lines = object.getAsJsonArray("results");
@@ -119,7 +179,7 @@ public class Relution
         JsonObject config = Configuration.getInstance().getConfig().getAsJsonObject("relution");
         List<String> tabletClasses = StreamSupport.stream(config.getAsJsonArray("tabletClasses").spliterator(), false)
                 .map(JsonElement::getAsString).sorted().collect(Collectors.toList());
-        
+
         Relution relution = new Relution();
         ASV asv = new ASV();
         Untis untis = new Untis();

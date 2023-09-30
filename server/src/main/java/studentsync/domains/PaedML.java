@@ -33,7 +33,7 @@ public class PaedML
 
     ThreadLocal<LdapContext> ldapContext = ThreadLocal.withInitial(() -> {
         try {
-            ExtendedTrustManager.getInstance(Configuration.getInstance().getConfig());
+            //ExtendedTrustManager.getInstance(Configuration.getInstance().getConfig());
 
             System.out.println("PaedML: establishing connection");
             Hashtable<String, String> env = new Hashtable<String, String>();
@@ -183,7 +183,7 @@ public class PaedML
     }
 
     public void storeImage(String userid, byte[] photo) {
-        String dn = userDn(userid);
+        String dn = studentDn(userid);
 
         try {
             LdapContext context = this.ldapContext.get();
@@ -266,7 +266,7 @@ public class PaedML
         LdapContext context = null;
         try {
             context = ldapContext.get();
-            String dn = userDn(student.account);
+            String dn = studentDn(student.account);
             context.createSubcontext(dn, container);
             System.out.println("student created");
 
@@ -298,7 +298,7 @@ public class PaedML
     public void removeStudent(Student student) {
         try {
             LdapContext context = ldapContext.get();
-            String dn = userDn(student.account);
+            String dn = studentDn(student.account);
             context.destroySubcontext(dn);
         }
         catch (Exception e) {
@@ -310,7 +310,7 @@ public class PaedML
     public void changeStudent(Student student) {
         try {
             LdapContext context = ldapContext.get();
-            String dn = userDn(student.getAccount());
+            String dn = studentDn(student.getAccount());
             context.modifyAttributes(dn, new ModificationItem[] {
                 new ModificationItem(DirContext.REPLACE_ATTRIBUTE, new BasicAttribute("givenName", student.getFirstName())),
                 new ModificationItem(DirContext.REPLACE_ATTRIBUTE, new BasicAttribute("sn", student.getLastName())),
@@ -404,7 +404,7 @@ public class PaedML
 
     public void fixStudentsGroups(Student student) {
         LdapContext context = ldapContext.get();
-        String dn = userDn(student.getAccount());
+        String dn = studentDn(student.getAccount());
 
         student.getCourses().forEach(course -> {
             try {
@@ -479,7 +479,7 @@ public class PaedML
         }
     }
 
-    public synchronized List<Student> studentsWithFakeEMail() {
+    public synchronized List<Student> teachersWithoutEMail() {
         LdapContext context = null;
         try {
             context = ldapContext.get();
@@ -496,24 +496,23 @@ public class PaedML
 
             byte[] b = null;
             do {
-                NamingEnumeration results = context.search(getConfigString("studentUserbase"), searchFilter, searchControls);
+                NamingEnumeration<SearchResult> results = context.search(getConfigString("teacherUserbase"), searchFilter, searchControls);
 
                 if (results != null) {
                     int subcounter = 0;
                     while (results.hasMoreElements()) {
-                        SearchResult searchResult = (SearchResult) results.nextElement();
+                        SearchResult searchResult = results.nextElement();
                         Attributes attributes = searchResult.getAttributes();
                         //System.out.println("attributes = " + attributes);
                         String cn = attribute(attributes, "cn");
                         String givenname = attribute(attributes, "givenname");
                         String sn = attribute(attributes, "sn");
-                        String department = attribute(attributes, "department");
                         String email = attribute(attributes, "mail");
-                        if (cn == null || givenname == null || sn == null || department == null)
+                        if (cn == null || givenname == null || sn == null)
                             continue;
 
-                        if ("schueler@valckenburgschule.de".equals(email)) {
-                            Student student = new Student(cn.toLowerCase(), givenname, sn, null, null, department);
+                        if (email == null || email.length() == 0) {
+                            Student student = new Student(cn.toLowerCase(), givenname, sn, null, null, null);
                             students.add(student);
                         }
                     }
@@ -543,7 +542,7 @@ public class PaedML
 
     public void fixStudentsEMail(Student student) {
         LdapContext context = ldapContext.get();
-        String dn = userDn(student.getAccount());
+        String dn = studentDn(student.getAccount());
         try {
             context.modifyAttributes(dn, new ModificationItem[] { new ModificationItem(DirContext.ADD_ATTRIBUTE, new BasicAttribute("mail", student.getEMail())) });
         }
@@ -552,19 +551,22 @@ public class PaedML
         }
     }
 
-    public void removeStudentsFakeEMail(Student student) {
+    public void addTeacherEMail(Student student) {
         LdapContext context = ldapContext.get();
-        String dn = userDn(student.getAccount());
+        String dn = teacherDn(student.getAccount());
         try {
-            context.modifyAttributes(dn, new ModificationItem[] { new ModificationItem(DirContext.REMOVE_ATTRIBUTE, new BasicAttribute("mail")) });
+            context.modifyAttributes(dn, new ModificationItem[] { new ModificationItem(DirContext.ADD_ATTRIBUTE, new BasicAttribute("mail", student.account + "@valckenburgschule.de")) });
         }
         catch (NamingException e) {
             e.printStackTrace();
         }
     }
 
-    private String userDn(String userid) {
+    private String studentDn(String userid) {
         return "cn=" + userid + "," + getConfigString("studentUserbase");
+    }
+    private String teacherDn(String userid) {
+        return "cn=" + userid + "," + getConfigString("teacherUserbase");
     }
 
     public List<Student> fixStudents() {
@@ -576,9 +578,9 @@ public class PaedML
     public static void main(String[] args) throws IOException, ParseException {
         Configuration.getInstance().setConfigPath(args[0]);
         PaedML paedML = new PaedML();
-        List<Student> students = paedML.studentsWithFakeEMail();
+        List<Student> students = paedML.teachersWithoutEMail();
         Student.listStudents(System.out, students);
-        students.forEach(paedML::removeStudentsFakeEMail);
+        students.forEach(paedML::addTeacherEMail);
 
         //List<Student> students = paedML.studentsWithGroupsMissing();
         //Student.listStudents(System.out, students);
@@ -593,18 +595,6 @@ public class PaedML
         System.out.println("students = " + students.size());
         students.forEach(paedML::fixStudentsGroups);
          */
-
-
-        /*
-        List<Student> students = paedML.readStudents();
-        System.out.println(students.size() + " students " + students);
-        */
-
-        /*
-        String userid = "mielke.han9620";
-        byte[] photo = FileUtils.readFileToByteArray(new File("/home/holger/jdevel/photos/mielke.han9620.png"));
-        paedML.storeImage(userid, photo);
-        */
     }
 
     /*

@@ -16,18 +16,6 @@ public class ExtendedTrustManager
     public static synchronized ExtendedTrustManager getInstance(JsonObject config) {
         if (INSTANCE == null) {
             try {
-                TrustManagerFactory tmf = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
-                tmf.init((KeyStore)null);
-
-                // Get hold of the default trust manager
-                X509TrustManager defaultTm = null;
-                for (TrustManager tm : tmf.getTrustManagers()) {
-                    if (tm instanceof X509TrustManager) {
-                        defaultTm = (X509TrustManager)tm;
-                        break;
-                    }
-                }
-
                 System.out.println("Loading KeyStore from " + config.getAsJsonObject("ldap").get("trustStore").getAsString());
                 FileInputStream myKeys = new FileInputStream(config.getAsJsonObject("ldap").get("trustStore").getAsString());
                 KeyStore myTrustStore = KeyStore.getInstance(KeyStore.getDefaultType());
@@ -35,7 +23,7 @@ public class ExtendedTrustManager
                 myKeys.close();
                 System.out.println("Done loading KeyStore from " + config.getAsJsonObject("ldap").get("trustStore").getAsString());
 
-                tmf = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
+                TrustManagerFactory tmf = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
                 tmf.init(myTrustStore);
 
                 X509TrustManager myTm = null;
@@ -46,10 +34,20 @@ public class ExtendedTrustManager
                     }
                 }
 
+                // Get hold of the default trust manager
+                X509TrustManager defaultTm = null;
+                for (TrustManager tm : tmf.getTrustManagers()) {
+                    if (tm instanceof X509TrustManager) {
+                        defaultTm = (X509TrustManager)tm;
+                        break;
+                    }
+                }
+
                 final X509TrustManager finalDefaultTm = defaultTm;
                 final X509TrustManager finalMyTm = myTm;
 
-                SSLContext sslContext = SSLContext.getInstance("TLS");
+                System.out.println("SSLContext.getDefault().getProtocol() = " + SSLContext.getDefault().getProtocol());
+                SSLContext sslContext = SSLContext.getInstance("SSL");
                 sslContext.init(null, new TrustManager[] { INSTANCE }, new java.security.SecureRandom());
                 SSLContext.setDefault(sslContext);
                 System.out.println("Extended TrustManager installed successfully");
