@@ -62,7 +62,7 @@ public class CorsServlet extends HttpServlet {
             JsonObject line = new JsonObject();
             line.addProperty("key", entry.getKey());
             if (Collection.class.isAssignableFrom(entry.getValue().getClass()))
-                line.addProperty("value", String.join(", ", (Collection) entry.getValue()));
+                line.addProperty("value", String.join(" ", (Collection) entry.getValue()));
             else
                 line.addProperty("value", "" + entry.getValue());
             jsonReport.add(line);
