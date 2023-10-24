@@ -53,11 +53,15 @@ export class TaskCard extends LitElement {
             <span slot="header">${this.name}</span>
             <div slot="content">
                 ${this._lines.map((line) => html`
-                  <li><b>${line['key']}:</b> ${line['value']}</li>
+                  <li><b>${line['key']}:</b> ${this.listsWithoutCommas(line['value'])}</li>
                 `)}
             </div>
             <mwc-icon-button slot="footer" icon="play_arrow" @click="${this.execute}" title="Jetzt ausführen"></mwc-icon-button>
         </vu-card>
     `;
+  }
+
+  listsWithoutCommas(element: any) {
+    return element === undefined ? '' : Array.isArray(element) ? element.join(" ") : element;
   }
 }
