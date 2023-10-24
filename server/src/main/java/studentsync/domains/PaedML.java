@@ -562,6 +562,20 @@ public class PaedML
         }
     }
 
+    public void fixPasswordSettings(Student student) {
+        LdapContext context = ldapContext.get();
+        String dn = studentDn(student.getAccount());
+        try {
+            context.modifyAttributes(dn, new ModificationItem[] {
+                    new ModificationItem(DirContext.REPLACE_ATTRIBUTE, new BasicAttribute("userAccountControl", Integer.toString(UF_NORMAL_ACCOUNT + UF_PASSWD_NOTREQD))),
+                    new ModificationItem(DirContext.REPLACE_ATTRIBUTE, new BasicAttribute("pwdLastSet", Integer.toString(0)))
+            });
+        }
+        catch (NamingException e) {
+            e.printStackTrace();
+        }
+    }
+
     private String studentDn(String userid) {
         return "cn=" + userid + "," + getConfigString("studentUserbase");
     }
@@ -578,9 +592,9 @@ public class PaedML
     public static void main(String[] args) throws IOException, ParseException {
         Configuration.getInstance().setConfigPath(args[0]);
         PaedML paedML = new PaedML();
-        List<Student> students = paedML.teachersWithoutEMail();
+        List<Student> students = paedML.readStudents();
         Student.listStudents(System.out, students);
-        students.forEach(paedML::addTeacherEMail);
+        students.forEach(paedML::fixPasswordSettings);
 
         //List<Student> students = paedML.studentsWithGroupsMissing();
         //Student.listStudents(System.out, students);

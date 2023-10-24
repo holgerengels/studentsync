@@ -248,10 +248,15 @@ public class Schulkonsole
         JsonObject config = Configuration.getInstance().getConfig().getAsJsonObject("schulkonsole");
         Schulkonsole schulkonsole = new Schulkonsole();
         List<Student> students = schulkonsole.readStudents();
+        schulkonsole.addStudent(new Student("lili", "li", "li", null, null, "testklasse"));
+        /*
+        List<Student> students = schulkonsole.readStudents();
         Student.listStudents(System.out, students);
-        //schulkonsole.changeStudent(new Student("schrodi.jan", "Janine", "Schrodi", null, null, "gym22e"));
+        schulkonsole.changeStudent(new Student("lala.lol", "Lolo", "Lala", null, null, "gym22e"));
         //schulkonsole.addStudent(new Student("lala.lol", "Lolo", "Lala", null, null, "gym22e"));
         schulkonsole.removeStudent(new Student("lala.lol", "Lolo", "Lala"));
+
+         */
     }
 }
 

@@ -55,14 +55,16 @@ public class DeviceReportTask
             persons.addAll(teachers);
             Collections.sort(persons);
 
+            Report report = new Report();
+
             List<Student> multipleDevices = relution.readDeviceOwners().stream().collect(Collectors.groupingBy(Function.identity(), Collectors.counting()))
                     .entrySet().stream().filter(e -> e.getValue() != 1).map(Map.Entry::getKey).collect(Collectors.toList());
-
-            Report report = new Report();
+            relution.teachersFirst(multipleDevices);
             report.put("multipleDevices", multipleDevices.stream().map(Student::getAccount).collect(Collectors.toList()));
 
             List<Student> unknownOwners = new ArrayList<>(deviceOwners);
             unknownOwners.removeAll(persons);
+            relution.teachersFirst(unknownOwners);
             report.put("unknownOwners", unknownOwners.stream().map(Student::getAccount).collect(Collectors.toList()));
 
             List<Student> deviceButNotTabletClass = new ArrayList<>();
@@ -70,11 +72,13 @@ public class DeviceReportTask
             deviceButNotTabletClass.removeAll(unknownOwners);
             deviceButNotTabletClass.removeAll(teachers);
             deviceButNotTabletClass.removeAll(tabletClassStudents);
+            relution.teachersFirst(deviceButNotTabletClass);
             report.put("deviceButNotTabletClass", deviceButNotTabletClass.stream().map(Student::getAccount).collect(Collectors.toList()));
 
             List<Student> noDeviceButTabletClass = new ArrayList<>();
             noDeviceButTabletClass.addAll(tabletClassStudents);
             noDeviceButTabletClass.removeAll(deviceOwners);
+            relution.teachersFirst(noDeviceButTabletClass);
             report.put("noDeviceButTabletClass", noDeviceButTabletClass.stream().map(Student::getAccount).collect(Collectors.toList()));
 
             return report;

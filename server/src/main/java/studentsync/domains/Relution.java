@@ -158,8 +158,16 @@ public class Relution
         finally {
             stop("read students");
         }
-        Collections.sort(students);
+        teachersFirst(students);
         return students;
+    }
+
+    public void teachersFirst(List<Student> students) {
+        students.sort((a, b) -> {
+            boolean at = a.account.matches("[a-z]\\.[a-z0-9]*");
+            boolean bt = b.account.matches("[a-z]\\.[a-z0-9]*");
+            return at & !bt ? -1 : !at & bt ? 1 : a.account.compareTo(b.account);
+        });
     }
 
     private static final SimpleDateFormat dateFormat = new SimpleDateFormat("dd.MM.yyyy");
@@ -209,10 +217,12 @@ public class Relution
         Collections.sort(persons);
 
         List<Student> duplicates = relution.readDeviceOwners().stream().collect(Collectors.groupingBy(Function.identity(), Collectors.counting())).entrySet().stream().filter(e -> e.getValue() != 1).map(Map.Entry::getKey).collect(Collectors.toList());
+        relution.teachersFirst(duplicates);
         System.out.println(duplicates.size() + " people own multiple devices = " + duplicates);
 
         List<Student> unknownOwners = new ArrayList<>(deviceOwners);
         unknownOwners.removeAll(persons);
+        relution.teachersFirst(unknownOwners);
         System.out.println(unknownOwners.size() + " unknown device owners = " + unknownOwners);
 
         List<Student> nonTabletClassOwners = new ArrayList<>();
@@ -220,11 +230,13 @@ public class Relution
         nonTabletClassOwners.removeAll(unknownOwners);
         nonTabletClassOwners.removeAll(teachers);
         nonTabletClassOwners.removeAll(tabletClassStudents);
+        relution.teachersFirst(nonTabletClassOwners);
         System.out.println(nonTabletClassOwners.size() + " device owners not in tablet class = " + nonTabletClassOwners);
 
         List<Student> tabletClassNonOwners = new ArrayList<>();
         tabletClassNonOwners.addAll(tabletClassStudents);
         tabletClassNonOwners.removeAll(deviceOwners);
+        relution.teachersFirst(tabletClassNonOwners);
         System.out.println(tabletClassNonOwners.size() + " tablet class students without device = " + tabletClassNonOwners);
     }
 }

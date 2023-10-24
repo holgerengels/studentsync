@@ -41,6 +41,7 @@
   "name": "studentsync",
   "version": "2.0.0",
   "description": "Identity Management",
+  "author": "Holger Engels",
   "license": "MIT",
   "dependencies": {
     "@captaincodeman/rdx": "^1.0.0-rc.9",
