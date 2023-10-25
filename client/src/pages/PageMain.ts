@@ -24,7 +24,7 @@ export class PageMain extends connect(store, LitElement) {
   @state()
   private _idgenerator: TaskReportState = <TaskReportState>{};
   @state()
-  private _groupmapping: TaskReportState = <TaskReportState>{};
+  private _paedmlfixes: TaskReportState = <TaskReportState>{};
   @state()
   private _teacherids: TaskReportState = <TaskReportState>{};
   @state()
@@ -43,7 +43,7 @@ export class PageMain extends connect(store, LitElement) {
       _asvwebuntis: state.asvwebuntis,
       _asvschulkonsole: state.asvschulkonsole,
       _idgenerator: state.idgenerator,
-      _groupmapping: state.groupmapping,
+      _paedmlfixes: state.paedmlfixes,
       _teacherids: state.teacherids,
       _exitdatesync: state.exitdatesync,
       _devicereport: state.devicereport,
@@ -88,7 +88,7 @@ export class PageMain extends connect(store, LitElement) {
         <diff-card from="ASV" to="WebUntis" .diff="${this._asvwebuntis}" .load="${store.dispatch.asvwebuntis.load}" list="/sync/asvwebuntis" color="tertiary"></diff-card>
         <diff-card from="ASV" to="Schulkonsole" .diff="${this._asvschulkonsole}" .load="${store.dispatch.asvschulkonsole.load}" .sync="${store.dispatch.asvschulkonsole.sync}" list="/sync/asvschulkonsole" color="tertiary"></diff-card>
         <task-card name="ASV ID-Generator" .report="${this._idgenerator}" .execute="${store.dispatch.idgenerator.execute}" color="secondary"></task-card>
-        <!--task-card name="PaedML Gruppenzuordnung" .report="${this._groupmapping}" .execute="${store.dispatch.groupmapping.execute}" color="secondary"></task-card-->
+        <task-card name="PaedML Fixes" .report="${this._paedmlfixes}" .execute="${store.dispatch.paedmlfixes.execute}" color="secondary"></task-card-->
         <task-card name="Lehrer Externe ID" .report="${this._teacherids}" .execute="${store.dispatch.teacherids.execute}" color="secondary"></task-card>
         <task-card name="WebUntis Austrittsdatum" .report="${this._exitdatesync}" .execute="${store.dispatch.exitdatesync.execute}" color="secondary"></task-card>
         <task-card name="Tablet Verbleib" .report="${this._devicereport}" .execute="${store.dispatch.devicereport.execute}" color="secondary"></task-card>

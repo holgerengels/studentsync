@@ -30,6 +30,7 @@ public class PaedML
     private String MEMBER_OF_OCTO = "CN=OCTO_VBS_";
     private String MEMBER_OF_PROJECT = "CN=G_Projekte_";
     private List<Student> students;
+    private List<Student> teachers;
 
     ThreadLocal<LdapContext> ldapContext = ThreadLocal.withInitial(() -> {
         try {
@@ -84,7 +85,7 @@ public class PaedML
             searchControls.setSearchScope(SearchControls.SUBTREE_SCOPE);
             searchControls.setCountLimit(2000);
 
-            students = new ArrayList<Student>();
+            students = new ArrayList<>();
 
             byte[] b = null;
             do {
@@ -274,7 +275,7 @@ public class PaedML
             byte[] newUnicodePassword = newQuotedPassword.getBytes(StandardCharsets.UTF_16LE);
             context.modifyAttributes(dn, new ModificationItem[] {
                 new ModificationItem(DirContext.REPLACE_ATTRIBUTE, new BasicAttribute("unicodePwd", newUnicodePassword)),
-                new ModificationItem(DirContext.REPLACE_ATTRIBUTE, new BasicAttribute("userAccountControl", Integer.toString(UF_NORMAL_ACCOUNT + UF_PASSWD_NOTREQD))),
+                new ModificationItem(DirContext.REPLACE_ATTRIBUTE, new BasicAttribute("userAccountControl", Integer.toString(UF_NORMAL_ACCOUNT + UF_DONT_EXPIRE_PASSWD))),
                 new ModificationItem(DirContext.REPLACE_ATTRIBUTE, new BasicAttribute("pwdLastSet", Integer.toString(0)))
             });
             System.out.println("password set");
@@ -479,6 +480,68 @@ public class PaedML
         }
     }
 
+    public synchronized List<Student> readTeachers() {
+        if (teachers != null)
+            return teachers;
+
+        LdapContext context = null;
+        try {
+            context = ldapContext.get();
+            context.setRequestControls(new Control[]{ new PagedResultsControl(100, false) });
+            String searchFilter = "(&(objectClass=User))";
+
+            SearchControls searchControls = new SearchControls();
+            String[] resultAttributes = { "cn", "sn", "givenName", "memberof", "department", "mail" };
+            searchControls.setReturningAttributes(resultAttributes);
+            searchControls.setSearchScope(SearchControls.SUBTREE_SCOPE);
+            searchControls.setCountLimit(2000);
+
+            teachers = new ArrayList<>();
+
+            byte[] b = null;
+            do {
+                NamingEnumeration<SearchResult> results = context.search(getConfigString("teacherUserbase"), searchFilter, searchControls);
+
+                if (results != null) {
+                    int subcounter = 0;
+                    while (results.hasMoreElements()) {
+                        SearchResult searchResult = results.nextElement();
+                        Attributes attributes = searchResult.getAttributes();
+                        //System.out.println("attributes = " + attributes);
+                        String cn = attribute(attributes, "cn");
+                        String givenname = attribute(attributes, "givenname");
+                        String sn = attribute(attributes, "sn");
+                        String email = attribute(attributes, "mail");
+                        if (cn == null || givenname == null || sn == null)
+                            continue;
+
+                        Student student = new Student(cn.toLowerCase(), givenname, sn, null, null, null);
+                        teachers.add(student);
+                    }
+                }
+                else
+                    System.out.println("did not match with any!!!");
+
+                b = ((PagedResultsResponseControl)context.getResponseControls()[0]).getCookie();
+
+                if (b != null) {
+                    System.out.println("--------NEW PAGE----------");
+                    context.setRequestControls(new Control[]{ new PagedResultsControl(100, b, Control.CRITICAL) });
+                }
+
+            } while (b != null);
+
+            Collections.sort(teachers);
+            return teachers;
+        }
+        catch (NamingException | IOException e) {
+            Logger.getLogger(getClass().getSimpleName()).log(Level.SEVERE, e.getMessage(), e);
+            throw new RuntimeException(e.getMessage());
+        }
+        finally {
+        }
+    }
+
     public synchronized List<Student> teachersWithoutEMail() {
         LdapContext context = null;
         try {
@@ -562,12 +625,26 @@ public class PaedML
         }
     }
 
-    public void fixPasswordSettings(Student student) {
+    public void fixStudentPasswordSettings(Student student) {
         LdapContext context = ldapContext.get();
         String dn = studentDn(student.getAccount());
         try {
             context.modifyAttributes(dn, new ModificationItem[] {
-                    new ModificationItem(DirContext.REPLACE_ATTRIBUTE, new BasicAttribute("userAccountControl", Integer.toString(UF_NORMAL_ACCOUNT + UF_PASSWD_NOTREQD))),
+                    new ModificationItem(DirContext.REPLACE_ATTRIBUTE, new BasicAttribute("userAccountControl", Integer.toString(UF_NORMAL_ACCOUNT + UF_DONT_EXPIRE_PASSWD))),
+                    new ModificationItem(DirContext.REPLACE_ATTRIBUTE, new BasicAttribute("pwdLastSet", Integer.toString(0)))
+            });
+        }
+        catch (NamingException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public void fixTeacherPasswordSettings(Student student) {
+        LdapContext context = ldapContext.get();
+        String dn = teacherDn(student.getAccount());
+        try {
+            context.modifyAttributes(dn, new ModificationItem[] {
+                    new ModificationItem(DirContext.REPLACE_ATTRIBUTE, new BasicAttribute("userAccountControl", Integer.toString(UF_NORMAL_ACCOUNT + UF_DONT_EXPIRE_PASSWD))),
                     new ModificationItem(DirContext.REPLACE_ATTRIBUTE, new BasicAttribute("pwdLastSet", Integer.toString(0)))
             });
         }
@@ -594,7 +671,10 @@ public class PaedML
         PaedML paedML = new PaedML();
         List<Student> students = paedML.readStudents();
         Student.listStudents(System.out, students);
-        students.forEach(paedML::fixPasswordSettings);
+        students.forEach(paedML::fixStudentPasswordSettings);
+        List<Student> teachers = paedML.readTeachers();
+        Student.listStudents(System.out, teachers);
+        teachers.forEach(paedML::fixTeacherPasswordSettings);
 
         //List<Student> students = paedML.studentsWithGroupsMissing();
         //Student.listStudents(System.out, students);
