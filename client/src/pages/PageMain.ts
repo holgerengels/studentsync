@@ -88,7 +88,7 @@ export class PageMain extends connect(store, LitElement) {
         <diff-card from="ASV" to="WebUntis" .diff="${this._asvwebuntis}" .load="${store.dispatch.asvwebuntis.load}" list="/sync/asvwebuntis" color="tertiary"></diff-card>
         <diff-card from="ASV" to="Schulkonsole" .diff="${this._asvschulkonsole}" .load="${store.dispatch.asvschulkonsole.load}" .sync="${store.dispatch.asvschulkonsole.sync}" list="/sync/asvschulkonsole" color="tertiary"></diff-card>
         <task-card name="ASV ID-Generator" .report="${this._idgenerator}" .execute="${store.dispatch.idgenerator.execute}" color="secondary"></task-card>
-        <task-card name="PaedML Fixes" .report="${this._paedmlfixes}" .execute="${store.dispatch.paedmlfixes.execute}" color="secondary"></task-card-->
+        <task-card name="PaedML Fixes" .report="${this._paedmlfixes}" .execute="${store.dispatch.paedmlfixes.execute}" color="secondary"></task-card>
         <task-card name="Lehrer Externe ID" .report="${this._teacherids}" .execute="${store.dispatch.teacherids.execute}" color="secondary"></task-card>
         <task-card name="WebUntis Austrittsdatum" .report="${this._exitdatesync}" .execute="${store.dispatch.exitdatesync.execute}" color="secondary"></task-card>
         <task-card name="Tablet Verbleib" .report="${this._devicereport}" .execute="${store.dispatch.devicereport.execute}" color="secondary"></task-card>
