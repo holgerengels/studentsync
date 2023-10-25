@@ -46,11 +46,11 @@ public class Schulkonsole
         ExtendedTrustManager.getInstance(Configuration.getInstance().getConfig());
 
         try {
-            SSLContext sslContext = SSLContext.getInstance("TLSv1.1");
+            SSLContext sslContext = SSLContext.getInstance("TLSv1.3");
             sslContext.init(null, new TrustManager[]{ExtendedTrustManager.INSTANCE}, new SecureRandom());
 
             SSLConnectionSocketFactory sslConnectionSocketFactory = new SSLConnectionSocketFactory(sslContext, new String[]
-                    {"TLSv1.1"}, null, (hostname, session) -> true);
+                    {"TLSv1.3"}, null, (hostname, session) -> true);
 
             return PoolingHttpClientConnectionManagerBuilder.create()
                     .setSSLSocketFactory(sslConnectionSocketFactory)
@@ -248,7 +248,8 @@ public class Schulkonsole
         JsonObject config = Configuration.getInstance().getConfig().getAsJsonObject("schulkonsole");
         Schulkonsole schulkonsole = new Schulkonsole();
         List<Student> students = schulkonsole.readStudents();
-        schulkonsole.addStudent(new Student("lili", "li", "li", null, null, "testklasse"));
+        Student.listStudents(System.out, students);
+        //schulkonsole.addStudent(new Student("lili", "li", "li", null, null, "testklasse"));
         /*
         List<Student> students = schulkonsole.readStudents();
         Student.listStudents(System.out, students);
