@@ -48,7 +48,7 @@ public class Schulkonsole
 
         try {
             SSLContext sslContext = SSLContext.getInstance("TLSv1.3");
-            sslContext.init(null, new TrustManager[]{ExtendedTrustManager.INSTANCE}, new SecureRandom());
+            //sslContext.init(null, new TrustManager[]{ExtendedTrustManager.INSTANCE}, new SecureRandom());
 
             SSLConnectionSocketFactory sslConnectionSocketFactory = new SSLConnectionSocketFactory(sslContext, new String[]
                     {"TLSv1.3"}, null, (hostname, session) -> true);
@@ -57,7 +57,7 @@ public class Schulkonsole
                     .setSSLSocketFactory(sslConnectionSocketFactory)
                     .build();
         }
-        catch (NoSuchAlgorithmException | KeyManagementException e) {
+        catch (NoSuchAlgorithmException e) {
             throw new RuntimeException(e);
         }
     });
