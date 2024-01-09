@@ -27,7 +27,7 @@ public class ActiveDirectory
 
     ThreadLocal<LdapContext> ldapContext = ThreadLocal.withInitial(() -> {
         try {
-            ExtendedTrustManager.getInstance(Configuration.getInstance().getConfig());
+            //ExtendedTrustManager.getInstance(Configuration.getInstance().getConfig());
 
             System.out.println("ActiceDirectory: establishing connection");
             Hashtable<String, String> env = new Hashtable<String, String>();
