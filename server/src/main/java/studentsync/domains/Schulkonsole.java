@@ -44,9 +44,8 @@ public class Schulkonsole
 
     static ThreadLocal<PoolingHttpClientConnectionManager> connectionManager = ThreadLocal.withInitial(() -> {
         // ExtendedTrustManager.getInstance(Configuration.getInstance().getConfig());
-        return PoolingHttpClientConnectionManagerBuilder.create().build();
+        //return PoolingHttpClientConnectionManagerBuilder.create().build();
 
-        /*
         try {
             SSLContext sslContext = SSLContext.getInstance("TLSv1.3");
             sslContext.init(null, new TrustManager[]{ExtendedTrustManager.INSTANCE}, new SecureRandom());
@@ -61,7 +60,6 @@ public class Schulkonsole
         catch (NoSuchAlgorithmException | KeyManagementException e) {
             throw new RuntimeException(e);
         }
-        */
     });
 
     ThreadLocal<CloseableHttpClient> client = ThreadLocal.withInitial(() -> HttpClientBuilder.create().setConnectionManager(connectionManager.get()).build());
