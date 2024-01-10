@@ -145,8 +145,8 @@ public class Relution
                     JsonObject o = (JsonObject) l;
                     if ("IOS".equals(o.getAsJsonPrimitive("platform").getAsString())
                             && !"DELETED".equals(o.getAsJsonPrimitive("status").getAsString())
-                    && !"VALCKENBURGSCHULE Device User".equals(o.getAsJsonPrimitive("userName").getAsString()))
-                        students.add(new Student(o.getAsJsonPrimitive("userName").getAsString(), null, null));
+                    && !"VALCKENBURGSCHULE Device User".equals(o.getAsJsonPrimitive("name").getAsString()))
+                        students.add(new Student(o.getAsJsonPrimitive("name").getAsString(), null, null));
                 });
                 EntityUtils.consume(entity);
             }
