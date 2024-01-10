@@ -3,8 +3,11 @@ package studentsync.base;
 import com.google.gson.*;
 import com.google.gson.stream.JsonReader;
 
+import javax.net.ssl.SSLSocket;
+import javax.net.ssl.SSLSocketFactory;
 import java.io.*;
 import java.util.*;
+import java.util.stream.StreamSupport;
 
 /**
  * Created by holger on 22.10.16.
@@ -17,8 +20,7 @@ public class Configuration {
     private String configPath;
     private String settingsPath;
 
-    public Configuration() {
-    }
+    public Configuration() {}
 
     public synchronized static Configuration getInstance() {
         if (INSTANCE == null)
@@ -29,6 +31,7 @@ public class Configuration {
 
     public void setConfigPath(String configPath) {
         this.configPath = configPath;
+        testSSLConnection();
     }
 
     public void invalidate() {
@@ -60,6 +63,17 @@ public class Configuration {
         }
         else
             return jsonElement.getAsString();
+    }
+
+    public List<String> getStrings(String domain, String key) {
+        ensureConfig();
+        JsonElement jsonElement = config.getAsJsonObject(domain).get(key);
+        if (jsonElement == null || jsonElement.isJsonNull()) {
+            System.err.println("WARNING: Property " + key + " is not configured");
+            return null;
+        }
+        else
+            return StreamSupport.stream(jsonElement.getAsJsonArray().spliterator(), false).map(JsonElement::getAsString).toList();
     }
 
     public Integer getInteger(String domain, String key) {
@@ -137,5 +151,39 @@ public class Configuration {
     public JsonObject readSettings() {
         ensureConfig();
         return settings;
+    }
+
+    // echo -n | openssl s_client -connect dc01:636 | sed -ne '/-BEGIN CERTIFICATE-/,/-END CERTIFICATE-/p' > ldapserver.pem
+    protected void testSSLConnection() {
+        List<String> urls = getStrings("ssl", "urls");
+        if (urls != null) {
+            urls.forEach(url -> {
+                try {
+                    int pos = url.indexOf(":");
+                    String host = url.substring(0, pos);
+                    String port = url.substring(pos + 1);
+                    System.out.println("host = " + host);
+                    System.out.println("port = " + port);
+                    System.out.println("trustStore = " + System.getProperty("javax.net.ssl.trustStore"));
+
+                    SSLSocketFactory sslsocketfactory = (SSLSocketFactory) SSLSocketFactory.getDefault();
+                    InputStream in;
+                    OutputStream out;
+                    try (SSLSocket sslsocket = (SSLSocket) sslsocketfactory.createSocket(host, Integer.parseInt(port))) {
+                        in = sslsocket.getInputStream();
+                        out = sslsocket.getOutputStream();
+                        out.write(1);
+                    }
+                    while (in.available() > 0) {
+                        System.out.print(in.read());
+                    }
+                    System.out.println("Successfully connected " + url);
+                }
+                catch (Exception exception) {
+                    System.out.println("Error connecting " + url);
+                    exception.printStackTrace();
+                }
+            });
+        }
     }
 }
