@@ -21,6 +21,8 @@ import java.util.TreeMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import static java.lang.StringTemplate.STR;
+
 /**
  * Created by holger on 20.12.14.
  */
@@ -256,7 +258,7 @@ public class Untis
 
             String schulid = getConfigString("schulid");
             String schuljahr = getConfigString("schuljahr");
-            rs = st.executeQuery("SELECT CLASS_ID, Name FROM Class where SCHOOL_ID = '" + schulid + "' AND SCHOOLYEAR_ID = '" + schuljahr + "'");
+            rs = st.executeQuery(STR . "SELECT CLASS_ID, Name, MAX(VERSION_ID) FROM Class where SCHOOL_ID = '\{schulid}' AND SCHOOLYEAR_ID = '\{schuljahr}' GROUP BY CLASS_ID, Name");
 
             classes = new HashMap<>();
             while (rs.next()) {
