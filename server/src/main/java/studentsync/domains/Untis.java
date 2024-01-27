@@ -258,7 +258,7 @@ public class Untis
 
             String schulid = getConfigString("schulid");
             String schuljahr = getConfigString("schuljahr");
-            rs = st.executeQuery(STR . "SELECT CLASS_ID, Name, MAX(VERSION_ID) FROM Class where SCHOOL_ID = '\{schulid}' AND SCHOOLYEAR_ID = '\{schuljahr}' GROUP BY CLASS_ID, Name");
+            rs = st.executeQuery(STR . "SELECT CLASS_ID, Name FROM Class where SCHOOL_ID = '\{schulid}' AND SCHOOLYEAR_ID = '\{schuljahr}' ORDER BY TERM_ID");
 
             classes = new HashMap<>();
             while (rs.next()) {
