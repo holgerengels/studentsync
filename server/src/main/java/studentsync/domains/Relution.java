@@ -77,64 +77,65 @@ public class Relution
 
             post = new HttpPost(url + devices);
             post.setHeader(new BasicHeader("Content-Type", "application/json"));
-            String json = "{\n" +
-                    "  \"limit\": 3000,\n" +
-                    "  \"offset\": 0,\n" +
-                    "  \"getNonpagedCount\": true,\n" +
-                    "  \"sortOrder\": {\n" +
-                    "    \"sortFields\": [\n" +
-                    "      {\n" +
-                    "        \"name\": \"userName\",\n" +
-                    "        \"ascending\": true\n" +
-                    "      }\n" +
-                    "    ]\n" +
-                    "  },\n" +
-                    "  \"filter\": {\n" +
-                    "    \"type\": \"logOp\",\n" +
-                    "    \"operation\": \"AND\",\n" +
-                    "    \"filters\": [\n" +
-                    "      {\n" +
-                    "        \"type\": \"stringEnum\",\n" +
-                    "        \"fieldName\": \"platform\",\n" +
-                    "        \"values\": [\n" +
-                    "          \"ANDROID\",\n" +
-                    "          \"ANDROID_ENTERPRISE\",\n" +
-                    "          \"CHROMEOS\",\n" +
-                    "          \"IOS\",\n" +
-                    "          \"TVOS\",\n" +
-                    "          \"MACOS\",\n" +
-                    "          \"WINDOWS\"\n" +
-                    "        ]\n" +
-                    "      },\n" +
-                    "      {\n" +
-                    "        \"type\": \"stringEnum\",\n" +
-                    "        \"fieldName\": \"status\",\n" +
-                    "        \"values\": [\n" +
-                    "          \"COMPLIANT\",\n" +
-                    "          \"INACTIVE\",\n" +
-                    "          \"NONCOMPLIANT\"\n" +
-                    "        ]\n" +
-                    "      },\n" +
-                    "      {\n" +
-                    "        \"type\": \"stringEnum\",\n" +
-                    "        \"fieldName\": \"ownership\",\n" +
-                    "        \"values\": [\n" +
-                    "          \"UNKNOWN\",\n" +
-                    "          \"COD\",\n" +
-                    "          \"BYOD\"\n" +
-                    "        ]\n" +
-                    "      },\n" +
-                    "      {\n" +
-                    "        \"type\": \"stringEnum\",\n" +
-                    "        \"fieldName\": \"deviceConnectionState\",\n" +
-                    "        \"values\": [\n" +
-                    "          \"NORMAL\",\n" +
-                    "          \"NOT_NOW\"\n" +
-                    "        ]\n" +
-                    "      }\n" +
-                    "    ]\n" +
-                    "  }\n" +
-                    "}";
+            String json = """
+                    {
+                      "limit": 3000,
+                      "offset": 0,
+                      "getNonpagedCount": true,
+                      "sortOrder": {
+                        "sortFields": [
+                          {
+                            "name": "userName",
+                            "ascending": true
+                          }
+                        ]
+                      },
+                      "filter": {
+                        "type": "logOp",
+                        "operation": "AND",
+                        "filters": [
+                          {
+                            "type": "stringEnum",
+                            "fieldName": "platform",
+                            "values": [
+                              "ANDROID",
+                              "ANDROID_ENTERPRISE",
+                              "CHROMEOS",
+                              "IOS",
+                              "TVOS",
+                              "MACOS",
+                              "WINDOWS"
+                            ]
+                          },
+                          {
+                            "type": "stringEnum",
+                            "fieldName": "status",
+                            "values": [
+                              "COMPLIANT",
+                              "INACTIVE",
+                              "NONCOMPLIANT"
+                            ]
+                          },
+                          {
+                            "type": "stringEnum",
+                            "fieldName": "ownership",
+                            "values": [
+                              "UNKNOWN",
+                              "COD",
+                              "BYOD"
+                            ]
+                          },
+                          {
+                            "type": "stringEnum",
+                            "fieldName": "deviceConnectionState",
+                            "values": [
+                              "NORMAL",
+                              "NOT_NOW"
+                            ]
+                          }
+                        ]
+                      }
+                    }""";
             post.setEntity(new StringEntity(json));
             try (final CloseableHttpResponse response = client.execute(post)) {
                 HttpEntity entity = response.getEntity();

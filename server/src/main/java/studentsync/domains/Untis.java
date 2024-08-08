@@ -374,7 +374,7 @@ public class Untis
             con = getConnection("untis");
             st = con.createStatement();
 
-            return st.executeUpdate("update Teacher set foreignkey = left(email, length(email) - 20) where email like '%vbs.ul.bw.schule.de' and foreignkey != left(email, length(email) - 20)");
+            return st.executeUpdate("update Teacher set foreignkey = left(email, length(email) - 21) where email like '%valckenburgschule.de' and foreignkey != left(email, length(email) - 21)");
         }
         catch (SQLException e) {
             Logger.getLogger(getClass().getSimpleName()).log(Level.SEVERE, e.getMessage(), e);
