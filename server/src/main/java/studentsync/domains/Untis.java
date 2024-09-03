@@ -303,7 +303,7 @@ public class Untis
             String schulid = getConfigString("schulid");
             String version = getConfigString("version");
             String schuljahr = getConfigString("schuljahr");
-            rs = st.executeQuery(STR."SELECT c.STUDENT_ID, c.AlternativeCourses FROM StudentChoice c WHERE c.SCHOOL_ID = '\{schulid}' and VERSION_ID = '\{version}' AND c.SCHOOLYEAR_ID = '\{schuljahr}'");
+            rs = st.executeQuery(STR."SELECT c.STUDENT_ID, c.AlternativeCourses FROM StudentChoice c WHERE c.SCHOOL_ID = '\{schulid}' and c.VERSION_ID = '\{version}' AND c.SCHOOLYEAR_ID = '\{schuljahr}'");
 
             choices = new HashMap<>();
             while (rs.next()) {
@@ -451,7 +451,7 @@ public class Untis
             String schulid = getConfigString("schulid");
             String version = getConfigString("version");
             con = getConnection("untis");
-            pst = con.prepareStatement(STR."update Student s set s.FirstName = ?, s.Longname = ?, s.Flags = ?, s.BirthDate = ? where s.SCHOOL_ID = '\{schulid}' and VERSION_ID = '\{version}' AND s.Name = ?");
+            pst = con.prepareStatement(STR."update Student s set s.FirstName = ?, s.Longname = ?, s.Flags = ?, s.BirthDate = ? where s.SCHOOL_ID = '\{schulid}' and s.VERSION_ID = '\{version}' AND s.Name = ?");
             pst.setString(1, student.getFirstName());
             pst.setString(2, student.getLastName());
             pst.setString(3, fromGender(student.getGender()));
