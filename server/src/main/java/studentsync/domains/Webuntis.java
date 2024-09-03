@@ -16,6 +16,7 @@ import org.apache.hc.core5.http.HttpHeaders;
 import org.apache.hc.core5.http.HttpResponse;
 import org.apache.hc.core5.http.NameValuePair;
 import org.apache.hc.core5.http.io.entity.EntityUtils;
+import org.apache.hc.core5.http.io.entity.StringEntity;
 import org.apache.hc.core5.http.message.BasicNameValuePair;
 import studentsync.base.Configuration;
 import studentsync.base.Domain;
@@ -109,11 +110,91 @@ public class Webuntis
         return students;
     }
 
+    public synchronized List<Student> readTutors() {
+        String url = getConfigString("url"); if (!url.endsWith("/")) url += "/";
+        String login = getConfigString("login"); if (login.startsWith("/")) login = login.substring(1);
+        String report = getConfigString("report"); if (report.startsWith("/")) report = report.substring(1);
+        String fetchStudents = "name=Class&format=csv"; //getConfigString("fetchStudents");
+        String user = getConfigString("user");
+        String password = getConfigString("password");
+
+        CloseableHttpClient client = HttpClientBuilder.create().build();
+
+        start();
+        try {
+            // authentication
+            List<NameValuePair> nameValuePairs = new ArrayList<>(2);
+            nameValuePairs.add(new BasicNameValuePair("j_username", user));
+            nameValuePairs.add(new BasicNameValuePair("j_password", password));
+
+            HttpPost post = new HttpPost(url + login);
+            post.setEntity(new UrlEncodedFormEntity(nameValuePairs));
+            try (final CloseableHttpResponse response = client.execute(post)) {}
+
+            post = new HttpPost(url + "jsonrpc_web/jsonCalendarService");
+            post.setEntity(new StringEntity("""
+                    { "id": 1, "method": "setSchoolyear", "params": [15], "jsonrpc": "2.0" }
+                    """));
+            try (final CloseableHttpResponse response = client.execute(post)) {}
+            post = new HttpPost(url + "jsonrpc_web/jsonCalendarService");
+            post.setEntity(new StringEntity("""
+                    { "id": 2, "method": "setDate", "params": [20230911], "jsonrpc": "2.0" }
+                    """));
+            try (final CloseableHttpResponse response = client.execute(post)) {}
+            post = new HttpPost(url + "jsonrpc_web/jsonCalendarService");
+            post.setEntity(new StringEntity("""
+                    { "id": 3, "method": "setSchoolyear", "params": [15], "jsonrpc": "2.0" }
+                    """));
+            try (final CloseableHttpResponse response = client.execute(post)) {}
+
+            // generate report
+            String messageId;
+            String reportParams;
+            HttpGet get = new HttpGet(url + report + "?" + fetchStudents);
+            try (final CloseableHttpResponse response = client.execute(get)) {
+                HttpEntity entity = response.getEntity();
+                JsonObject object = new Gson().fromJson(new InputStreamReader(entity.getContent()), JsonObject.class);
+                object = object.getAsJsonObject("data");
+                messageId = object.getAsJsonPrimitive("messageId").getAsString();
+                reportParams = object.getAsJsonPrimitive("reportParams").getAsString();
+                EntityUtils.consume(entity);
+            }
+            // fetch report
+            Thread.sleep(3000);
+            get = new HttpGet(url + report + "?msgId=" + messageId + "&" + reportParams);
+            try (final CloseableHttpResponse response = client.execute(get)) {
+                HttpEntity entity = response.getEntity();
+                LineNumberReader reader = new LineNumberReader(new InputStreamReader(entity.getContent()));
+
+                students = new ArrayList<>(2000);
+                String line = reader.readLine();
+                while ((line = reader.readLine()) != null) {
+                    //System.out.println("line = " + line);
+                    String[] cols = line.split("\t");
+                    if (cols.length < 6)
+                        System.out.println("CORRUPT LINE = " + line);
+                    else
+                        students.add(new Student(cols[0], cols[2], cols[1], cols[3], date(cols[4]), cols[5]));
+                }
+                EntityUtils.consume(entity);
+            }
+        }
+        catch (IOException | InterruptedException e) {
+            Logger.getLogger(getClass().getSimpleName()).log(Level.SEVERE, e.getMessage(), e);
+            throw new RuntimeException(e.getMessage());
+        }
+        finally {
+            stop("read students");
+        }
+        Collections.sort(students);
+        return students;
+    }
+
     private static final SimpleDateFormat dateFormat = new SimpleDateFormat("dd.MM.yyyy");
 
     private Date date(String string) {
         try {
-            return string != null && string.length() > 0 ? new Date(dateFormat.parse(string).getTime()) : null;
+            return string != null && !string.isEmpty() ? new Date(dateFormat.parse(string).getTime()) : null;
         }
         catch (ParseException e) {
             Logger.getLogger(Webuntis.class.getSimpleName()).log(Level.WARNING, e.getMessage(), e);
@@ -234,13 +315,11 @@ public class Webuntis
         }
     }
 
-    /*
     public static void main(String[] args) throws Exception {
         Configuration.getInstance().setConfigPath(args[0]);
         Webuntis webuntis = new Webuntis();
-        List<Student> students = webuntis.readStudents();
+        List<Student> students = webuntis.readTutors();
         List<String> list = students.stream().map(student -> Objects.toString(student, null)).collect(Collectors.toList());
         System.out.println("students = " + String.join("\n", list));
     }
-     */
 }
