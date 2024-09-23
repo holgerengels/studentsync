@@ -1,4 +1,4 @@
-import {createModel, RoutingState} from '@captaincodeman/rdx';
+import {createModel} from '@captaincodeman/rdx';
 import {Store} from '../store';
 import {TaskReportState} from "../state";
 import {endpoint} from "../endpoint";
@@ -52,7 +52,7 @@ export default createModel({
         dispatch.exitdatesync.error(message);
       }
     },
-
+    /*
     'routing/change': async function(payload: RoutingState<string>) {
       const dispatch = store.getDispatch();
 
@@ -62,5 +62,6 @@ export default createModel({
           break
       }
     }
+    */
   })
 })
