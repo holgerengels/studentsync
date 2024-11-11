@@ -114,7 +114,7 @@ public class Webuntis
         String url = getConfigString("url"); if (!url.endsWith("/")) url += "/";
         String login = getConfigString("login"); if (login.startsWith("/")) login = login.substring(1);
         String report = getConfigString("report"); if (report.startsWith("/")) report = report.substring(1);
-        String fetchStudents = "name=Class&format=csv"; //getConfigString("fetchStudents");
+        String fetchStudents = "name=Class&format=pdf"; //getConfigString("fetchStudents");
         String user = getConfigString("user");
         String password = getConfigString("password");
 
@@ -131,6 +131,7 @@ public class Webuntis
             post.setEntity(new UrlEncodedFormEntity(nameValuePairs));
             try (final CloseableHttpResponse response = client.execute(post)) {}
 
+            /*
             post = new HttpPost(url + "jsonrpc_web/jsonCalendarService");
             post.setEntity(new StringEntity("""
                     { "id": 1, "method": "setSchoolyear", "params": [15], "jsonrpc": "2.0" }
@@ -146,6 +147,7 @@ public class Webuntis
                     { "id": 3, "method": "setSchoolyear", "params": [15], "jsonrpc": "2.0" }
                     """));
             try (final CloseableHttpResponse response = client.execute(post)) {}
+            */
 
             // generate report
             String messageId;
@@ -316,7 +318,7 @@ public class Webuntis
     }
 
     public static void main(String[] args) throws Exception {
-        Configuration.getInstance().setConfigPath(args[0]);
+        try { Configuration.getInstance().setConfigPath(args[0]); } catch (Exception e) { System.out.println("e = " + e); }
         Webuntis webuntis = new Webuntis();
         List<Student> students = webuntis.readTutors();
         List<String> list = students.stream().map(student -> Objects.toString(student, null)).collect(Collectors.toList());
