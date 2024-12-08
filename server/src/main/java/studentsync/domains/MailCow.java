@@ -87,7 +87,7 @@ public class MailCow
     private String authorize(String user, String password) throws IOException {
         String token;
         // login page .. obtain token
-        HttpGet get = new HttpGet("https://mailcow.valckenburgschule.de");
+        HttpGet get = new HttpGet("https://mail.valckenburgschule.de");
         try (final CloseableHttpResponse response = client.get().execute(get)) {
             HttpEntity entity = response.getEntity();
             String string = new String(entity.getContent().readAllBytes(), StandardCharsets.UTF_8);
@@ -95,7 +95,7 @@ public class MailCow
             EntityUtils.consume(entity);
         }
         System.out.println("token = " + token);
-        HttpPost post = new HttpPost("https://mailcow.valckenburgschule.de");
+        HttpPost post = new HttpPost("https://mail.valckenburgschule.de");
         final List<NameValuePair> params = new ArrayList<NameValuePair>();
         params.add(new BasicNameValuePair("login_user", user));
         params.add(new BasicNameValuePair("pass_user", password));
