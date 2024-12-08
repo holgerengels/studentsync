@@ -31,6 +31,8 @@ export class PageMain extends connect(store, LitElement) {
   private _exitdatesync: TaskReportState = <TaskReportState>{};
   @state()
   private _devicereport: TaskReportState = <TaskReportState>{};
+  @state()
+  private _mailinglistreport: TaskReportState = <TaskReportState>{};
 
   @query('#download')
   private _download: HTMLAnchorElement;
@@ -47,6 +49,7 @@ export class PageMain extends connect(store, LitElement) {
       _teacherids: state.teacherids,
       _exitdatesync: state.exitdatesync,
       _devicereport: state.devicereport,
+      _mailinglistreport: state.mailinglistreport,
     }
   }
 
@@ -92,6 +95,7 @@ export class PageMain extends connect(store, LitElement) {
         <task-card name="Lehrer Externe ID" .report="${this._teacherids}" .execute="${store.dispatch.teacherids.execute}" color="secondary"></task-card>
         <task-card name="WebUntis Austrittsdatum" .report="${this._exitdatesync}" .execute="${store.dispatch.exitdatesync.execute}" color="secondary"></task-card>
         <task-card name="Tablet Verbleib" .report="${this._devicereport}" .execute="${store.dispatch.devicereport.execute}" color="secondary"></task-card>
+        <task-card name="Mailboxen" .report="${this._mailinglistreport}" .execute="${store.dispatch.mailinglistreport.execute}" color="secondary"></task-card>
       </div>
     `;
   }

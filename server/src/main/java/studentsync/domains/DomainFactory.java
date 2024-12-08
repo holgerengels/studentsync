@@ -24,6 +24,7 @@ public class DomainFactory
         SERVERS.put("schulkonsole", Schulkonsole.class);
         SERVERS.put("owncloud", NextCloud.class);
         SERVERS.put("relution", Relution.class);
+        SERVERS.put("mailCow", MailCow.class);
     }
     private static DomainFactory INSTANCE = null;
     private Map<Class, Domain> domains = new SelfExpiringHashMap<>(5000);
@@ -70,4 +71,5 @@ public class DomainFactory
     public Schulkonsole getSchulkonsole() { return getDomain(Schulkonsole.class); }
     public Bridge getBridge() { return getDomain(Bridge.class); }
     public Relution getRelution() { return getDomain(Relution.class); }
+    public MailCow getMailCow() { return getDomain(MailCow.class); }
 }

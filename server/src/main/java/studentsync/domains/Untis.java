@@ -21,8 +21,6 @@ import java.util.TreeMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import static java.lang.StringTemplate.STR;
-
 /**
  * Created by holger on 20.12.14.
  */
@@ -61,7 +59,7 @@ public class Untis
             String schulid = getConfigString("schulid");
             String version = getConfigString("version");
             String schuljahr = getConfigString("schuljahr");
-            rs = st.executeQuery(STR."SELECT distinct s.STUDENT_ID, s.Name, s.FirstName, s.Longname, s.Flags, s.BirthDate, s.CLASS_ID FROM Student s where s.SCHOOL_ID = '\{schulid}' and s.VERSION_ID = '\{version}' and s.SCHOOLYEAR_ID = '\{schuljahr}';");
+            rs = st.executeQuery("SELECT distinct s.STUDENT_ID, s.Name, s.FirstName, s.Longname, s.Flags, s.BirthDate, s.CLASS_ID FROM Student s where s.SCHOOL_ID = '" + schulid + "' and s.VERSION_ID = '" + version + "' and s.SCHOOLYEAR_ID = '" + schuljahr + "';");
 
             studentsByAccount = new HashMap<String, Student>();
             studentById = new HashMap<String, Student>();
@@ -221,7 +219,7 @@ public class Untis
             String schulid = getConfigString("schulid");
             String version = getConfigString("version");
             String schuljahr = getConfigString("schuljahr");
-            rs = st.executeQuery(STR."SELECT SUBJECT_ID, Name FROM Subjects where SCHOOL_ID = '\{schulid}' and VERSION_ID = '\{version}' AND SCHOOLYEAR_ID = '\{schuljahr}'");
+            rs = st.executeQuery("SELECT SUBJECT_ID, Name FROM Subjects where SCHOOL_ID = '" + schulid + "' and VERSION_ID = '" + version + "' AND SCHOOLYEAR_ID = '" + schuljahr + "'");
 
             subjects = new HashMap<String, String>();
             while (rs.next()) {
@@ -261,7 +259,7 @@ public class Untis
             String schulid = getConfigString("schulid");
             String version = getConfigString("version");
             String schuljahr = getConfigString("schuljahr");
-            rs = st.executeQuery(STR . "SELECT CLASS_ID, Name FROM Class where SCHOOL_ID = '\{schulid}' and VERSION_ID = '\{version}' AND SCHOOLYEAR_ID = '\{schuljahr}' ORDER BY TERM_ID");
+            rs = st.executeQuery("SELECT CLASS_ID, Name FROM Class where SCHOOL_ID = '" + schulid + "' and VERSION_ID = '" + version+ "' AND SCHOOLYEAR_ID = '" + schuljahr + "' ORDER BY TERM_ID");
 
             classes = new HashMap<>();
             while (rs.next()) {
@@ -303,7 +301,7 @@ public class Untis
             String schulid = getConfigString("schulid");
             String version = getConfigString("version");
             String schuljahr = getConfigString("schuljahr");
-            rs = st.executeQuery(STR."SELECT c.STUDENT_ID, c.AlternativeCourses FROM StudentChoice c WHERE c.SCHOOL_ID = '\{schulid}' and c.VERSION_ID = '\{version}' AND c.SCHOOLYEAR_ID = '\{schuljahr}'");
+            rs = st.executeQuery("SELECT c.STUDENT_ID, c.AlternativeCourses FROM StudentChoice c WHERE c.SCHOOL_ID = '" + schulid + "' and c.VERSION_ID = '" + version + "' AND c.SCHOOLYEAR_ID = '" + schuljahr + "'");
 
             choices = new HashMap<>();
             while (rs.next()) {
@@ -404,7 +402,7 @@ public class Untis
             String schulid = getConfigString("schulid");
             String version = getConfigString("version");
             String schuljahr = getConfigString("schuljahr");
-            rs = st.executeQuery(STR."SELECT Name, Email FROM Teacher where SCHOOL_ID = '\{schulid}' and VERSION_ID = '\{version}' AND SCHOOLYEAR_ID = '\{schuljahr}'");
+            rs = st.executeQuery("SELECT Name, Email FROM Teacher where SCHOOL_ID = '" + schulid + "' and VERSION_ID = '" + version + "' AND SCHOOLYEAR_ID = '" + schuljahr + "'");
 
             HashMap<String, String> map = new HashMap<String, String>();
             while (rs.next()) {
@@ -451,7 +449,7 @@ public class Untis
             String schulid = getConfigString("schulid");
             String version = getConfigString("version");
             con = getConnection("untis");
-            pst = con.prepareStatement(STR."update Student s set s.FirstName = ?, s.Longname = ?, s.Flags = ?, s.BirthDate = ? where s.SCHOOL_ID = '\{schulid}' and s.VERSION_ID = '\{version}' AND s.Name = ?");
+            pst = con.prepareStatement("update Student s set s.FirstName = ?, s.Longname = ?, s.Flags = ?, s.BirthDate = ? where s.SCHOOL_ID = '" + schulid + "' and s.VERSION_ID = '" + version + "' AND s.Name = ?");
             pst.setString(1, student.getFirstName());
             pst.setString(2, student.getLastName());
             pst.setString(3, fromGender(student.getGender()));

@@ -1,12 +1,12 @@
 package studentsync.domains;
 
+import com.google.gson.JsonObject;
 import com.google.gson.JsonPrimitive;
 import org.postgresql.ds.PGPoolingDataSource;
 import studentsync.base.*;
 
 import javax.sql.DataSource;
 import java.io.IOException;
-import java.io.PrintWriter;
 import java.sql.*;
 import java.sql.Date;
 import java.util.*;
@@ -27,6 +27,7 @@ public class ASV
 {
     private List<Student> students;
     private List<Student> teachers;
+    private List<String> classTeachers;
     private Map<String, Map<String,String>> valueLists = new HashMap<>();
     protected Map<String, String> classes;
 
@@ -141,15 +142,85 @@ public class ASV
 
         try {
             con = getConnection("asv");
+            String schuljahr = getConfigString("schuljahr");
 
             teachers = new ArrayList<>();
             st = con.createStatement();
-            rs = st.executeQuery("select id, familienname, vornamen, wl_geschlecht_id from svp_lehrer_stamm");
+            rs = st.executeQuery("select lss.namenskuerzel, lst.familienname, lst.vornamen, lower(ko.kommunikationsadresse)" +
+                    "  from asv.svp_lehrer_schuljahr_schule lss, asv.svp_lehrer_schuljahr ls, asv.svp_lehrer_stamm lst," +
+                    "       asv.svp_lehrer_stamm_kommunikation lsk, asv.svp_kommunikation ko" +
+                    "  where lss.schule_schuljahr_id in (select ss.id" +
+                    "                                  from asv.svp_wl_schuljahr sj," +
+                    "                                       asv.svp_schule_schuljahr ss" +
+                    "                                  where sj.id = ss.schuljahr_id" +
+                    "                                    and sj.kurzform = '" + schuljahr + "')" +
+                    "    and lss.lehrer_schuljahr_id = ls.id" +
+                    "    and ls.lehrer_stamm_id = lst.id" +
+                    "    and lsk.lehrer_stamm_id = ls.lehrer_stamm_id" +
+                    "    and lsk.kommunikation_id = ko.id" +
+                    "    and ko.wl_kommunikationstyp_id = '1113_EMAIL'" +
+                    "  order by lower(ko.kommunikationsadresse);");
             while (rs.next()) {
-                teachers.add(new Student(rs.getString(3).substring(0, 1).toLowerCase() + "." + UserIDs.encode(rs.getString(2)), rs.getString(3), rs.getString(2)));
+                String lastName = rs.getString(2);
+                String firstName = rs.getString(3);
+                String eMail = rs.getString(4);
+                Student teacher = new Student(eMail.substring(0, eMail.indexOf('@')), firstName, lastName);
+                teacher.setEMail(eMail);
+                teachers.add(teacher);
             }
             Collections.sort(teachers);
             return teachers;
+        }
+        catch (SQLException e) {
+            e.printStackTrace();
+            Logger.getLogger(Untis.class.getSimpleName()).log(Level.SEVERE, e.getMessage(), e);
+            return Collections.emptyList();
+        }
+        finally {
+            close(rs);
+            close(st);
+            close(con);
+            stop("read teachers");
+        }
+    }
+
+    public List<String> readClassTeachers() {
+        if (classTeachers != null)
+            return classTeachers;
+
+        Connection con = null;
+        Statement st = null;
+        ResultSet rs = null;
+
+        start();
+
+        try {
+            con = getConnection("asv");
+            String schuljahr = getConfigString("schuljahr");
+
+            classTeachers = new ArrayList<String>();
+            st = con.createStatement();
+            rs = st.executeQuery("select k.klassenname, lss.namenskuerzel, lst.familienname, lst.vornamen, lower(ko.kommunikationsadresse)" +
+                    "  from asv.svp_klassenleitung kl, asv.svp_lehrer_schuljahr_schule lss, asv.svp_klasse k, asv.svp_lehrer_schuljahr ls, asv.svp_lehrer_stamm lst," +
+                    "       asv.svp_lehrer_stamm_kommunikation lsk, asv.svp_kommunikation ko " +
+                    "  where k.schule_schuljahr_id in (select ss.id" +
+                    "                                  from asv.svp_wl_schuljahr sj," +
+                    "                                       asv.svp_schule_schuljahr ss" +
+                    "                                  where sj.id = ss.schuljahr_id" +
+                    "                                    and sj.kurzform = '" + schuljahr + "')" +
+                    "    and kl.lehrer_schuljahr_schule_id = lss.id" +
+                    "    and lss.lehrer_schuljahr_id = ls.id" +
+                    "    and kl.klasse_id = k.id" +
+                    "    and ls.lehrer_stamm_id = lst.id" +
+                    "    and lsk.lehrer_stamm_id = ls.lehrer_stamm_id" +
+                    "    and lsk.kommunikation_id = ko.id" +
+                    "    and ko.wl_kommunikationstyp_id = '1113_EMAIL'" +
+                    " order by k.klassenname;");
+            while (rs.next()) {
+                classTeachers.add(rs.getString(5));
+            }
+            Collections.sort(classTeachers);
+            return classTeachers;
         }
         catch (SQLException e) {
             e.printStackTrace();
@@ -287,21 +358,6 @@ public class ASV
         return null;
     }
 
-    public static void main(String[] args) throws IOException {
-        Configuration.getInstance().setConfigPath(args[0]);
-        ASV asv = new ASV();
-        // List<Student> teachers = asv.readTeachers();
-
-        List<Student> students = asv.readStudents();
-        new CSVGenerator().write(new PrintWriter(System.out), students);
-        List<String> ids = students.stream()
-                //.filter(student -> student.clazz.startsWith("GYM0"))
-                .sorted(Comparator.comparing(Student::getClazz).thenComparing(Student::getLastName))
-                .map(student -> student.account).collect(Collectors.toList());
-        //List<Map<String, Object>> maps = asv.loadStudents(ids.toArray(new String[0]));
-
-    }
-
     public synchronized Map<String, Date> readExitDates(List<String> students) {
         Connection con = null;
         Statement st = null;
@@ -339,7 +395,6 @@ public class ASV
         }
     }
 
-
     @Override
     protected DataSource createDataSource(String name) {
         PGPoolingDataSource dataSource =  new PGPoolingDataSource();
@@ -352,6 +407,27 @@ public class ASV
         dataSource.setPassword(getConfigString("password"));
         dataSource.setMaxConnections(Integer.parseInt(getConfigString("pool")));
         return dataSource;
+    }
+
+    public static void main(String[] args) throws IOException {
+        Configuration.getInstance().setConfigPath(args[0]);
+        JsonObject config = Configuration.getInstance().getConfig().getAsJsonObject("asv");
+        ASV asv = new ASV();
+        List<Student> teachers = asv.readTeachers();
+        Student.listStudents(System.out, teachers);
+        List<String> classTeachers = asv.readClassTeachers();
+        System.out.println("classTeachers = " + classTeachers);
+
+
+        /*
+        List<Student> students = asv.readStudents();
+        new CSVGenerator().write(new PrintWriter(System.out), students);
+        List<String> ids = students.stream()
+                //.filter(student -> student.clazz.startsWith("GYM0"))
+                .sorted(Comparator.comparing(Student::getClazz).thenComparing(Student::getLastName))
+                .map(student -> student.account).collect(Collectors.toList());
+        //List<Map<String, Object>> maps = asv.loadStudents(ids.toArray(new String[0]));
+        */
     }
 }
 

@@ -23,6 +23,7 @@ public class ScheduleManager {
         ScheduleManager.TASKS.put("ad-group-mapping", ADGroupMappingTask.class);
         ScheduleManager.TASKS.put("paedml-fixes", PaedMLFixPasswordExpiration.class);
         ScheduleManager.TASKS.put("device-report", DeviceReportTask.class);
+        ScheduleManager.TASKS.put("mailinglist-report", MailingListsReportTask.class);
         ScheduleManager.TASKS.put("dummy", DummyTask.class);
     }
 
