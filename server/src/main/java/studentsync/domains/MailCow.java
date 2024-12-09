@@ -85,9 +85,11 @@ public class MailCow
     }
 
     private String authorize(String user, String password) throws IOException {
+        String authURL = getConfigString("apiURL");
+
         String token;
         // login page .. obtain token
-        HttpGet get = new HttpGet("https://mail.valckenburgschule.de");
+        HttpGet get = new HttpGet(authURL);
         try (final CloseableHttpResponse response = client.get().execute(get)) {
             HttpEntity entity = response.getEntity();
             String string = new String(entity.getContent().readAllBytes(), StandardCharsets.UTF_8);
@@ -95,7 +97,7 @@ public class MailCow
             EntityUtils.consume(entity);
         }
         System.out.println("token = " + token);
-        HttpPost post = new HttpPost("https://mail.valckenburgschule.de");
+        HttpPost post = new HttpPost(authURL);
         final List<NameValuePair> params = new ArrayList<NameValuePair>();
         params.add(new BasicNameValuePair("login_user", user));
         params.add(new BasicNameValuePair("pass_user", password));
@@ -116,8 +118,6 @@ public class MailCow
         int end = string.indexOf("\"", start);
         return string.substring(start, end);
     }
-
-    // https://mailcow.valckenburgschule.de/api/v1/get/mailbox/datatables?
 
     public synchronized List<Student> readTeachers() {
         return readStudents();
