@@ -26,8 +26,8 @@ public class ASV
     extends Domain
 {
     private List<Student> students;
-    private List<Student> teachers;
-    private List<String> classTeachers;
+    private List<Teacher> teachers;
+    private List<Teacher> classTeachers;
     private Map<String, Map<String,String>> valueLists = new HashMap<>();
     protected Map<String, String> classes;
 
@@ -72,7 +72,7 @@ public class ASV
         }
         catch (SQLException e) {
             e.printStackTrace();
-            Logger.getLogger(Untis.class.getSimpleName()).log(Level.SEVERE, e.getMessage(), e);
+            Logger.getLogger(ASV.class.getSimpleName()).log(Level.SEVERE, e.getMessage(), e);
             return Collections.emptyMap();
         }
         finally {
@@ -119,7 +119,7 @@ public class ASV
         }
         catch (SQLException e) {
             e.printStackTrace();
-            Logger.getLogger(Untis.class.getSimpleName()).log(Level.SEVERE, e.getMessage(), e);
+            Logger.getLogger(ASV.class.getSimpleName()).log(Level.SEVERE, e.getMessage(), e);
             return Collections.emptyMap();
         }
         finally {
@@ -130,7 +130,7 @@ public class ASV
         }
     }
 
-    public List<Student> readTeachers() {
+    public List<Teacher> readTeachers() {
         if (teachers != null)
             return teachers;
 
@@ -161,11 +161,11 @@ public class ASV
                     "    and ko.wl_kommunikationstyp_id = '1113_EMAIL'" +
                     "  order by lower(ko.kommunikationsadresse);");
             while (rs.next()) {
+                String id = rs.getString(1);
                 String lastName = rs.getString(2);
                 String firstName = rs.getString(3);
                 String eMail = rs.getString(4);
-                Student teacher = new Student(eMail.substring(0, eMail.indexOf('@')), firstName, lastName);
-                teacher.setEMail(eMail);
+                Teacher teacher = new Teacher(id, firstName, lastName, eMail);
                 teachers.add(teacher);
             }
             Collections.sort(teachers);
@@ -173,7 +173,7 @@ public class ASV
         }
         catch (SQLException e) {
             e.printStackTrace();
-            Logger.getLogger(Untis.class.getSimpleName()).log(Level.SEVERE, e.getMessage(), e);
+            Logger.getLogger(ASV.class.getSimpleName()).log(Level.SEVERE, e.getMessage(), e);
             return Collections.emptyList();
         }
         finally {
@@ -183,8 +183,7 @@ public class ASV
             stop("read teachers");
         }
     }
-
-    public List<String> readClassTeachers() {
+    public List<Teacher> readClassTeachers() {
         if (classTeachers != null)
             return classTeachers;
 
@@ -198,7 +197,7 @@ public class ASV
             con = getConnection("asv");
             String schuljahr = getConfigString("schuljahr");
 
-            classTeachers = new ArrayList<String>();
+            classTeachers = new ArrayList<>();
             st = con.createStatement();
             rs = st.executeQuery("select k.klassenname, lss.namenskuerzel, lst.familienname, lst.vornamen, lower(ko.kommunikationsadresse)" +
                     "  from asv.svp_klassenleitung kl, asv.svp_lehrer_schuljahr_schule lss, asv.svp_klasse k, asv.svp_lehrer_schuljahr ls, asv.svp_lehrer_stamm lst," +
@@ -217,14 +216,19 @@ public class ASV
                     "    and ko.wl_kommunikationstyp_id = '1113_EMAIL'" +
                     " order by k.klassenname;");
             while (rs.next()) {
-                classTeachers.add(rs.getString(5));
+                String id = rs.getString(2);
+                String lastName = rs.getString(3);
+                String firstName = rs.getString(4);
+                String eMail = rs.getString(5);
+                Teacher teacher = new Teacher(id, firstName, lastName, eMail);
+                teachers.add(teacher);
             }
             Collections.sort(classTeachers);
             return classTeachers;
         }
         catch (SQLException e) {
             e.printStackTrace();
-            Logger.getLogger(Untis.class.getSimpleName()).log(Level.SEVERE, e.getMessage(), e);
+            Logger.getLogger(ASV.class.getSimpleName()).log(Level.SEVERE, e.getMessage(), e);
             return Collections.emptyList();
         }
         finally {
@@ -232,6 +236,171 @@ public class ASV
             close(st);
             close(con);
             stop("read teachers");
+        }
+    }
+
+    public List<Teacher> amendWithClass(List<Teacher> teachers) {
+        Connection con = null;
+        Statement st = null;
+        ResultSet rs = null;
+
+        start();
+
+        Map<String, Teacher> map = teachers.stream().collect(Collectors.toMap(Teacher::getId, teacher -> teacher));
+        try {
+            con = getConnection("asv");
+            String schuljahr = getConfigString("schuljahr");
+
+            classTeachers = new ArrayList<>();
+            st = con.createStatement();
+            rs = st.executeQuery("select k.klassenname, lss.namenskuerzel, lst.familienname, lst.vornamen, lower(ko.kommunikationsadresse)" +
+                    "  from asv.svp_klassenleitung kl, asv.svp_lehrer_schuljahr_schule lss, asv.svp_klasse k, asv.svp_lehrer_schuljahr ls, asv.svp_lehrer_stamm lst," +
+                    "       asv.svp_lehrer_stamm_kommunikation lsk, asv.svp_kommunikation ko " +
+                    "  where k.schule_schuljahr_id in (select ss.id" +
+                    "                                  from asv.svp_wl_schuljahr sj," +
+                    "                                       asv.svp_schule_schuljahr ss" +
+                    "                                  where sj.id = ss.schuljahr_id" +
+                    "                                    and sj.kurzform = '" + schuljahr + "')" +
+                    "    and kl.lehrer_schuljahr_schule_id = lss.id" +
+                    "    and lss.lehrer_schuljahr_id = ls.id" +
+                    "    and kl.klasse_id = k.id" +
+                    "    and ls.lehrer_stamm_id = lst.id" +
+                    "    and lsk.lehrer_stamm_id = ls.lehrer_stamm_id" +
+                    "    and lsk.kommunikation_id = ko.id" +
+                    "    and ko.wl_kommunikationstyp_id = '1113_EMAIL'" +
+                    " order by k.klassenname;");
+            while (rs.next()) {
+                String id = rs.getString(2);
+                String clazz = rs.getString(1);
+                Teacher teacher = map.get(id);
+                if (teacher != null)
+                    teacher.setClazz(clazz);
+                else
+                    Logger.getLogger(ASV.class.getSimpleName()).log(Level.INFO, "unknown teacher: " + id);
+            }
+
+            return teachers;
+        }
+        catch (SQLException e) {
+            e.printStackTrace();
+            Logger.getLogger(ASV.class.getSimpleName()).log(Level.SEVERE, e.getMessage(), e);
+            return Collections.emptyList();
+        }
+        finally {
+            close(rs);
+            close(st);
+            close(con);
+            stop("amend teachers with class");
+        }
+    }
+
+    public List<Teacher> amendWithFunctions(List<Teacher> teachers) {
+        Connection con = null;
+        Statement st = null;
+        ResultSet rs = null;
+
+        start();
+
+        Map<String, Teacher> map = teachers.stream().collect(Collectors.toMap(Teacher::getId, teacher -> teacher));
+        try {
+            con = getConnection("asv");
+            String schuljahr = getConfigString("schuljahr");
+
+            teachers = new ArrayList<>();
+            st = con.createStatement();
+            rs = st.executeQuery("select lss.namenskuerzel, lst.familienname, lst.vornamen, lf.freitext" +
+                    " from asv.svp_lehrer_schuljahr_schule lss," +
+                    "      asv.svp_lehrer_schuljahr ls," +
+                    "      asv.svp_lehrer_stamm lst," +
+                    "      asv.svp_freitext_bezeichnung fb," +
+                    "      asv.svp_lehrer_freitext lf" +
+                    " where lss.schule_schuljahr_id in (select ss.id" +
+                    "                                   from asv.svp_wl_schuljahr sj," +
+                    "                                        asv.svp_schule_schuljahr ss" +
+                    "                                   where sj.id = ss.schuljahr_id" +
+                    "                                     and sj.kurzform = '" + schuljahr + "')" +
+                    "   and lss.lehrer_schuljahr_id = ls.id" +
+                    "   and ls.lehrer_stamm_id = lst.id" +
+                    "   and lst.id = lf.lehrer_stamm_id" +
+                    "   and lf.freitext_bezeichnung_id = fb.id" +
+                    "   and lf.freitext is not null" +
+                    "   and fb.bezeichnung = 'Funktion'");
+            while (rs.next()) {
+                String id = rs.getString(1);
+                String function = rs.getString(4);
+                Teacher teacher = map.get(id);
+                if (teacher != null)
+                    teacher.addFunction(function);
+                else
+                    Logger.getLogger(ASV.class.getSimpleName()).log(Level.INFO, "unknown teacher: " + id);
+            }
+            return teachers;
+        }
+        catch (SQLException e) {
+            e.printStackTrace();
+            Logger.getLogger(ASV.class.getSimpleName()).log(Level.SEVERE, e.getMessage(), e);
+            return Collections.emptyList();
+        }
+        finally {
+            close(rs);
+            close(st);
+            close(con);
+            stop("amend teachers with functions");
+        }
+    }
+
+    public List<Teacher> amendWithTeams(List<Teacher> teachers) {
+        Connection con = null;
+        Statement st = null;
+        ResultSet rs = null;
+
+        start();
+
+        Map<String, Teacher> map = teachers.stream().collect(Collectors.toMap(Teacher::getId, teacher -> teacher));
+        try {
+            con = getConnection("asv");
+            String schuljahr = getConfigString("schuljahr");
+
+            teachers = new ArrayList<>();
+            st = con.createStatement();
+            rs = st.executeQuery("select lss.namenskuerzel, lst.familienname, lst.vornamen, lf.freitext" +
+                    " from asv.svp_lehrer_schuljahr_schule lss," +
+                    "      asv.svp_lehrer_schuljahr ls," +
+                    "      asv.svp_lehrer_stamm lst," +
+                    "      asv.svp_freitext_bezeichnung fb," +
+                    "      asv.svp_lehrer_freitext lf" +
+                    " where lss.schule_schuljahr_id in (select ss.id" +
+                    "                                   from asv.svp_wl_schuljahr sj," +
+                    "                                        asv.svp_schule_schuljahr ss" +
+                    "                                   where sj.id = ss.schuljahr_id" +
+                    "                                     and sj.kurzform = '" + schuljahr + "')" +
+                    "   and lss.lehrer_schuljahr_id = ls.id" +
+                    "   and ls.lehrer_stamm_id = lst.id" +
+                    "   and lst.id = lf.lehrer_stamm_id" +
+                    "   and lf.freitext_bezeichnung_id = fb.id" +
+                    "   and lf.freitext is not null" +
+                    "   and fb.bezeichnung = 'Fachschaft'");
+            while (rs.next()) {
+                String id = rs.getString(1);
+                String function = rs.getString(4);
+                Teacher teacher = map.get(id);
+                if (teacher != null)
+                    teacher.setTeams(Arrays.stream(function.split(",")).map(String::trim).toList());
+                else
+                    Logger.getLogger(ASV.class.getSimpleName()).log(Level.INFO, "unknown teacher: " + id);
+            }
+            return teachers;
+        }
+        catch (SQLException e) {
+            e.printStackTrace();
+            Logger.getLogger(ASV.class.getSimpleName()).log(Level.SEVERE, e.getMessage(), e);
+            return Collections.emptyList();
+        }
+        finally {
+            close(rs);
+            close(st);
+            close(con);
+            stop("amend teachers with teams");
         }
     }
 
@@ -412,12 +581,18 @@ public class ASV
     public static void main(String[] args) throws IOException {
         Configuration.getInstance().setConfigPath(args[0]);
         JsonObject config = Configuration.getInstance().getConfig().getAsJsonObject("asv");
+        Report report = new MailingListsReportTask().execute();
+        System.out.println("report = " + report);
+        /*
         ASV asv = new ASV();
-        List<Student> teachers = asv.readTeachers();
-        Student.listStudents(System.out, teachers);
-        List<String> classTeachers = asv.readClassTeachers();
+        List<Teacher> teachers = asv.readTeachers();
+        asv.amendWithClass(teachers);
+        asv.amendWithFunctions(teachers);
+        asv.amendWithTeams(teachers);
+        Teacher.listTeachers(System.out, teachers);
+        List<Teacher> classTeachers = asv.readClassTeachers();
         System.out.println("classTeachers = " + classTeachers);
-
+        */
 
         /*
         List<Student> students = asv.readStudents();

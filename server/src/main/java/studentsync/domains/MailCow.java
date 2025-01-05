@@ -4,11 +4,8 @@ import com.google.gson.Gson;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonPrimitive;
-import org.apache.hc.client5.http.classic.methods.HttpDelete;
 import org.apache.hc.client5.http.classic.methods.HttpGet;
 import org.apache.hc.client5.http.classic.methods.HttpPost;
-import org.apache.hc.client5.http.classic.methods.HttpPut;
-import org.apache.hc.client5.http.entity.EntityBuilder;
 import org.apache.hc.client5.http.entity.UrlEncodedFormEntity;
 import org.apache.hc.client5.http.impl.classic.CloseableHttpClient;
 import org.apache.hc.client5.http.impl.classic.CloseableHttpResponse;
@@ -16,7 +13,6 @@ import org.apache.hc.client5.http.impl.classic.HttpClientBuilder;
 import org.apache.hc.client5.http.impl.io.PoolingHttpClientConnectionManager;
 import org.apache.hc.client5.http.impl.io.PoolingHttpClientConnectionManagerBuilder;
 import org.apache.hc.client5.http.ssl.SSLConnectionSocketFactory;
-import org.apache.hc.core5.http.ContentType;
 import org.apache.hc.core5.http.HttpEntity;
 import org.apache.hc.core5.http.NameValuePair;
 import org.apache.hc.core5.http.io.entity.EntityUtils;
@@ -43,7 +39,7 @@ import static studentsync.domains.JSON.string;
 public class MailCow
     extends Domain
 {
-    private List<Student> students;
+    private List<Teacher> teachers;
     private ArrayList<String> allTeachers;
     private ArrayList<String> classTeachers;
     private String authorization;
@@ -119,14 +115,15 @@ public class MailCow
         return string.substring(start, end);
     }
 
-    public synchronized List<Student> readTeachers() {
-        return readStudents();
-    }
     public synchronized List<Student> readStudents() {
-        if (students != null)
-            return students;
+        return Collections.emptyList();
+    }
 
-        students = new ArrayList<Student>();
+    public synchronized List<Teacher> readTeachers() {
+        if (teachers != null)
+            return teachers;
+
+        teachers = new ArrayList<Teacher>();
 
         String user = getConfigString("user");
         String password = getConfigString("password");
@@ -164,15 +161,16 @@ public class MailCow
                     JsonObject object = (JsonObject)jsonElement;
                     JsonArray tags = object.getAsJsonArray("tags");
                     if (tags != null && tags.contains(new JsonPrimitive("ldap"))) {
-                        Student student = new Student(
+                        Teacher student = new Teacher(
                                 string(object, "local_part"),
                                 string(object, "name"),
-                                string(object, "name"));
-                        student.setEMail(string(object, "username"));
-                        students.add(student);
+                                string(object, "name"),
+                                string(object, "username"));
+                        teachers.add(student);
                     }
                 });
             }
+            /*
             get = new HttpGet(apiURL + "get/alias/all");
             //URI uri = new URIBuilder(get.getUri()).addParameters(Arrays.asList(params)).build();
             //get.setUri(uri);
@@ -190,16 +188,17 @@ public class MailCow
                     }
                     JsonArray tags = object.getAsJsonArray("tags");
                     if (tags != null && tags.contains(new JsonPrimitive("ldap"))) {
-                        Student student = new Student(
+                        Teacher student = new Teacher(
                                 string(object, "local_part"),
                                 string(object, "name"),
                                 string(object, "name"));
-                        students.add(student);
+                        teachers.add(student);
                     }
                 });
             }
-            Collections.sort(students);
-            return students;
+             */
+            Collections.sort(teachers);
+            return teachers;
         }
         catch (IOException | URISyntaxException e) {
             throw new RuntimeException(e);
@@ -208,11 +207,8 @@ public class MailCow
         }
     }
 
-    public synchronized List<String> readAllTeachers() {
-        if (allTeachers != null)
-            return allTeachers;
-
-        allTeachers = new ArrayList<String>();
+    public synchronized List<String> readList(String list) {
+        List<String> teachers = new ArrayList<String>();
 
         String user = getConfigString("user");
         String password = getConfigString("password");
@@ -234,14 +230,14 @@ public class MailCow
                 jsonArray.forEach(jsonElement -> {
                     JsonObject object = (JsonObject)jsonElement;
                     String address = object.getAsJsonPrimitive("address").getAsString();
-                    if ("lehrer@valckenburgschule.de".equals(address)) {
+                    if ((list + "@valckenburgschule.de").equals(address)) {
                         String to = object.getAsJsonPrimitive("goto").getAsString();
-                        Arrays.stream(to.split(",")).map(e -> e.substring(0, e.indexOf("@"))).forEach(email -> allTeachers.add(email));
+                        Arrays.stream(to.split(",")).map(e -> e.substring(0, e.indexOf("@"))).forEach(email -> teachers.add(email));
                     }
                 });
             }
-            Collections.sort(allTeachers);
-            return allTeachers;
+            Collections.sort(teachers);
+            return teachers;
         }
         catch (IOException e) {
             throw new RuntimeException(e);
