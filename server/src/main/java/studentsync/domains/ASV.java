@@ -165,6 +165,8 @@ public class ASV
                 String lastName = rs.getString(2);
                 String firstName = rs.getString(3);
                 String eMail = rs.getString(4);
+                if (eMail == null || !eMail.endsWith("@valckenburgschule.de"))
+                    continue;
                 Teacher teacher = new Teacher(id, firstName, lastName, eMail);
                 teachers.add(teacher);
             }
@@ -220,6 +222,8 @@ public class ASV
                 String lastName = rs.getString(3);
                 String firstName = rs.getString(4);
                 String eMail = rs.getString(5);
+                if (eMail == null || !eMail.endsWith("@valckenburgschule.de"))
+                    continue;
                 Teacher teacher = new Teacher(id, firstName, lastName, eMail);
                 teachers.add(teacher);
             }
