@@ -30,7 +30,7 @@ public class MailingListsReportTask
             asv.amendWithTeams(asvTeachers);
 
             List<String> asvAllTeachers = asvTeachers.stream().map(Teacher::getAccount).toList();
-            List<String> asvClassTeachers = asv.readClassTeachers().stream().map(Teacher::getAccount).toList();
+            List<String> asvClassTeachers = asvTeachers.stream().filter(t -> t.getClazz() != null).map(Teacher::getAccount).toList();
             List<Teacher> mailCowTeachers = mailCow.readTeachers();
             List<String> mailCowAllTeachers = mailCowTeachers.stream().map(Teacher::getAccount).toList();
             List<String> mailCowListTeachers = mailCow.readList("lehrer");
@@ -59,11 +59,11 @@ public class MailingListsReportTask
             List<String> missingInClass = new ArrayList<>(asvClassTeachers);
             missingInClass.removeAll(mailCowListClassTeachers);
             if (!missingInClass.isEmpty())
-                report.put("missing in class", missingInClass);
+                report.put("missing in klassenlehrer", missingInClass);
             List<String> obsoleteInClass = new ArrayList<>(mailCowListClassTeachers);
             obsoleteInClass.removeAll(asvClassTeachers);
             if (!obsoleteInClass.isEmpty())
-                report.put("obsolete in class", obsoleteInClass);
+                report.put("obsolete in klassenlehrer", obsoleteInClass);
 
             List<String> lists = asvTeachers.stream().flatMap(t -> t.getTeams().stream()).distinct().sorted().toList();
             for (String list : lists) {

@@ -203,7 +203,7 @@ public class ASV
             st = con.createStatement();
             rs = st.executeQuery("select k.klassenname, lss.namenskuerzel, lst.familienname, lst.vornamen, lower(ko.kommunikationsadresse)" +
                     "  from asv.svp_klassenleitung kl, asv.svp_lehrer_schuljahr_schule lss, asv.svp_klasse k, asv.svp_lehrer_schuljahr ls, asv.svp_lehrer_stamm lst," +
-                    "       asv.svp_lehrer_stamm_kommunikation lsk, asv.svp_kommunikation ko " +
+                    "       asv.svp_lehrer_stamm_kommunikation lsk, asv.svp_kommunikation ko" +
                     "  where k.schule_schuljahr_id in (select ss.id" +
                     "                                  from asv.svp_wl_schuljahr sj," +
                     "                                       asv.svp_schule_schuljahr ss" +
@@ -255,7 +255,6 @@ public class ASV
             con = getConnection("asv");
             String schuljahr = getConfigString("schuljahr");
 
-            classTeachers = new ArrayList<>();
             st = con.createStatement();
             rs = st.executeQuery("select k.klassenname, lss.namenskuerzel, lst.familienname, lst.vornamen, lower(ko.kommunikationsadresse)" +
                     "  from asv.svp_klassenleitung kl, asv.svp_lehrer_schuljahr_schule lss, asv.svp_klasse k, asv.svp_lehrer_schuljahr ls, asv.svp_lehrer_stamm lst," +
@@ -310,7 +309,6 @@ public class ASV
             con = getConnection("asv");
             String schuljahr = getConfigString("schuljahr");
 
-            teachers = new ArrayList<>();
             st = con.createStatement();
             rs = st.executeQuery("select lss.namenskuerzel, lst.familienname, lst.vornamen, lf.freitext" +
                     " from asv.svp_lehrer_schuljahr_schule lss," +
@@ -585,6 +583,7 @@ public class ASV
     public static void main(String[] args) throws IOException {
         Configuration.getInstance().setConfigPath(args[0]);
         JsonObject config = Configuration.getInstance().getConfig().getAsJsonObject("asv");
+        System.out.println("config = " + config);
         Report report = new MailingListsReportTask().execute();
         System.out.println("report = " + report);
         /*
