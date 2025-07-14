@@ -433,7 +433,7 @@ public class ASV
                     "           select id from asv.svp_wl_schuljahr where kurzform = '" + schuljahr + "'" +
                     "       )" +
                     "   )" +
-                    "   and (s.austrittsdatum is null or s.austrittsdatum > date(now() - INTERVAL '1 month'))" +
+                    "   and (s.austrittsdatum is null or s.austrittsdatum > date(now() - INTERVAL '1 week'))" +
                     "   and sj.schueler_stamm_id = s.id" +
                     "   and sj.klassengruppe_id = kg.id" +
                     "   and u.id = s.id" +
