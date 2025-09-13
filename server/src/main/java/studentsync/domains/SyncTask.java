@@ -15,7 +15,7 @@ public class SyncTask
         diffTask = new DiffTask(master, slave, fields);
     }
 
-    private Diff diff() {
+    protected Diff diff() {
         return diffTask.diff();
     }
 
@@ -23,7 +23,7 @@ public class SyncTask
         return sync(diff());
     }
 
-    private Report sync(Diff diff) {
+    protected Report sync(Diff diff) {
         Report report = new Report();
         ManageableDomain slave = (ManageableDomain)diffTask.getSlave();
         if (diff.added.size() != 0) {

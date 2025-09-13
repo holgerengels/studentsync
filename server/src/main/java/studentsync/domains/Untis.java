@@ -148,7 +148,7 @@ public class Untis
     public static void main(String[] args) throws IOException {
         Configuration.getInstance().setConfigPath(args[0]);
         Untis untis = new Untis();
-        untis.teacherExternalIds();
+        //untis.teacherExternalIds();
         /*
         System.out.println("students = " + untis.readStudents());
         System.out.println("subjects = " + untis.readSubjects());

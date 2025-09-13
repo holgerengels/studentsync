@@ -2,6 +2,11 @@ package studentsync.domains;
 
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
+import dev.samstevens.totp.code.CodeGenerator;
+import dev.samstevens.totp.code.DefaultCodeGenerator;
+import dev.samstevens.totp.exceptions.CodeGenerationException;
+import dev.samstevens.totp.time.SystemTimeProvider;
+import dev.samstevens.totp.time.TimeProvider;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.io.output.WriterOutputStream;
 import org.apache.hc.client5.http.classic.HttpClient;
@@ -53,6 +58,7 @@ public class Webuntis
         String fetchStudents = getConfigString("fetchStudents");
         String user = getConfigString("user");
         String password = getConfigString("password");
+        String secret = getConfigString("secret");
 
         CloseableHttpClient client = HttpClientBuilder.create().build();
 
@@ -62,6 +68,7 @@ public class Webuntis
             List<NameValuePair> nameValuePairs = new ArrayList<>(2);
             nameValuePairs.add(new BasicNameValuePair("j_username", user));
             nameValuePairs.add(new BasicNameValuePair("j_password", password));
+            nameValuePairs.add(new BasicNameValuePair("token", code(secret)));
 
             HttpPost post = new HttpPost(url + login);
             post.setEntity(new UrlEncodedFormEntity(nameValuePairs));
@@ -117,6 +124,7 @@ public class Webuntis
         String fetchStudents = "name=Class&format=pdf"; //getConfigString("fetchStudents");
         String user = getConfigString("user");
         String password = getConfigString("password");
+        String secret = getConfigString("secret");
 
         CloseableHttpClient client = HttpClientBuilder.create().build();
 
@@ -126,6 +134,7 @@ public class Webuntis
             List<NameValuePair> nameValuePairs = new ArrayList<>(2);
             nameValuePairs.add(new BasicNameValuePair("j_username", user));
             nameValuePairs.add(new BasicNameValuePair("j_password", password));
+            nameValuePairs.add(new BasicNameValuePair("token", code(secret)));
 
             HttpPost post = new HttpPost(url + login);
             post.setEntity(new UrlEncodedFormEntity(nameValuePairs));
@@ -223,6 +232,7 @@ public class Webuntis
         String exitDate = Configuration.getInstance().getString("webuntis", "exitDate"); if (exitDate.startsWith("/")) exitDate = exitDate.substring(1);
         String user = Configuration.getInstance().getString("webuntis", "user");
         String password = Configuration.getInstance().getString("webuntis", "password");
+        String secret = getConfigString("secret");
 
         try (final CloseableHttpClient client = HttpClientBuilder.create()
                 .setUserAgent("Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/88.0.4324.150 Safari/537.36")
@@ -232,6 +242,8 @@ public class Webuntis
             List<NameValuePair> nameValuePairs = new ArrayList<>(2);
             nameValuePairs.add(new BasicNameValuePair("j_username", user));
             nameValuePairs.add(new BasicNameValuePair("j_password", password));
+            nameValuePairs.add(new BasicNameValuePair("token", code(secret)));
+
             HttpPost post = new HttpPost(url + login);
             post.setEntity(new UrlEncodedFormEntity(nameValuePairs));
             try (final CloseableHttpResponse response = client.execute(post)) {}
@@ -317,10 +329,21 @@ public class Webuntis
         }
     }
 
+    public String code(String secret) {
+        try {
+            TimeProvider timeProvider = new SystemTimeProvider();
+            CodeGenerator codeGenerator = new DefaultCodeGenerator();
+            long time = Math.round(Math.floor(timeProvider.getTime()/30.0));
+            return codeGenerator.generate(secret, time);
+        } catch (CodeGenerationException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
     public static void main(String[] args) throws Exception {
         try { Configuration.getInstance().setConfigPath(args[0]); } catch (Exception e) { System.out.println("e = " + e); }
         Webuntis webuntis = new Webuntis();
-        List<Student> students = webuntis.readTutors();
+        List<Student> students = webuntis.readStudents();
         List<String> list = students.stream().map(student -> Objects.toString(student, null)).collect(Collectors.toList());
         System.out.println("students = " + String.join("\n", list));
     }
