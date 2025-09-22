@@ -410,6 +410,7 @@ public class ASV
         if (students != null)
             return students;
 
+        String lag = Configuration.getInstance().getString("asv", "lag");
         Map<String, String> genders = getValueList("GESCHLECHT");
         genders = genders.entrySet().stream().collect(Collectors.toMap(Map.Entry::getKey, e -> e.getValue().toLowerCase()));
         readClasses();
@@ -433,7 +434,7 @@ public class ASV
                     "           select id from asv.svp_wl_schuljahr where kurzform = '" + schuljahr + "'" +
                     "       )" +
                     "   )" +
-                    "   and (s.austrittsdatum is null or s.austrittsdatum > date(now() - INTERVAL '1 week'))" +
+                    "   and (s.austrittsdatum is null or s.austrittsdatum > date(now() - INTERVAL '" + lag + "'))" +
                     "   and sj.schueler_stamm_id = s.id" +
                     "   and sj.klassengruppe_id = kg.id" +
                     "   and u.id = s.id" +

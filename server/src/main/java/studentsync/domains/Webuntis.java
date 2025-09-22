@@ -268,7 +268,7 @@ public class Webuntis
             for (Map.Entry<String, Date> entry : map.entrySet()) {
                 String selId;
                 post = new HttpPost(url + exitDate);
-                nameValuePairs = new ArrayList<>(4);
+                nameValuePairs = new ArrayList<>(6);
                 nameValuePairs.add(new BasicNameValuePair("exitDateFilter", ""));
                 nameValuePairs.add(new BasicNameValuePair("klasseId", "-1"));
                 nameValuePairs.add(new BasicNameValuePair("schoolyearId", "-1"));
@@ -301,7 +301,7 @@ public class Webuntis
                 }
 
                 post = new HttpPost(url + exitDate);
-                nameValuePairs = new ArrayList<>(3);
+                nameValuePairs = new ArrayList<>(4);
                 nameValuePairs.add(new BasicNameValuePair("setexitdate", "1"));
                 nameValuePairs.add(new BasicNameValuePair("exitDate", "" + entry.getValue()));
                 nameValuePairs.add(new BasicNameValuePair("selId", selId));
