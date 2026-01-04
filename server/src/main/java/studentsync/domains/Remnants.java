@@ -32,7 +32,8 @@ public class Remnants {
             // Schritt 2: Die gefilterten Zeilen in die Ausgabedatei schreiben
             BufferedWriter writer = new BufferedWriter(new FileWriter(outputFile));
             for (String line : linesToKeep) {
-                writer.write("rm -rf " + line + System.lineSeparator());
+                writer.write("sudo -u www-data php occ ldap:reset-user -y " + line + System.lineSeparator());
+                //writer.write("rm -rf " + line + System.lineSeparator());
             }
             writer.close();
 

@@ -24,6 +24,7 @@ public class Diff
     public static final int COMPARE_BIRTHDAY = 4;
     public static final int COMPARE_FIRST_NAME = 8;
     public static final int COMPARE_LAST_NAME = 16;
+    public static final int COMPARE_GENERIC = 32;
     private Map<String,String> notes = new HashMap<>();
 
     public Diff compare(List<Student> master, List<Student> slave, List<Pair> pairs, int flags) {
@@ -55,7 +56,9 @@ public class Diff
                 (flags & COMPARE_LAST_NAME) != 0 && different(masterStudent.getLastName(), slaveStudent.getLastName()) ||
                 (flags & COMPARE_CLASS) != 0 && differentClass(pairs, masterStudent, slaveStudent) ||
                 (flags & COMPARE_GENDER) != 0 && different(masterStudent.getGender(), slaveStudent.getGender()) ||
-                (flags & COMPARE_BIRTHDAY) != 0 && different(masterStudent.getBirthday(), slaveStudent.getBirthday()))
+                (flags & COMPARE_BIRTHDAY) != 0 && different(masterStudent.getBirthday(), slaveStudent.getBirthday()) ||
+                (flags & COMPARE_GENERIC) != 0 && different(masterStudent.getProperties(), slaveStudent.getProperties())
+            )
             {
                 changed.add(new Change(masterStudent, slaveStudent));
                 iterator.remove();

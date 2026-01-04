@@ -567,6 +567,67 @@ public class ASV
         }
     }
 
+    public List<Student> studentsWithGuardianContact() {
+        String lag = Configuration.getInstance().getString("asv", "lag");
+
+        Connection con = null;
+        Statement st = null;
+        ResultSet rs = null;
+
+        start();
+
+        try {
+            List<Student> students = new ArrayList<>();
+            Map<String, Student> map = new HashMap<>();
+
+            con = getConnection("asv");
+            String schuljahr = getConfigString("schuljahr");
+
+            st = con.createStatement();
+            rs = st.executeQuery(
+                    "SELECT DISTINCT u.userid, ss.vornamen, ss.familienname, p.vornamen, p.familienname, k.kommunikationsadresse" +
+                            "  FROM asv.svp_kommunikation k, asv.svp_person_kommunikation pk, asv.svp_schueler_anschrift sa, asv.svp_schueler_stamm ss, asv.svp_person p, sync.user_id u" +
+                            " WHERE k.id = pk.kommunikation_id" +
+                            "   AND pk.person_id = sa.person_id" +
+                            "   AND pk.person_id = p.id" +
+                            "   AND sa.schueler_stamm_id = ss.id" +
+                            "   AND k.wl_kommunikationstyp_id = '2087_7'" +
+                            "   AND (ss.austrittsdatum is null or ss.austrittsdatum > date(now() - INTERVAL '" + lag + "'))" +
+                            "   AND ss.id in (\n" +
+                            "     select schueler_stamm_id from asv.svp_schueler_schuljahr where schuljahr_id in (" +
+                            "       select id from asv.svp_wl_schuljahr where kurzform = '" + schuljahr + "'" +
+                            "     )" +
+                            "   )" +
+                            "   AND u.id = ss.id");
+
+            while (rs.next()) {
+                Student student = map.get(rs.getString(1));
+                if (rs.getString(1).startsWith("hartmann"))
+                    System.out.println("student = " + student);
+                if (student == null) {
+                    student = new Student(rs.getString(1), rs.getString(2), rs.getString(3), null, null, null);
+                    student.getAggregates().put("guardians", new ArrayList<>());
+                    students.add(student);
+                    map.put(rs.getString(1), student);
+                }
+                List<Guardian> guardians = (List<Guardian>)student.getAggregates().get("guardians");
+                guardians.add(new Guardian(null, rs.getString(4), rs.getString(5), rs.getString(6).toLowerCase()));
+            }
+            Collections.sort(students);
+            return students;
+        }
+        catch (SQLException e) {
+            Logger.getLogger(getClass().getSimpleName()).log(Level.SEVERE, e.getMessage(), e);
+            throw new RuntimeException(e.getMessage());
+        }
+        finally {
+            close(rs);
+            close(st);
+            close(con);
+            stop("read students with guardian contact");
+        }
+    }
+
     @Override
     protected DataSource createDataSource(String name) {
         PGPoolingDataSource dataSource =  new PGPoolingDataSource();
@@ -584,20 +645,9 @@ public class ASV
     public static void main(String[] args) throws IOException {
         Configuration.getInstance().setConfigPath(args[0]);
         JsonObject config = Configuration.getInstance().getConfig().getAsJsonObject("asv");
-        System.out.println("config = " + config);
-        Report report = new MailingListsReportTask().execute();
-        System.out.println("report = " + report);
-        /*
         ASV asv = new ASV();
-        List<Teacher> teachers = asv.readTeachers();
-        asv.amendWithClass(teachers);
-        asv.amendWithFunctions(teachers);
-        asv.amendWithTeams(teachers);
-        Teacher.listTeachers(System.out, teachers);
-        List<Teacher> classTeachers = asv.readClassTeachers();
-        System.out.println("classTeachers = " + classTeachers);
-        */
-
+        List<Student> students = asv.studentsWithGuardianContact();
+        Student.listStudents(System.out, students);
         /*
         List<Student> students = asv.readStudents();
         new CSVGenerator().write(new PrintWriter(System.out), students);

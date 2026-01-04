@@ -3,7 +3,9 @@ package studentsync.base;
 import java.io.PrintStream;
 import java.sql.Date;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Created by holger on 19.09.14.
@@ -19,6 +21,8 @@ public class Student
     public String eMail;
     public String clazz;
     List<String> courses = new ArrayList<String>();
+    Map<String, String> properties = new HashMap<String, String>();
+    Map<String, Object> aggregates = new HashMap<String, Object>();
 
     Student() {
     }
@@ -134,5 +138,20 @@ public class Student
             students.removeIf(student -> !student.getAccount().toLowerCase().startsWith(finalSearch));
         }
         return students;
+    }
+
+    public void set(String key, String value) {
+        properties.put(key, value);
+    }
+    public String get(String key) {
+        return properties.get(key);
+    }
+
+    public Map<String, String> getProperties() {
+        return properties;
+    }
+
+    public Map<String, Object> getAggregates() {
+        return aggregates;
     }
 }
