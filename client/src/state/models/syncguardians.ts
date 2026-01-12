@@ -38,18 +38,18 @@ export default createModel({
     async execute() {
       const dispatch = store.getDispatch();
 
-      dispatch.idgenerator.request();
+      dispatch.syncguardians.request();
       // @ts-ignore
       const resp = await fetch(endpoint.task("sync-guardians"), endpoint.get);
       if (resp.ok) {
         const json = await resp.json();
         // @ts-ignore
-        dispatch.idgenerator.receivedReport(json);
+        dispatch.syncguardians.receivedReport(json);
       }
       else {
         const message = await resp.text();
         // @ts-ignore
-        dispatch.idgenerator.error(message);
+        dispatch.syncguardians.error(message);
       }
     },
 
@@ -58,7 +58,7 @@ export default createModel({
 
       switch (payload.page) {
         case 'page-main':
-          dispatch.idgenerator.execute();
+          dispatch.syncguardians.execute();
           break
       }
     }

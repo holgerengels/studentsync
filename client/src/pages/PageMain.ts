@@ -51,8 +51,8 @@ export class PageMain extends connect(store, LitElement) {
       _teacherids: state.teacherids,
       _exitdatesync: state.exitdatesync,
       _devicereport: state.devicereport,
-      _mailinglistreport: state.mailinglistreport,
       _syncguardians: state.syncguardians,
+      _mailinglistreport: state.mailinglistreport,
     }
   }
 
