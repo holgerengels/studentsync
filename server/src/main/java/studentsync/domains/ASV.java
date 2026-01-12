@@ -570,6 +570,8 @@ public class ASV
     public List<Student> studentsWithGuardianContact() {
         String lag = Configuration.getInstance().getString("asv", "lag");
 
+        readClasses();
+
         Connection con = null;
         Statement st = null;
         ResultSet rs = null;
@@ -585,12 +587,14 @@ public class ASV
 
             st = con.createStatement();
             rs = st.executeQuery(
-                    "SELECT DISTINCT u.userid, ss.vornamen, ss.familienname, p.vornamen, p.familienname, k.kommunikationsadresse" +
-                            "  FROM asv.svp_kommunikation k, asv.svp_person_kommunikation pk, asv.svp_schueler_anschrift sa, asv.svp_schueler_stamm ss, asv.svp_person p, sync.user_id u" +
+                    "SELECT DISTINCT u.userid, ss.vornamen, ss.familienname, p.vornamen, p.familienname, k.kommunikationsadresse, kg.klasse_id" +
+                            "  FROM asv.svp_kommunikation k, asv.svp_person_kommunikation pk, asv.svp_schueler_anschrift sa, asv.svp_schueler_stamm ss, asv.svp_schueler_schuljahr sj, asv.svp_klassengruppe kg, asv.svp_person p, sync.user_id u" +
                             " WHERE k.id = pk.kommunikation_id" +
                             "   AND pk.person_id = sa.person_id" +
                             "   AND pk.person_id = p.id" +
                             "   AND sa.schueler_stamm_id = ss.id" +
+                            "   AND sj.schueler_stamm_id = ss.id" +
+                            "   AND sj.klassengruppe_id = kg.id" +
                             "   AND k.wl_kommunikationstyp_id = '2087_7'" +
                             "   AND (ss.austrittsdatum is null or ss.austrittsdatum > date(now() - INTERVAL '" + lag + "'))" +
                             "   AND ss.id in (\n" +
@@ -602,10 +606,10 @@ public class ASV
 
             while (rs.next()) {
                 Student student = map.get(rs.getString(1));
-                if (rs.getString(1).startsWith("hartmann"))
-                    System.out.println("student = " + student);
                 if (student == null) {
-                    student = new Student(rs.getString(1), rs.getString(2), rs.getString(3), null, null, null);
+                    student = new Student(rs.getString(1), rs.getString(2), rs.getString(3), null, null, classes.get(rs.getString(7)));
+                    if (student.getClazz() == null)
+                        continue;
                     student.getAggregates().put("guardians", new ArrayList<>());
                     students.add(student);
                     map.put(rs.getString(1), student);

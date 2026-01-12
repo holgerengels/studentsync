@@ -3,6 +3,8 @@ package studentsync.domains;
 import org.apache.hc.client5.http.impl.classic.CloseableHttpClient;
 import studentsync.base.*;
 import java.util.*;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.stream.Stream;
 
 /**
  * Created by holger on 05.07.14.
@@ -12,17 +14,21 @@ public class SyncGuardiansTask
 {
     @Override
     public void run() {
+    }
+
+    @Override
+    public Report execute() {
+        Report report = new Report();
+
         ASV asv = DomainFactory.getInstance().getASV();
         Webuntis webuntis = DomainFactory.getInstance().getWebuntis();
         CloseableHttpClient client = webuntis.client();
         List<Student> students = asv.studentsWithGuardianContact();
-        System.out.println("students = " + students);
         List<Guardian> guardians = webuntis.guardians(client);
         Map<String, Guardian> guardiansMap = new HashMap<>();
         guardians.forEach(guardian -> { guardiansMap.put( guardian.eMail, guardian); });
-        System.out.println("guardians = " + guardians);
 
-        // guardians associated to students, which are not present in webuntis
+        // guardians associated to students, which are not present in webuntis (new guardians)
         List<Guardian> missingGuardians = new ArrayList<>();
         students.forEach(student -> {
             List<Guardian> list = (List<Guardian>)student.getAggregates().get("guardians");
@@ -31,6 +37,28 @@ public class SyncGuardiansTask
                     missingGuardians.add(guardian);
                 }
             });
+        });
+
+        // guardians in webuntis without or with obsolete students
+        List<Guardian> guardiansWithoutChildren = new ArrayList<>();
+        List<Guardian> guardiansWithObsoleteChildren = new ArrayList<>();
+        guardians.forEach(guardian -> {
+            AtomicBoolean without = new AtomicBoolean(true);
+            AtomicBoolean obsolete = new AtomicBoolean(false);
+            guardian.getStudents().forEach(student -> {
+                if (students.contains(student)) {
+                    without.set(false);
+                }
+                else {
+                    obsolete.set(true);
+                }
+            });
+            if (without.get()) {
+                guardiansWithoutChildren.add(guardian);
+            }
+            else if (obsolete.get()) {
+                guardiansWithObsoleteChildren.add(guardian);
+            }
         });
 
         // guardians in webuntis, which are not associated with all their students
@@ -46,6 +74,7 @@ public class SyncGuardiansTask
                 }
             });
         });
+
         missingGuardians.forEach(guardian -> {
             List<Student> list = new ArrayList<>();
             students.forEach(student -> {
@@ -59,7 +88,7 @@ public class SyncGuardiansTask
             guardian.getStudents().addAll(list);
             webuntis.saveGuardian(client, guardian);
         });
-        guardiansMissingStudents.forEach(guardian -> {
+        Stream.concat(guardiansMissingStudents.stream(), guardiansWithObsoleteChildren.stream()).forEach(guardian -> {
             List<Student> list = new ArrayList<>();
             students.forEach(student -> {
                 if (((List<Guardian>)student.getAggregates().get("guardians")).contains(guardian)) {
@@ -68,15 +97,17 @@ public class SyncGuardiansTask
                     }
                 }
             });
-            System.out.println("for guardian " + guardian + " add " + list);
+            System.out.println("update guardian " + guardian + " old " + guardian.getStudents());
+            System.out.println("update guardian " + guardian + " new " + list);
+            guardian.getStudents().clear();
             guardian.getStudents().addAll(list);
             webuntis.saveGuardian(client, guardian);
         });
-    }
+        // TODO: remove obsolete guardians
 
-    @Override
-    public Report execute() {
-        return null;
+        report.put("added", missingGuardians.stream().map(Guardian::getEMail).toList());
+        report.put("updated", Stream.concat(guardiansMissingStudents.stream(), guardiansWithObsoleteChildren.stream()).map(Guardian::getEMail).toList());
+        return report;
     }
 
     public static void main(String[] args) {

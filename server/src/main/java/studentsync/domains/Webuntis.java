@@ -563,16 +563,7 @@ public class Webuntis
 
         Webuntis webuntis = new Webuntis();
         try (CloseableHttpClient client = webuntis.client()) {
-            /*
-            List<Guardian> guardians = webuntis.guardians(client);
-            List<String> list = guardians.stream().map(student -> Objects.toString(student, null)).collect(Collectors.toList());
-            System.out.println("guardians = " + String.join("\n", list));
-            List<Guardian> list1 = guardians.stream().filter(guardian -> guardian.getStudents().size() != 1).toList();
-            System.out.println("list1 = " + list1);
-            */
-            Guardian guardian = new Guardian(null, "Äüß", "AAA", "hengels@gmail.com");
-            //guardian.getStudents().add(new Student("Tester", "Test", "Osteron", null, null, null));
-            webuntis.saveGuardian(client, guardian);
+            List<Student> students = webuntis.readStudents(client);
         }
     }
 }
