@@ -170,6 +170,7 @@ public class Schulkonsole
         object.addProperty("homeDirectory", "");
         object.addProperty("password", getConfigString("initialPassword"));
         object.addProperty("passwordPolicy", "1");
+        object.addProperty("email", student.account + "@musterschule.schule.paedml");
         HttpEntity entity = EntityBuilder.create()
                 .setContentType(ContentType.APPLICATION_JSON)
                 .setText(object.toString()).build();
