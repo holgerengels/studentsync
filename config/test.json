@@ -1,0 +1,33 @@
+{
+    "tasks": [
+        {
+            "name": "dummy-random-modifications",
+            "titel": "Zufällige Änderungen",
+            "class": "DummyRandomModificationsTask"
+        }
+    ],
+    "domains": [
+        {
+            "name": "dummy",
+            "titel": "Dummy",
+            "actions": [
+                {
+                    "name": "Zufällige Änderungen",
+                    "run": "dummy-random-modifications"
+                }
+            ]
+        },
+        {
+            "name": "asv",
+            "titel": "ASV"
+        }
+    ],
+    "diffs": [
+        {
+            "name": "asv-dummy",
+            "titel": "ASV → Dummy",
+            "source": "ASV",
+            "target": "Dummy"
+        }
+    ]
+}

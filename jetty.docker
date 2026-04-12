@@ -1,0 +1,4 @@
+FROM jetty:11.0.0-jre11
+RUN mkdir -p $JETTY_BASE/auth ; chown -R jetty:jetty $JETTY_BASE/auth
+#ADD jetty/auth/ $JETTY_BASE/auth/
+COPY server/target/server.war $JETTY_BASE/webapps

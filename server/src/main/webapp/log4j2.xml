@@ -1,0 +1,15 @@
+<Configuration>
+    <Appenders>
+        <Console name="STDOUT">
+            <PatternLayout pattern="%d %-5level [%logger] %msg%n%xThrowable" />
+        </Console>
+    </Appenders>
+    <Loggers>
+        <Logger name="org.apache.hc.client5.http.impl" level="DEBUG">
+            <AppenderRef ref="Console"/>
+        </Logger>
+        <Root level="INFO">
+            <AppenderRef ref="STDOUT" />
+        </Root>
+    </Loggers>
+</Configuration>
