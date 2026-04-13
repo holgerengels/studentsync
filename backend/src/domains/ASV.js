@@ -14,15 +14,20 @@ class ASV extends Domain {
     constructor() {
         super('asv');
         const asvConfig = config.asv || {};
-        // Use environment variables as fallback, tunnel might be mapped this way
-        this.pool = new Pool({
-            host: asvConfig.host || process.env.ASV_HOST || 'localhost',
-            port: asvConfig.port || process.env.ASV_PORT || 5432,
-            database: asvConfig.name || process.env.ASV_DB || 'asv',
-            user: asvConfig.user || process.env.ASV_USER || 'asv',
-            password: asvConfig.password || process.env.ASV_PASSWORD || 'asv'
-        });
-        this.schuljahr = asvConfig.schuljahr || '2025/26';
+        const host = asvConfig.host || process.env.ASV_HOST;
+        const port = asvConfig.port || process.env.ASV_PORT;
+        const database = asvConfig.name || process.env.ASV_DB;
+        const user = asvConfig.user || process.env.ASV_USER;
+        const password = asvConfig.password || process.env.ASV_PASSWORD;
+        
+        if (!host || !port || !database || !user || !password) {
+            throw new Error('ASV Database configuration is incomplete. Missing host, port, name, user, or password.');
+        }
+
+        this.pool = new Pool({ host, port, database, user, password });
+        
+        this.schuljahr = asvConfig.schuljahr;
+        if (!this.schuljahr) throw new Error('ASV schuljahr missing');
         this.lag = asvConfig.lag || '30 days';
     }
 

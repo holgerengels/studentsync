@@ -8,9 +8,8 @@ class NextcloudService {
     }
 
     async getRemnants() {
-        if (!this.config.host) {
-            console.warn('Nextcloud configuration is missing!');
-            return [];
+        if (!this.config.host || !this.config.user || (!this.config.key && !this.config.passphrase)) {
+            throw new Error('Nextcloud configuration is incomplete. Missing host, user, or key/passphrase.');
         }
 
         const ssh = new NodeSSH();

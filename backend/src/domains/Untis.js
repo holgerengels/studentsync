@@ -13,16 +13,25 @@ class Untis extends Domain {
     constructor() {
         super('untis');
         const c = config.untis || {};
-        this.dbConfig = {
-            host: c.host || process.env.UNTIS_HOST || 'localhost',
-            port: c.port || process.env.UNTIS_PORT || 3306,
-            database: c.name || process.env.UNTIS_DB || 'untis',
-            user: c.user || process.env.UNTIS_USER || 'untis',
-            password: c.password || process.env.UNTIS_PASSWORD || 'untis'
-        };
-        this.schulid = c.schulid || '1';
-        this.version = c.version || '1';
-        this.schuljahr = c.schuljahr || '20252026';
+        const host = c.host || process.env.UNTIS_HOST;
+        const port = c.port || process.env.UNTIS_PORT;
+        const database = c.name || process.env.UNTIS_DB;
+        const user = c.user || process.env.UNTIS_USER;
+        const password = c.password || process.env.UNTIS_PASSWORD;
+
+        if (!host || !port || !database || !user || !password) {
+            throw new Error('Untis Database configuration is incomplete. Missing host, port, name, user, or password.');
+        }
+
+        this.dbConfig = { host, port, database, user, password };
+
+        this.schulid = c.schulid;
+        this.version = c.version;
+        this.schuljahr = c.schuljahr;
+
+        if (!this.schulid || !this.version || !this.schuljahr) {
+            throw new Error('Untis configuration is incomplete. Missing schulid, version, or schuljahr.');
+        }
     }
 
     async readIdentities() {

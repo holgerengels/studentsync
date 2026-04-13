@@ -11,12 +11,19 @@ class Schulkonsole extends ManagableDomain {
     constructor() {
         super('schulkonsole');
         const c = config.schulkonsole || {};
-        this.apiURL = c.apiURL || process.env.SCHULKONSOLE_API || 'https://localhost:43001/api/';
+        this.apiURL = c.apiURL || process.env.SCHULKONSOLE_API;
+        if (!this.apiURL) throw new Error('Schulkonsole apiURL missing');
         if (!this.apiURL.endsWith('/')) this.apiURL += '/';
         
-        this.tokenURL = c.tokenURL || process.env.SCHULKONSOLE_TOKEN_URL || 'https://localhost:43001/api/token';
-        this.user = c.user || process.env.SCHULKONSOLE_USER || 'admin';
-        this.password = c.password || process.env.SCHULKONSOLE_PASSWORD || 'secret';
+        this.tokenURL = c.tokenURL || process.env.SCHULKONSOLE_TOKEN_URL;
+        if (!this.tokenURL) throw new Error('Schulkonsole tokenURL missing');
+        
+        this.user = c.user || process.env.SCHULKONSOLE_USER;
+        this.password = c.password || process.env.SCHULKONSOLE_PASSWORD;
+
+        if (!this.user || !this.password) {
+            throw new Error('Schulkonsole configuration incomplete. Missing user or password.');
+        }
         
         this.axiosInstance = axios.create({
             httpsAgent: new https.Agent({ rejectUnauthorized: false })

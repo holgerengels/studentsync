@@ -13,7 +13,8 @@ class WebUntisDomain extends ManagableDomain {
     constructor() {
         super('webuntis');
         const c = config.webuntis || {};
-        this.url = c.url || 'https://vu.webuntis.com/WebUntis/';
+        this.url = c.url;
+        if (!this.url) throw new Error('WebUntis url missing');
         if (!this.url.endsWith('/')) this.url += '/';
         
         this.loginPath = c.login || 'j_spring_security_check?school=VU';
@@ -24,9 +25,13 @@ class WebUntisDomain extends ManagableDomain {
         
         this.fetchStudents = c.fetchStudents || 'name=Student&format=csv&klasseId=-1&studentsForDate=true&context=klasseId';
         
-        this.user = c.user || process.env.WEBUNTIS_USER || 'sync';
-        this.password = c.password || process.env.WEBUNTIS_PASSWORD || 'secret';
-        this.secret = c.secret || process.env.WEBUNTIS_SECRET || '';
+        this.user = c.user || process.env.WEBUNTIS_USER;
+        this.password = c.password || process.env.WEBUNTIS_PASSWORD;
+        this.secret = c.secret || process.env.WEBUNTIS_SECRET;
+
+        if (!this.user || !this.password) {
+             throw new Error('WebUntis configuration incomplete. Missing user or password.');
+        }
     }
 
     async readIdentities() {
