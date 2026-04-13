@@ -12,7 +12,9 @@ const registry = {
     'dummy-random-modifications': new (require('./DummyRandomModificationsTask'))(),
     'untis-generate-import': new (require('./UntisGenerateImportTask'))(),
     'web-untis-set-exit-dates': new (require('./WebUntisSetExitDatesTask'))(),
-    'untis-teacher-external-ids': require('./UntisTeacherExternalIdsTask')
+    'untis-teacher-external-ids': require('./UntisTeacherExternalIdsTask'),
+    'web-untis-guardian-sync': new (require('./WebUntisGuardianSyncTask'))(),
+    'web-untis-majority': new (require('./WebUntisMajorityTask'))()
 };
 
 if (config && config.tasks) {

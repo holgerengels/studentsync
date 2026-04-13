@@ -203,6 +203,107 @@ class ASV extends Domain {
             client.release();
         }
     }
+
+    async readGuardians() {
+        let client;
+        try {
+            client = await this.pool.connect();
+        } catch (e) {
+            console.error('ASV DB Connection failed:', e.message);
+            throw new Error('ASV DB Connection failed: ' + e.message);
+        }
+
+        try {
+            // First get classes to resolve klasse_id
+            const classRes = await client.query(`
+                select k.id, k.klassenname
+                from asv.svp_klasse k
+                where k.schule_schuljahr_id in (
+                    select ss.id from asv.svp_wl_schuljahr sj, asv.svp_schule_schuljahr ss
+                    where sj.id = ss.schuljahr_id and sj.kurzform = $1
+                )
+                and k.wl_klassenart_id in (
+                    select id from asv.svp_wl_wert
+                    where werteliste_id in (
+                        select id from asv.svp_wl_werteliste where bezeichnung = 'KLASSENART'
+                    )
+                    and kurzform != 'ORG'
+                )
+            `, [this.schuljahr]);
+            const classes = {};
+            classRes.rows.forEach(r => {
+                if (!r.klassenname.includes('-')) {
+                    classes[r.id] = r.klassenname;
+                }
+            });
+
+            // Get guardians
+            const guardianRes = await client.query(`
+                SELECT DISTINCT u.userid, ss.vornamen as student_firstname, ss.familienname as student_lastname, 
+                                p.vornamen as guardian_firstname, p.familienname as guardian_lastname, 
+                                k.kommunikationsadresse as email, kg.klasse_id
+                FROM asv.svp_kommunikation k, asv.svp_person_kommunikation pk, asv.svp_schueler_anschrift sa, 
+                     asv.svp_schueler_stamm ss, asv.svp_schueler_schuljahr sj, asv.svp_klassengruppe kg, 
+                     asv.svp_person p, sync.user_id u
+                WHERE k.id = pk.kommunikation_id
+                  AND pk.person_id = sa.person_id
+                  AND pk.person_id = p.id
+                  AND sa.schueler_stamm_id = ss.id
+                  AND sj.schueler_stamm_id = ss.id
+                  AND sj.klassengruppe_id = kg.id
+                  AND k.wl_kommunikationstyp_id = '2087_7'
+                  AND (ss.austrittsdatum is null or ss.austrittsdatum > date(now() - $2::interval))
+                  AND ss.id in (
+                    select schueler_stamm_id from asv.svp_schueler_schuljahr where schuljahr_id in (
+                      select id from asv.svp_wl_schuljahr where kurzform = $1
+                    )
+                  )
+                  AND u.id = ss.id
+            `, [this.schuljahr, this.lag]);
+
+            const map = {}; // map guardians by email
+            const guardians = [];
+
+            for (const r of guardianRes.rows) {
+                const clazz = classes[r.klasse_id];
+                if (!clazz) continue; // Filter students without a valid class
+
+                const email = (r.email || '').trim().toLowerCase();
+                if (!email) continue;
+                
+                let guardian = map[email];
+                if (!guardian) {
+                    guardian = {
+                        id: null,
+                        email: email,
+                        firstName: r.guardian_firstname,
+                        lastName: r.guardian_lastname,
+                        students: []
+                    };
+                    guardians.push(guardian);
+                    map[email] = guardian;
+                }
+
+                // Add student to the guardian
+                // Only add if not already present to avoid duplicates from the database
+                if (!guardian.students.find(s => s.account === r.userid)) {
+                    guardian.students.push({
+                        account: r.userid,
+                        firstName: r.student_firstname,
+                        lastName: r.student_lastname,
+                        clazz: clazz
+                    });
+                }
+            }
+
+            return guardians;
+        } catch(e) {
+            console.error('ASV query failed for guardians', e);
+            throw new Error('ASV query failed for guardians: ' + e.message);
+        } finally {
+            client.release();
+        }
+    }
 }
 
 module.exports = new ASV();
