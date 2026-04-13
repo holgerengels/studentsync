@@ -5,8 +5,33 @@ const DiffTask = require('./tasks/DiffTask');
 const SyncTask = require('./tasks/SyncTask');
 const Log = require('./models/Log'); // assuming Log exists
 const config = require('./config');
+const { login, refreshAccessToken, verifyToken } = require('./auth');
 
 router.get('/health', (req, res) => res.json({ status: 'ok' }));
+
+// ------------------------
+// Auth APIs
+// ------------------------
+
+router.post('/login', async (req, res) => {
+    const { username, password } = req.body;
+    if (!username || !password) return res.status(400).json({ error: 'Missing credentials' });
+    
+    const result = await login(username, password, true);
+    if (!result) return res.status(401).json({ error: 'Invalid credentials' });
+    
+    res.json(result);
+});
+
+router.post('/refresh', (req, res) => {
+    const { refreshToken } = req.body;
+    if (!refreshToken) return res.status(400).json({ error: 'No refresh token' });
+
+    const result = refreshAccessToken(refreshToken);
+    if (!result) return res.status(401).json({ error: 'Refresh token invalid or expired' });
+    
+    res.json(result);
+});
 
 // ------------------------
 // Dynamic Environment APIs
@@ -22,7 +47,7 @@ router.get('/config/ui', (req, res) => {
 });
 
 // Identities API for any registered domain
-router.get('/identities/:domainName', async (req, res) => {
+router.get('/identities/:domainName', verifyToken, async (req, res) => {
     try {
         const domain = getDomain(req.params.domainName);
         if (!domain) {
@@ -39,7 +64,7 @@ router.get('/identities/:domainName', async (req, res) => {
 });
 
 // Generic Task Execution Endpoint
-router.post('/execute/:taskName', async (req, res) => {
+router.post('/execute/:taskName', verifyToken, async (req, res) => {
     try {
         const tasks = require('./tasks/index');
         const task = tasks[req.params.taskName];
@@ -78,7 +103,7 @@ router.post('/execute/:taskName', async (req, res) => {
 });
 
 // Calculate Diff
-router.post('/diff/:source/:target', async (req, res) => {
+router.post('/diff/:source/:target', verifyToken, async (req, res) => {
     try {
         const { source, target } = req.params;
         const task = new DiffTask(source, target);
@@ -97,7 +122,7 @@ router.post('/diff/:source/:target', async (req, res) => {
 });
 
 // Execute Sync
-router.post('/sync/:source/:target', async (req, res) => {
+router.post('/sync/:source/:target', verifyToken, async (req, res) => {
     try {
         const { source, target } = req.params;
         const task = new SyncTask(source, target);
@@ -124,7 +149,7 @@ router.post('/sync/:source/:target', async (req, res) => {
 });
 
 // Logs API
-router.get('/logs', async (req, res) => {
+router.get('/logs', verifyToken, async (req, res) => {
     try {
         const limit = parseInt(req.query.limit) || 50;
         const logs = await Log.find().sort({ startTime: -1 }).limit(limit);

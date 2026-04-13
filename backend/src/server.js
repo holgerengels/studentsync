@@ -40,8 +40,6 @@ app.use(bodyParser.json());
 app.use(cookieParser());
 
 // Routes
-const authRoutes = require('./auth');
-app.use('/auth', authRoutes);
 app.use('/api', routes);
 
 // Serve Static Frontend

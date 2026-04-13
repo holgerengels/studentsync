@@ -1,10 +1,12 @@
 <template>
-  <div class="app-container" :class="{ 'with-sidebar': true, 'sidebar-collapsed': !sidebarOpen && !isMobile }">
+  <div class="app-container" :class="{ 'with-sidebar': auth.isAuthenticated, 'sidebar-collapsed': !sidebarOpen && !isMobile }">
     
-    <div v-if="isMobile && sidebarOpen" class="sidebar-backdrop" @click="sidebarOpen = false"></div>
+    <Login v-if="auth.showLogin" />
 
-    <aside class="sidebar" :class="{ 'mobile-open': sidebarOpen && isMobile, 'mobile-closed': !sidebarOpen && isMobile }">
-      <div class="logo"><img src="/vu.svg" alt="Synx" height="44"/>&nbsp;Synx</div>
+    <div v-if="isMobile && sidebarOpen && auth.isAuthenticated" class="sidebar-backdrop" @click="sidebarOpen = false"></div>
+
+    <aside v-if="auth.isAuthenticated" class="sidebar" :class="{ 'mobile-open': sidebarOpen && isMobile, 'mobile-closed': !sidebarOpen && isMobile }">
+      <div class="logo"><img src="/vu.svg" alt="Synx" height="44"/>&nbsp;SYNX</div>
       <nav v-if="config">
         <router-link to="/" @click="closeMobileSidebar">Dashboard</router-link>
         <router-link to="/logs" @click="closeMobileSidebar">Logs (History)</router-link>
@@ -18,19 +20,25 @@
             {{ df.titel || df.name }}
         </router-link>
       </nav>
-      <div class="footer" style="padding: 1rem; margin-top: auto;">
-          <wa-button @click="logout" size="small" variant="neutral" style="width: 100%;">Logout</wa-button>
+      <div class="footer">
+           <div class="user-info" v-if="auth.user && auth.user.username">
+              <wa-avatar :initials="userInitials" shape="circle" size="small"></wa-avatar>
+              <span class="nav-text">{{ auth.user.displayName || auth.user.username }}</span>
+           </div>
+          <wa-button appearance="plain" @click="auth.logout()" style="margin-left: auto;">
+             <wa-icon name="box-arrow-right"></wa-icon>
+          </wa-button>
       </div>
     </aside>
     
     <main class="main-content">
-      <header class="top-bar">
-        <button title="Menu" style="font-size: 1.5rem; background: transparent; border: none; cursor: pointer; padding: 0.5rem;" @click="sidebarOpen = !sidebarOpen">
-            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 16 16">
+      <header v-if="auth.isAuthenticated" class="top-bar">
+        <button title="Menu" style="font-size: 1.25rem; background: transparent; border: none; cursor: pointer; padding: 0.25rem;" @click="sidebarOpen = !sidebarOpen">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16">
               <path fill-rule="evenodd" d="M2.5 12a.5.5 0 0 1 .5-.5h10a.5.5 0 0 1 0 1H3a.5.5 0 0 1-.5-.5zm0-4a.5.5 0 0 1 .5-.5h10a.5.5 0 0 1 0 1H3a.5.5 0 0 1-.5-.5zm0-4a.5.5 0 0 1 .5-.5h10a.5.5 0 0 1 0 1H3a.5.5 0 0 1-.5-.5z"/>
             </svg>
         </button>
-        <h2 style="margin: 0; margin-left: 0.5rem; display: inline-block; vertical-align: bottom;">Synx</h2>
+        <h2 style="margin: 0; margin-left: 0.5rem; display: inline-block; vertical-align: middle; font-size: 1.1rem; text-transform: uppercase; color: var(--wa-color-neutral-600); letter-spacing: 1px;">Synx</h2>
       </header>
       <router-view></router-view>
     </main>
@@ -39,12 +47,22 @@
 </template>
 
 <script setup>
-import { inject, ref, onMounted, onUnmounted } from 'vue';
+import { inject, ref, onMounted, onUnmounted, computed } from 'vue';
 import { useRouter } from 'vue-router';
-import axios from 'axios';
+import { useAuthStore } from './stores/auth';
+import Login from './views/Login.vue';
 
 const config = inject('synxConfig');
 const router = useRouter();
+const auth = useAuthStore();
+
+const userInitials = computed(() => {
+    const name = auth.user?.displayName || auth.user?.username;
+    if (!name) return '?';
+    const parts = name.trim().split(/\s+/);
+    if (parts.length >= 2) return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+    return name.substring(0, 2).toUpperCase();
+});
 
 const isMobile = ref(false);
 const sidebarOpen = ref(true);
@@ -76,11 +94,6 @@ function closeMobileSidebar() {
     if (isMobile.value) {
         sidebarOpen.value = false;
     }
-}
-
-async function logout() {
-    await axios.post('/auth/logout');
-    router.push('/login');
 }
 </script>
 
@@ -162,16 +175,34 @@ nav a.router-link-active {
 }
 .nav-header {
     padding: 1.5rem 1.5rem 0.25rem;
-    font-size: 0.8rem;
+    font-size: 0.9rem;
+    font-weight: 600;
     text-transform: uppercase;
     color: var(--wa-color-neutral-500);
     letter-spacing: 0.5px;
 }
 
+.footer {
+    display: flex;
+    align-items: center;
+    padding: 1rem;
+    margin-top: auto;
+    border-top: 1px solid var(--wa-color-neutral-80);
+}
+
+.user-info {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+}
+
 /* Main Content */
 .main-content {
     flex: 1;
-    padding: 1.5rem;
+    padding: 1rem;
     background-color: var(--wa-color-neutral-95);
     overflow-y: auto;
 }
@@ -179,8 +210,8 @@ nav a.router-link-active {
 .top-bar {
     display: flex;
     align-items: center;
-    padding-bottom: 1.5rem;
-    margin-bottom: 1.5rem;
+    padding-bottom: 0.75rem;
+    margin-bottom: 0.75rem;
     border-bottom: 1px solid var(--wa-color-neutral-200);
 }
 

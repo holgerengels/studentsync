@@ -3,6 +3,7 @@ import { createPinia } from 'pinia';
 import axios from 'axios';
 import App from './App.vue';
 import { createRouter, createWebHistory } from 'vue-router';
+import './axios';
 
 // Initialize Web Awesome locally
 import '@awesome.me/webawesome/dist/styles/themes/default.css';
@@ -19,6 +20,7 @@ import '@awesome.me/webawesome/dist/components/card/card.js';
 import '@awesome.me/webawesome/dist/components/button/button.js';
 import '@awesome.me/webawesome/dist/components/icon/icon.js';
 import '@awesome.me/webawesome/dist/components/badge/badge.js';
+import '@awesome.me/webawesome/dist/components/avatar/avatar.js';
 import '@awesome.me/webawesome/dist/components/tooltip/tooltip.js';
 import '@awesome.me/webawesome/dist/components/spinner/spinner.js';
 import '@awesome.me/webawesome/dist/components/drawer/drawer.js';
@@ -83,18 +85,7 @@ async function bootstrap() {
         routes,
     });
 
-    // Guard checking simple session mapping
-    router.beforeEach(async (to, from, next) => {
-        if (to.name === 'Login') {
-            return next();
-        }
-        try {
-            await axios.get('/auth/me');
-            next();
-        } catch (e) {
-            next({ name: 'Login' });
-        }
-    });
+    // Relying on global Axios interceptors for 401 routing via Login Overlay
 
     app.use(router);
     app.mount('#app');

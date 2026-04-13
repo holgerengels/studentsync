@@ -1,6 +1,6 @@
 <template>
-  <div>
-    <h2>Dashboard</h2>
+  <div style="margin-top: -0.5rem;">
+    <!-- h2 Dashboard removed to save space, contextual info is already clear -->
     
     <div class="card-grid">
       <wa-card v-for="d in config?.domains" :key="d.name" class="dashboard-card">
@@ -8,17 +8,17 @@
               <strong style="font-size: 1.1rem;">{{ d.titel || d.name }}</strong>
           </div>
           
-          <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 1.5rem 0;">
-              <div style="font-size: 2.5rem; font-weight: bold; color: var(--wa-color-primary-600); line-height: 1;">
+          <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 0.5rem 0; margin-bottom: 0.5rem;">
+              <div style="font-size: 1.6rem; font-weight: bold; color: var(--wa-color-primary-600); line-height: 1;">
                   {{ counts[d.name] !== undefined ? counts[d.name] : '-' }}
               </div>
-              <div style="font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--wa-color-neutral-500); margin-top: 0.5rem;">
+              <div style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--wa-color-neutral-500); margin-top: 0.25rem;">
                   Identities
               </div>
           </div>
           <div v-if="results[d.name]" class="result-msg" style="text-align: center; margin-bottom: 0.5rem;" v-html="results[d.name]"></div>
           
-          <div slot="footer" style="display: flex; justify-content: flex-end; gap: 0.5rem; align-items: center;">
+          <div slot="footer" style="display: flex; justify-content: flex-end; gap: 0.25rem; align-items: center;">
               <template v-if="d.actions && d.actions.length">
                   <wa-button v-for="act in d.actions" :key="act.name" variant="neutral" size="small" @click="runAction(act, d.name)" style="margin-right: auto;">
                       {{ act.name }}
@@ -26,11 +26,11 @@
               </template>
               <div style="flex-grow: 1" v-if="!d.actions || !d.actions.length"></div>
               
-              <wa-button title="Details ansehen" variant="text" size="medium" @click="$router.push('/domain/'+d.name)">
+              <wa-button title="Details ansehen" variant="text" size="small" @click="$router.push('/domain/'+d.name)">
                   <wa-icon name="list"></wa-icon>
               </wa-button>
               
-              <wa-button title="Neu laden" variant="text" size="medium" @click="refreshDomain(d.name)" :disabled="loading[d.name]">
+              <wa-button title="Neu laden" variant="text" size="small" @click="refreshDomain(d.name)" :disabled="loading[d.name]">
                   <wa-icon name="arrow-clockwise"></wa-icon>
               </wa-button>
           </div>
@@ -45,9 +45,9 @@
           <div class="vd-body">
               <div class="vd-grid">
                   <!-- Header Row -->
-                  <div style="text-align: right;">{{ df.source }}</div>
+                  <div style="text-align: right; font-size: 0.9rem;">{{ df.source }}</div>
                   <div><span style="color: var(--wa-color-neutral-400); font-size: 0.8rem;">&rarr;</span></div>
-                  <div>{{ df.target }}</div>
+                  <div style="font-size: 0.9rem">{{ df.target }}</div>
                   <div></div>
                   
                   <!-- Add Row -->
@@ -86,7 +86,7 @@
           
           <div v-if="results[df.name]" class="result-msg" v-html="results[df.name]"></div>
           
-          <div slot="footer" style="display: flex; justify-content: flex-end; gap: 0.5rem; align-items: center; flex-wrap: wrap;">
+          <div slot="footer" style="display: flex; justify-content: flex-end; gap: 0.25rem; align-items: center; flex-wrap: wrap;">
               <!-- Custom tasks attached to diffs -->
               <template v-if="df.actions">
                   <wa-button v-for="act in df.actions" :key="act.name" variant="neutral" size="small" @click="runAction(act, df.name)" style="margin-right: auto;">
@@ -95,15 +95,15 @@
               </template>
               <div style="flex-grow: 1" v-if="!df.actions || !df.actions.length"></div>
               
-              <wa-button title="Synchronisieren" variant="text" size="medium" @click="runSync(df)" :disabled="loading[df.name]">
+              <wa-button title="Synchronisieren" variant="text" size="small" @click="runSync(df)" :disabled="loading[df.name]">
                   <wa-icon name="arrow-repeat"></wa-icon>
               </wa-button>
               
-              <wa-button title="Details ansehen" variant="text" size="medium" @click="$router.push('/diff/'+df.name)">
+              <wa-button title="Details ansehen" variant="text" size="small" @click="$router.push('/diff/'+df.name)">
                   <wa-icon name="list"></wa-icon>
               </wa-button>
               
-              <wa-button title="Neu berechnen" variant="text" size="medium" @click="refreshDiff(df.name, true)" :disabled="loading[df.name]">
+              <wa-button title="Neu berechnen" variant="text" size="small" @click="refreshDiff(df.name, true)" :disabled="loading[df.name]">
                   <wa-icon name="arrow-clockwise"></wa-icon>
               </wa-button>
           </div>
@@ -287,9 +287,9 @@ async function runAction(act, contextName) {
 <style scoped>
 .card-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-    gap: 1.5rem;
-    margin-top: 2rem;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 1rem;
+    margin-top: 1.5rem;
 }
 .dashboard-card {
     display: flex;
@@ -317,32 +317,32 @@ async function runAction(act, contextName) {
     flex-direction: column;
 }
 .vd-body {
-    padding: 0.5rem;
+    padding: 0;
     display: flex;
     justify-content: center;
 }
 .vd-grid {
     display: grid;
-    grid-template-columns: minmax(70px, max-content) auto minmax(70px, max-content) auto;
-    gap: 0.35rem 0.5rem;
+    grid-template-columns: minmax(50px, max-content) auto minmax(50px, max-content) auto;
+    gap: 0.2rem 0.35rem;
     align-items: center;
 }
 .vd-grid .header {
     font-weight: bold;
     text-align: center;
     color: var(--wa-color-neutral-800);
-    margin-bottom: 0.5rem;
-    font-size: 1.05rem;
+    margin-bottom: 0.25rem;
+    font-size: 0.95rem;
 }
 .vd-box {
-    border: 1.5px solid var(--wa-color-neutral-400);
+    border: 1px solid var(--wa-color-neutral-400);
     background-color: var(--wa-color-neutral-50);
-    min-width: 70px;
-    height: 30px;
+    min-width: 50px;
+    height: 24px;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 1.05rem;
+    font-size: 0.85rem;
     font-family: inherit;
     color: var(--wa-color-neutral-800);
     box-sizing: border-box;
@@ -355,14 +355,14 @@ async function runAction(act, contextName) {
 .vd-op-label {
     padding-left: 0.25rem;
     color: var(--wa-color-neutral-600);
-    font-size: 0.95rem;
+    font-size: 0.85rem;
 }
 .vd-symbol {
     font-weight: normal;
     text-align: center;
-    padding: 0 0.25rem;
+    padding: 0 0.15rem;
     color: var(--wa-color-neutral-500);
-    font-size: 0.95rem;
+    font-size: 0.85rem;
 }
 .primary-icon-btn::part(base) {
     color: var(--wa-color-primary-600);

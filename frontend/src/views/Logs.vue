@@ -7,8 +7,6 @@
       </wa-button>
     </div>
     
-    <p>Historie der Synchronisierungs- und ID-Generierungsvorgänge.</p>
-    
     <div v-if="loading" style="display: flex; justify-content: center; padding: 2rem;">
       <wa-spinner style="font-size: 2rem;"></wa-spinner>
     </div>
@@ -45,9 +43,9 @@
                 <wa-button 
                    variant="text" 
                    size="small" 
-                   @click="showDetails(log)"
+                   @click.stop.prevent="showDetails(log)"
                    :title="log.details ? 'Details / Diffs ansehen' : 'Keine Details vorhanden'">
-                  <wa-icon name="list-ul" style="font-size: 1.1rem;"></wa-icon>
+                  <wa-icon name="list" style="font-size: 1.1rem;"></wa-icon>
                 </wa-button>
               </td>
             </tr>
@@ -59,7 +57,7 @@
       </wa-card>
     </div>
 
-    <wa-dialog ref="dialogEl" label="Log Details & Diffs" style="--width: 80vw;">
+    <wa-drawer :open="isDrawerOpen" @wa-after-hide="isDrawerOpen = false" label="Log Details & Diffs" style="--size: 80vw;">
       <div v-if="selectedLog">
         <div style="margin-bottom: 1rem; display: flex; gap: 1rem; flex-wrap: wrap;">
            <strong>ID:</strong> {{ selectedLog._id }}
@@ -75,7 +73,7 @@
            <pre class="json-viewer">{{ JSON.stringify(selectedLog.details, null, 2) }}</pre>
         </div>
       </div>
-    </wa-dialog>
+    </wa-drawer>
 
   </div>
 </template>
@@ -87,7 +85,7 @@ import axios from 'axios';
 const logs = ref([]);
 const loading = ref(false);
 
-const dialogEl = ref(null);
+const isDrawerOpen = ref(false);
 const selectedLog = ref(null);
 
 const fetchLogs = async () => {
@@ -102,12 +100,9 @@ const fetchLogs = async () => {
   }
 };
 
-const showDetails = async (log) => {
+const showDetails = (log) => {
   selectedLog.value = log;
-  await nextTick();
-  if (dialogEl.value) {
-    dialogEl.value.show();
-  }
+  isDrawerOpen.value = true;
 };
 
 onMounted(() => {

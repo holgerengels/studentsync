@@ -88,7 +88,7 @@ class SyncTask extends DiffTask {
          const changeCount = syncLog.changed ? syncLog.changed.length : 0;
          const rmCount = syncLog.removed ? syncLog.removed.length : 0;
          
-         let msg = `Sync completed. Added: ${addCount}, Changed: ${changeCount}, Removed: ${rmCount}.`;
+         let msg = `Sync completed. <span style="color: var(--wa-color-success-600)">Added: ${addCount}</span>, <span style="color: var(--wa-color-warning-600)">Changed: ${changeCount}</span>, <span style="color: var(--wa-color-danger-600)">Removed: ${rmCount}</span>.`;
          if (devMode) {
              msg += ' <span style="font-size: smaller; opacity: 0.7;">[DEV MODE LIMIT]</span>';
          }
