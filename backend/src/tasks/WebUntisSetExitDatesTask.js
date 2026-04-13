@@ -20,7 +20,7 @@ class WebUntisSetExitDatesTask {
         }
         
         if (removed.length === 0) {
-            return { syncLog: { set: [] }, message: 'Nothing to do', dateCount: 0, devMode: isDevMode };
+            return { syncLog: {}, message: 'Nothing to do', dateCount: 0, devMode: isDevMode };
         }
         
         const asv = getDomain('asv');
@@ -31,15 +31,18 @@ class WebUntisSetExitDatesTask {
         
         const idsToProcess = Object.keys(exitDates).length;
         if (idsToProcess === 0) {
-             return { syncLog: { set: [] }, message: 'No exact dates found for removed users.', dateCount: 0, devMode: isDevMode };
+             return { syncLog: {}, message: 'No exact dates found for removed users.', dateCount: 0, devMode: isDevMode };
         }
 
         // Post exit dates sequentially to WebUntis
         const updatedUsers = await webuntis.writeExitDates(exitDates);
         
+        const syncLog = {};
+        if (updatedUsers.length > 0) syncLog.exitDatesSet = updatedUsers;
+
         return { 
             message: `Austrittsdatum für ${updatedUsers.length} von ${idsToProcess} Schülern gesetzt.`,
-            syncLog: { set: updatedUsers },
+            syncLog: syncLog,
             dateCount: updatedUsers.length,
             devMode: isDevMode
         };

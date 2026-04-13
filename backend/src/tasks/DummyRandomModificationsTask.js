@@ -36,16 +36,16 @@ class DummyRandomModificationsTask {
             addedArr.push(`dummy${rId}`);
         }
         
+        const syncLog = {};
+        if (addedArr.length > 0) syncLog.added = addedArr;
+        if (changedArr.length > 0) syncLog.changed = changedArr;
+        if (removedArr.length > 0) syncLog.removed = removedArr;
+        
         return { 
              removed: removedArr.length, 
              changed: changedArr.length, 
              added: addedArr.length,
-             syncLog: {
-                 added: addedArr,
-                 changed: changedArr,
-                 removed: removedArr,
-                 errors: []
-             }
+             syncLog
         };
     }
 

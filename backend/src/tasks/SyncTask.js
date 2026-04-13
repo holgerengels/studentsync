@@ -30,19 +30,19 @@ class SyncTask extends DiffTask {
         const changes = isDevMode ? diff.changed.slice(0, 1) : diff.changed;
         const removals = isDevMode ? diff.removed.slice(0, 1) : diff.removed;
 
-        const syncLog = {
-            added: [],
-            changed: [],
-            removed: [],
-            errors: []
-        };
+        const addedArr = [];
+        const changedArr = [];
+        const removedArr = [];
+        const errorsArr = [];
 
         for (const identity of additions) {
             try {
                 await targetDomain.addIdentity(identity);
-                syncLog.added.push(identity.userId);
+                addedArr.push(identity.userId);
             } catch (err) {
-                syncLog.errors.push(`Add error for ${identity.userId}: ${err.message}`);
+                if (err.name !== 'NotImplementedError') {
+                    errorsArr.push(`Add error for ${identity.userId}: ${err.message}`);
+                }
             }
         }
 
@@ -51,20 +51,29 @@ class SyncTask extends DiffTask {
                 // Send the target identity layered with the source properties that need updating
                 const updatedIdentity = { ...item.target, ...item.source };
                 await targetDomain.changeIdentity(updatedIdentity);
-                syncLog.changed.push(item.source.userId || item.target.userId);
+                changedArr.push(item.source.userId || item.target.userId);
             } catch (err) {
-                syncLog.errors.push(`Change error for ${item.source.userId}: ${err.message}`);
+                if (err.name !== 'NotImplementedError') {
+                    errorsArr.push(`Change error for ${item.source.userId}: ${err.message}`);
+                }
             }
         }
 
         for (const identity of removals) {
             try {
                  await targetDomain.removeIdentity(identity);
-                 syncLog.removed.push(identity.userId);
+                 removedArr.push(identity.userId);
             } catch (err) {
-                syncLog.errors.push(`Remove error for ${identity.userId}: ${err.message}`);
+                if (err.name !== 'NotImplementedError') {
+                    errorsArr.push(`Remove error for ${identity.userId}: ${err.message}`);
+                }
             }
         }
+        const syncLog = {};
+        if (addedArr.length > 0) syncLog.added = addedArr;
+        if (changedArr.length > 0) syncLog.changed = changedArr;
+        if (removedArr.length > 0) syncLog.removed = removedArr;
+        if (errorsArr.length > 0) syncLog.errors = errorsArr;
         
         report.syncLog = syncLog;
         report.devMode = isDevMode;
@@ -75,11 +84,15 @@ class SyncTask extends DiffTask {
          if (!report || !report.syncLog) return super.format(report);
          
          const { syncLog, devMode } = report;
-         let msg = `Sync completed. Added: ${syncLog.added.length}, Changed: ${syncLog.changed.length}, Removed: ${syncLog.removed.length}.`;
+         const addCount = syncLog.added ? syncLog.added.length : 0;
+         const changeCount = syncLog.changed ? syncLog.changed.length : 0;
+         const rmCount = syncLog.removed ? syncLog.removed.length : 0;
+         
+         let msg = `Sync completed. Added: ${addCount}, Changed: ${changeCount}, Removed: ${rmCount}.`;
          if (devMode) {
              msg += ' <span style="font-size: smaller; opacity: 0.7;">[DEV MODE LIMIT]</span>';
          }
-         if (syncLog.errors.length > 0) {
+         if (syncLog.errors && syncLog.errors.length > 0) {
               msg += ` <br/><span style="color:#EF4444;">Errors: ${syncLog.errors.length}</span>`;
          }
          return `<div>${msg}</div>`;

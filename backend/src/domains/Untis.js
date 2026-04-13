@@ -32,6 +32,11 @@ class Untis extends Domain {
         if (!this.schulid || !this.version || !this.schuljahr) {
             throw new Error('Untis configuration is incomplete. Missing schulid, version, or schuljahr.');
         }
+
+        this.emailDomain = c.emailDomain || process.env.UNTIS_EMAIL_DOMAIN;
+        if (!this.emailDomain) {
+            throw new Error('Untis configuration error: Missing emailDomain for teacher login sync.');
+        }
     }
 
     async readIdentities() {
@@ -82,6 +87,40 @@ class Untis extends Domain {
         } catch(e) {
             console.error('Untis query failed', e);
             throw new Error('Untis query failed: ' + e.message);
+        } finally {
+            if (connection) await connection.end();
+        }
+    }
+
+    async teacherExternalIds() {
+        let connection;
+        try {
+            connection = await mysql.createConnection(this.dbConfig);
+            const [rows] = await connection.execute("SELECT name, email, foreignkey FROM Teacher");
+            
+            const updatedIds = [];
+            const missingDomain = [];
+            const suffix = '@' + this.emailDomain;
+            
+            for (const row of rows) {
+                if (!row.email || !row.email.endsWith(suffix)) {
+                    missingDomain.push(row.name);
+                } else {
+                    const expectedForeignKey = row.email.substring(0, row.email.length - suffix.length);
+                    if (row.foreignkey !== expectedForeignKey) {
+                        await connection.execute(
+                            "UPDATE Teacher SET foreignkey = ? WHERE name = ?",
+                            [expectedForeignKey, row.name]
+                        );
+                        updatedIds.push(row.name);
+                    }
+                }
+            }
+            
+            return { updatedIds, missingDomain };
+        } catch(e) {
+            console.error('Untis teacherExternalIds query failed', e);
+            throw new Error('Untis teacherExternalIds query failed: ' + e.message);
         } finally {
             if (connection) await connection.end();
         }

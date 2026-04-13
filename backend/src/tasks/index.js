@@ -11,7 +11,8 @@ const registry = {
     'dummy': new (require('./DummyTask'))(),
     'dummy-random-modifications': new (require('./DummyRandomModificationsTask'))(),
     'untis-generate-import': new (require('./UntisGenerateImportTask'))(),
-    'web-untis-set-exit-dates': new (require('./WebUntisSetExitDatesTask'))()
+    'web-untis-set-exit-dates': new (require('./WebUntisSetExitDatesTask'))(),
+    'untis-teacher-external-ids': require('./UntisTeacherExternalIdsTask')
 };
 
 if (config && config.tasks) {
