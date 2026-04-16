@@ -1,5 +1,5 @@
 <template>
-  <wa-card class="dashboard-card visual-diff-card">
+  <wa-card class="dashboard-card visual-diff-card" :style="`--source-color: ${getBrandColor(diff.source || diff.name?.split('-')[0], config)}; --target-color: ${getBrandColor(diff.target || diff.name?.split('-')[1], config)};`">
     <div slot="header" style="font-size: 1.1rem; font-weight: bold;">
         {{ diff.titel }}
     </div>
@@ -7,9 +7,9 @@
     <div class="vd-body">
         <div class="vd-grid">
             <!-- Header Row -->
-            <div style="text-align: right; font-size: 0.9rem;">{{ diff.source }}</div>
-            <div style="font-size: 0.9rem;">&rarr;</div>
-            <div style="font-size: 0.9rem">{{ diff.target }}</div>
+            <div style="text-align: right; font-size: 1rem; font-weight: bold; color: var(--source-color);">{{ diff.source }}</div>
+            <div style="font-size: 1rem; font-weight: bold;">&rarr;</div>
+            <div style="font-size: 1rem; font-weight: bold; color: var(--target-color);">{{ diff.target }}</div>
             <div></div>
             
             <!-- Add Row -->
@@ -73,6 +73,11 @@
 </template>
 
 <script setup>
+import { inject } from 'vue';
+import { getBrandColor } from '../utils/brandColors.js';
+
+const config = inject('synxConfig', { domains: [] });
+
 defineProps({
   diff: { type: Object, required: true },
   stats: { type: Object, default: () => ({}) },
@@ -101,6 +106,10 @@ defineEmits(['run-action', 'refresh', 'sync']);
     display: flex;
     flex-direction: column;
 }
+.dashboard-card::part(header) {
+    border-bottom: 3px solid transparent !important;
+    border-image: linear-gradient(to right, var(--source-color, var(--wa-color-neutral-300)), var(--target-color, var(--wa-color-neutral-300))) 1 !important;
+}
 .vd-body {
     padding: 0;
     display: flex;
@@ -108,20 +117,13 @@ defineEmits(['run-action', 'refresh', 'sync']);
 }
 .vd-grid {
     display: grid;
-    grid-template-columns: minmax(50px, max-content) auto minmax(50px, max-content) auto;
-    gap: 0.2rem 0.35rem;
+    grid-template-columns: 50px auto 50px auto;
+    gap: 0.3rem 0.35rem;
     align-items: center;
 }
-.vd-grid .header {
-    font-weight: bold;
-    text-align: center;
-    color: var(--wa-color-neutral-800);
-    margin-bottom: 0.25rem;
-    font-size: 0.95rem;
-}
 .vd-box {
-    border: 1px solid var(--wa-color-neutral-400);
-    background-color: var(--wa-color-neutral-50);
+    border: 1px solid var(--wa-color-neutral-300);
+    background-color: rgba(0, 0, 0, 0.025);
     min-width: 50px;
     height: 24px;
     display: flex;
@@ -131,7 +133,8 @@ defineEmits(['run-action', 'refresh', 'sync']);
     font-family: inherit;
     color: var(--wa-color-neutral-800);
     box-sizing: border-box;
-    border-radius: 2px;
+    border-radius: 6px;
+    padding: 1rem;
 }
 .vd-box.has-val {
     color: var(--wa-color-primary-700);

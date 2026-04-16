@@ -1,11 +1,11 @@
 <template>
-  <wa-card class="dashboard-card">
+  <wa-card class="dashboard-card" :style="`--card-brand-color: ${domain.color || getBrandColor(domain.name)};`">
     <div slot="header">
       <strong style="font-size: 1.1rem;">{{ domain.titel || domain.name }}</strong>
     </div>
     
     <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 0.5rem 0; margin-bottom: 0.5rem;">
-      <div style="font-size: 1.6rem; font-weight: bold; color: var(--wa-color-primary-600); line-height: 1;">
+      <div style="font-size: 1.6rem; font-weight: bold; color: var(--card-brand-color); line-height: 1;">
         {{ count !== undefined ? count : '-' }}
       </div>
       <div style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--wa-color-neutral-500); margin-top: 0.25rem;">
@@ -34,6 +34,8 @@
 </template>
 
 <script setup>
+import { getBrandColor } from '../utils/brandColors.js';
+
 defineProps({
   domain: { type: Object, required: true },
   count: { type: [Number, String], default: '-' },
@@ -57,6 +59,9 @@ defineEmits(['run-action', 'refresh']);
     display: flex;
     flex-direction: column;
     justify-content: center;
+}
+.dashboard-card::part(header) {
+    border-bottom: 3px solid var(--card-brand-color) !important;
 }
 .result-msg {
     margin-top: 0.5rem;

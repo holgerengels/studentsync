@@ -201,16 +201,17 @@ async function refreshDiff(diffName, forceRefresh = false) {
 onMounted(async () => {
     if (!props.config) return;
     if (props.config.domains) {
-        for (const d of props.config.domains) {
-            try {
-                const res = await axios.get(`/api/identities/${d.name}`);
-                counts.value[d.name] = res.data?.length || 0;
-            } catch (e) {
-                counts.value[d.name] = 'Error';
-                const explanation = e.response?.data?.error || e.message;
-                results.value[d.name] = `<span style="color:var(--wa-color-danger-600)">Fehler: ${explanation}</span>`;
-            }
-        }
+        props.config.domains.forEach(d => {
+            axios.get(`/api/identities/${d.name}`)
+                .then(res => {
+                    counts.value[d.name] = res.data?.length || 0;
+                })
+                .catch(e => {
+                    counts.value[d.name] = 'Error';
+                    const explanation = e.response?.data?.error || e.message;
+                    results.value[d.name] = `<span style="color:var(--wa-color-danger-600)">Fehler: ${explanation}</span>`;
+                });
+        });
     }
     if (props.config.diffs) {
         for (const df of props.config.diffs) {
@@ -355,7 +356,7 @@ async function runAction(act, contextName) {
 <style scoped>
 .card-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
     gap: 1rem;
     margin-top: 1.5rem;
 }

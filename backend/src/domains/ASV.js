@@ -98,7 +98,7 @@ class ASV extends Domain {
                         r.vornamen,
                         r.familienname,
                         {
-                            birthday: r.geburtsdatum ? r.geburtsdatum.toISOString().split('T')[0] : null,
+                            birthday: r.geburtsdatum ? `${r.geburtsdatum.getFullYear()}-${String(r.geburtsdatum.getMonth() + 1).padStart(2, '0')}-${String(r.geburtsdatum.getDate()).padStart(2, '0')}` : null,
                             clazz: clazz,
                             gender: genders[r.wl_geschlecht_id] || ''
                         }

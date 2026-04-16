@@ -131,20 +131,19 @@ class WebUntisDomain extends ManagableDomain {
                     if (birthdayStr && birthdayStr.includes('.')) {
                         const parts = birthdayStr.split('.');
                         if (parts.length === 3) {
-                            const day = parseInt(parts[0], 10);
-                            const month = parseInt(parts[1], 10) - 1;
-                            const year = parseInt(parts[2], 10);
-                            const d = new Date(Date.UTC(year, month, day - 1));
-                            birthday = d.toISOString().split('T')[0];
+                            const day = parts[0];
+                            const month = parts[1];
+                            const year = parts[2];
+                            birthday = `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
                         }
                     }
 
                     let normGender = null;
                     if (genderStr) {
-                        const low = genderStr.toLowerCase();
-                        if (low === 'm' || low === 'male' || low === '1ännlich' || low === 'männlich') normGender = 'm';
-                        else if (low === 'w' || low === 'f' || low === 'female' || low === 'weiblich') normGender = 'f';
-                        else normGender = 'd';
+                        const str = genderStr.toUpperCase();
+                        if (str.startsWith('M') || str === '1ÄNNLICH') normGender = 'M';
+                        else if (str.startsWith('W') || str.startsWith('F')) normGender = 'W';
+                        else normGender = 'D';
                     }
 
                     identities.push(new Identity(
@@ -213,11 +212,11 @@ class WebUntisDomain extends ManagableDomain {
                 savePayload.set('birthDate', identity.birthday); // already in YYYY-MM-DD
             }
 
-            // Gender mapping (1=female, 2=male, 3=inter)
+            // Identity uses strictly uppercase M, W, D
             let webuntisGender = '';
-            if (identity.gender === 'm') webuntisGender = '2';
-            else if (identity.gender === 'f') webuntisGender = '1';
-            else if (identity.gender === 'd') webuntisGender = '3';
+            if (identity.gender === 'M') webuntisGender = '2';
+            else if (identity.gender === 'W') webuntisGender = '1';
+            else if (identity.gender === 'D') webuntisGender = '3';
 
             if (webuntisGender) {
                 savePayload.set('genderId', webuntisGender);
@@ -249,9 +248,16 @@ class WebUntisDomain extends ManagableDomain {
             this.lastSaveStatus = saveRes.status;
             this.lastSaveHtml = typeof saveRes.data === 'string' ? saveRes.data.substring(0, 1500) : "JSON";
             console.log(`[WebUntis] studentform.do save result: HTTP ${saveRes.status} Location: ${saveRes.headers['location']}`);
+            
             if (saveRes.status === 200 && typeof saveRes.data === 'string') {
-                console.log("[WebUntis] Body returned instead of redirect:", saveRes.data.substring(0, 400));
-                require('fs').writeFileSync('/tmp/untis_err.html', saveRes.data);
+                if (saveRes.data.includes('this.setError(')) {
+                     // Extract the error message for logging
+                     const errorMatch = saveRes.data.match(/this\.setError\([^,]+,\s*'([^']+)'/);
+                     const errorMsg = errorMatch ? errorMatch[1] : 'Unknown Validation Error';
+                     throw new Error(`WebUntis validation error during save: ${errorMsg}`);
+                } else {
+                     console.log("[WebUntis] Body returned instead of redirect, but no explicit error found.");
+                }
             }
 
             if (saveRes.status >= 400 && saveRes.status !== 403 && saveRes.status !== 302) {

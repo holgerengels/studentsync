@@ -1,6 +1,8 @@
 <template>
-  <div>
-    <h2>{{ domain.titel || domain.name }} Data</h2>
+  <div :style="`--view-brand-color: ${domain.color || getBrandColor(domain.name)};`">
+    <h2 style="border-bottom: 3px solid var(--view-brand-color); padding-bottom: 0.5rem; margin-bottom: 1rem;">
+      {{ domain.titel || domain.name }}
+    </h2>
     
     <div style="margin-bottom: 1rem; display: flex; gap: 0.5rem; justify-content: space-between; align-items: center;">
         <div style="flex-grow: 1; max-width: 400px;">
@@ -28,10 +30,10 @@
         <table class="data-table">
             <thead>
                 <tr>
-                    <th v-for="key in displayKeys" :key="key" @click="toggleSort(key)" style="cursor: pointer; user-select: none;" class="sortable-header">
+                    <th v-for="key in displayKeys" :key="key" @click="toggleSort(key)" style="cursor: pointer; user-select: none; color: var(--view-brand-color);" class="sortable-header">
                         <div style="display: flex; justify-content: space-between; align-items: center;">
                             <span>{{ key }}</span>
-                            <span v-if="sortKey === key" style="color: var(--wa-color-primary-600);">
+                            <span v-if="sortKey === key" style="color: var(--view-brand-color);">
                                 <wa-icon :name="sortAsc ? 'chevron-down' : 'chevron-up'"></wa-icon>
                             </span>
                             <span v-else style="color: transparent; font-size: 0.8em; opacity: 0.3;">
@@ -57,6 +59,7 @@
 <script setup>
 import { ref, computed, onMounted, watch } from 'vue';
 import axios from 'axios';
+import { getBrandColor } from '../utils/brandColors.js';
 
 const props = defineProps({
     domain: Object

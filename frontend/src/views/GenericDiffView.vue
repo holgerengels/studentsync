@@ -1,19 +1,34 @@
 <template>
-  <div>
-    <h2>Diff: {{ diff.titel || diff.name }}</h2>
+  <div :style="`--source-color: ${getBrandColor(diff.source || diff.name?.split('-')[0], config)}; --target-color: ${getBrandColor(diff.target || diff.name?.split('-')[1], config)};`">
+    <h2 style="border-bottom: 3px solid transparent; border-image: linear-gradient(to right, var(--source-color), var(--target-color)) 1; padding-bottom: 0.5rem; margin-bottom: 1rem;">
+      <span style="color: var(--source-color);">{{ diff.source || diff.name?.split('-')[0] }}</span>
+      <span style="color: var(--wa-color-neutral-500); margin: 0 0.5rem;">&rarr;</span>
+      <span style="color: var(--target-color);">{{ diff.target || diff.name?.split('-')[1] }}</span>
+    </h2>
     
-    <div style="margin-bottom: 1rem; display: flex; gap: 0.5rem; justify-content: flex-end;">
-        <wa-button @click="calculateDiff(true)" :loading="loading" variant="neutral" size="small">
-            <wa-icon slot="prefix" name="arrow-clockwise"></wa-icon>
-            Force Refresh Backend Data
-        </wa-button>
-        <wa-button @click="runSync" :loading="syncLoading" variant="primary" size="small">Run Sync Task</wa-button>
+    <div style="margin-bottom: 1rem; display: flex; gap: 0.5rem; justify-content: space-between; align-items: center;">
+        <div style="flex-grow: 1;"></div>
+        <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+            <template v-if="diff.actions && diff.actions.length">
+                <wa-button v-for="act in diff.actions" :key="act.name" variant="neutral" size="small" @click="runAction(act)" :loading="actionLoading === act.name">
+                    {{ act.name }}
+                </wa-button>
+            </template>
+            <wa-button @click="runSync" :loading="actionLoading === 'sync'" variant="primary" size="small">
+                <wa-icon slot="prefix" name="arrow-right-circle"></wa-icon>
+                Synchronisieren
+            </wa-button>
+            <wa-button @click="calculateDiff(true)" :loading="loading" variant="neutral" size="small">
+                <wa-icon slot="prefix" name="arrow-clockwise"></wa-icon>
+                Neu berechnen
+            </wa-button>
+        </div>
     </div>
     
+    <div v-if="resultMessage" class="result-msg" v-html="resultMessage"></div>
     <div v-if="error" class="error">{{ error }}</div>
-    <div v-if="syncResultHtml" class="sync-result" v-html="syncResultHtml"></div>
     
-    <wa-card v-if="report && report.diff" style="margin-top: 2rem;">
+    <wa-card v-if="report && report.diff" class="table-card">
         <div style="display: flex; gap: 2rem;">
             <div>
                  <h3 style="color: var(--wa-color-success-600)">Added ({{ report.diff.added.length }})</h3>
@@ -42,8 +57,11 @@
 </template>
 
 <script setup>
-import { ref, onMounted, watch } from 'vue';
+import { ref, onMounted, watch, inject } from 'vue';
 import axios from 'axios';
+import { getBrandColor } from '../utils/brandColors.js';
+
+const config = inject('synxConfig', { domains: [] });
 
 const props = defineProps({
     diff: Object
@@ -51,9 +69,9 @@ const props = defineProps({
 
 const report = ref(null);
 const loading = ref(false);
-const syncLoading = ref(false);
+const actionLoading = ref('');
 const error = ref('');
-const syncResultHtml = ref('');
+const resultMessage = ref('');
 
 onMounted(() => {
     calculateDiff(false);
@@ -67,7 +85,7 @@ watch(() => props.diff.name, () => {
 async function calculateDiff(refresh) {
     loading.value = true;
     error.value = '';
-    syncResultHtml.value = '';
+    resultMessage.value = '';
     try {
         const [source, target] = props.diff.name.split('-');
         const res = await axios.post(`/api/diff/${source}/${target}${refresh ? '?refresh=true' : ''}`);
@@ -80,19 +98,42 @@ async function calculateDiff(refresh) {
 }
 
 async function runSync() {
-    syncLoading.value = true;
+    actionLoading.value = 'sync';
     error.value = '';
+    resultMessage.value = '';
     try {
         const [source, target] = props.diff.name.split('-');
         const res = await axios.post(`/api/sync/${source}/${target}`);
-        syncResultHtml.value = res.data.html;
+        resultMessage.value = res.data.html || '<span style="color:var(--wa-color-success-600)">Synchronisierung erfolgreich</span>';
         
-        // Optionally refresh diff view afterwards to reflect state
         await calculateDiff(true);
     } catch(e) {
-        error.value = 'Sync failed';
+        error.value = 'Sync fehlgeschlagen';
     } finally {
-        syncLoading.value = false;
+        actionLoading.value = '';
+    }
+}
+
+async function runAction(act) {
+    if (act.download) {
+        window.open(`/api/execute/${act.download}`, '_blank');
+        return;
+    }
+    const actionKey = act.endpoint || act.run || act.task;
+    if (!actionKey) return;
+    
+    actionLoading.value = act.name;
+    error.value = '';
+    resultMessage.value = '';
+    
+    try {
+        const res = await axios.post(actionKey.startsWith('/') ? actionKey : `/api/execute/${actionKey}`);
+        resultMessage.value = res.data.html || `<span style="color:var(--wa-color-success-600)">Aktion ${act.name} ausgeführt</span>`;
+        await calculateDiff(true);
+    } catch(e) {
+        error.value = `Aktion ${act.name} fehlgeschlagen`;
+    } finally {
+        actionLoading.value = '';
     }
 }
 </script>
@@ -100,11 +141,15 @@ async function runSync() {
 <style scoped>
 .error {
     color: var(--wa-color-danger-600);
-}
-.sync-result {
-    padding: 1rem;
-    background: #eef;
-    border-radius: 4px;
     margin-bottom: 1rem;
+}
+.result-msg {
+    margin-bottom: 1rem;
+    text-align: right;
+    font-size: 0.95rem;
+}
+.table-card {
+    width: 100%;
+    overflow-x: auto;
 }
 </style>
