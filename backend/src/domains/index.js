@@ -4,15 +4,18 @@ const asv = require('./ASV');
 const untis = require('./Untis');
 const schulkonsole = require('./Schulkonsole');
 const webuntis = require('./WebUntis');
+const nextcloud = require('./Nextcloud');
 
-const BaseDomain = require('./BaseDomain');
+const Domain = require('./Domain');
 
 const domains = {
     asv,
     untis,
     schulkonsole,
     webuntis,
-    relution: new BaseDomain('relution')
+    nextcloud,
+    dummy: new (require('./DummyDomain'))(),
+    relution: new Domain('relution')
 };
 
 async function diffDomains(source, target, forceRefresh = false) {

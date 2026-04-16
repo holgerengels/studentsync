@@ -11,7 +11,7 @@ describe('Sync ASV -> Dummy Workflow', () => {
 
     beforeAll(async () => {
         // Connect to an isolated test db so we don't mess with dev 
-        await mongoose.connect('mongodb://localhost:27017/studentsync_tests');
+        await mongoose.connect('mongodb://localhost:27017/synx_tests');
         
         clearRegistry();
         

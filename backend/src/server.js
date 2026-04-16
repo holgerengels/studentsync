@@ -11,24 +11,21 @@ const mongoose = require('mongoose');
 const config = require('./config');
 
 const { registerDomain } = require('./domains/registry');
-const DummyDomain = require('./domains/DummyDomain');
-const ASV = require('./domains/ASV');
-const Schulkonsole = require('./domains/Schulkonsole');
-const Untis = require('./domains/Untis');
-const WebUntisDomain = require('./domains/WebUntis');
+const { domains } = require('./domains/index');
 
 if (config.domains) {
     config.domains.forEach(d => {
-        if (d.name === 'dummy') registerDomain(new DummyDomain());
-        else if (d.name === 'asv') registerDomain(ASV);
-        else if (d.name === 'schulkonsole') registerDomain(Schulkonsole);
-        else if (d.name === 'untis') registerDomain(Untis);
-        else if (d.name === 'webuntis') registerDomain(WebUntisDomain);
+        if (domains[d.name]) {
+            registerDomain(domains[d.name]);
+            console.log(`[Domain Registry] Registered: ${d.name}`);
+        } else {
+            console.warn(`[Domain Registry] Warning: Configured domain '${d.name}' has no available module implementation.`);
+        }
     });
 }
 
 // Connect to MongoDB for logging
-const mongoUri = config.mongodb?.uri || 'mongodb://localhost:27017/studentsync_logs';
+const mongoUri = config.mongodb?.uri || 'mongodb://localhost:27017/synx_logs';
 mongoose.connect(mongoUri)
     .then(() => console.log('Connected to MongoDB Logging Database'))
     .catch(err => console.error('MongoDB connection error:', err.message));
@@ -51,7 +48,7 @@ app.get('*', (req, res) => {
 // Start Server
 if (require.main === module) {
     app.listen(PORT, () => {
-        console.log(`StudentSync Node Server running on port ${PORT}`);
+        console.log(`Synx Node Server running on port ${PORT}`);
         
         // Start Background Jobs via Unified Scheduler
         const { startScheduler } = require('./scheduler');

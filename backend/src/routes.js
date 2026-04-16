@@ -72,7 +72,8 @@ router.post('/execute/:taskName', verifyToken, async (req, res) => {
         
         let report;
         if (typeof task.execute === 'function') {
-            report = await task.execute();
+            const parameters = req.body || {};
+            report = await task.execute(parameters);
         } else {
             return res.status(501).json({ error: `Task ${req.params.taskName} has no execute method` });
         }

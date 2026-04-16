@@ -1,7 +1,7 @@
 {
-    "name": "studentsync-backend",
+    "name": "synx-backend",
     "version": "1.0.0",
-    "description": "Backend for StudentSync",
+    "description": "Backend for Synx",
     "main": "src/server.js",
     "scripts": {
         "start": "node src/server.js",

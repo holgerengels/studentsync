@@ -21,8 +21,8 @@ export default defineConfig({
       injectRegister: 'auto',
       includeAssets: ['favicon.ico', 'apple-touch-icon.png', 'masked-icon.png'],
       manifest: {
-        name: 'StudentSync',
-        short_name: 'Sync',
+        name: 'Synx',
+        short_name: 'Synx',
         description: 'Identity Sync System',
         theme_color: '#ffffff',
         background_color: '#ffffff',
