@@ -41,8 +41,14 @@
       <div v-if="reportDialogContent" v-html="reportDialogContent" style="padding: 1rem; font-size: 0.9em;"></div>
 
       <!-- Interactive Vue Table for Remnants -->
-      <div v-if="reportDialogRemnants.length > 0" style="max-height: 60vh; overflow-y: auto;">
-         <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 0.9em;">
+      <div v-if="reportDialogRemnants.length > 0">
+         <div style="padding: 1rem; border-bottom: 1px solid var(--wa-color-neutral-200); display: flex; gap: 0.5rem; align-items: center; background: var(--wa-color-neutral-50);">
+             <strong style="margin-right: 0.5rem; font-size: 0.9em;">Auswahl-Helfer:</strong>
+             <wa-button size="small" variant="neutral" @click="selectTeachersInDialog">Lehrer:innen</wa-button>
+             <wa-button size="small" variant="neutral" @click="selectStudentsInDialog">Schüler:innen</wa-button>
+         </div>
+         <div style="max-height: 60vh; overflow-y: auto;">
+          <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 0.9em;">
             <thead style="position: sticky; top: 0; background: var(--wa-color-neutral-100); box-shadow: 0 1px 2px rgba(0,0,0,0.1); z-index: 1;">
                <tr>
                   <th style="padding: 0.75rem 1rem; width: 40px; border-bottom: 2px solid var(--wa-color-neutral-300);">
@@ -62,6 +68,7 @@
                </tr>
             </tbody>
          </table>
+         </div>
       </div>
 
       <div slot="footer" style="display:flex; justify-content:flex-end; gap:0.5rem;">
@@ -123,6 +130,20 @@ function toggleRemnant(rem, e) {
     rem.selected = e.target.checked;
     
     // Hack: If deep reactivity fails for any reason, trigger array reassignment
+    reportDialogRemnants.value = [...reportDialogRemnants.value];
+}
+
+function selectTeachersInDialog() {
+    reportDialogRemnants.value.forEach(r => {
+        r.selected = r.uid && r.uid.charAt(1) === '.';
+    });
+    reportDialogRemnants.value = [...reportDialogRemnants.value];
+}
+
+function selectStudentsInDialog() {
+    reportDialogRemnants.value.forEach(r => {
+        r.selected = r.uid && r.uid.charAt(1) !== '.';
+    });
     reportDialogRemnants.value = [...reportDialogRemnants.value];
 }
 

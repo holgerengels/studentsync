@@ -1,0 +1,21 @@
+services:
+  app:
+    image: ghcr.io/holgerengels/synx:latest
+    ports:
+      - "3001:3001"
+    volumes:
+      - ./config:/app/config
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    depends_on:
+      - mongo
+    restart: always
+
+  mongo:
+    image: mongo:latest
+    volumes:
+      - mongo-data:/data/db
+    restart: always
+
+volumes:
+  mongo-data:

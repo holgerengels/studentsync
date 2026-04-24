@@ -1,5 +1,6 @@
 const logger = require('./logger');
 const TaskRegistry = require('../tasks/index');
+const { runHooks } = require('./hookRunner');
 
 async function runTask(taskName, trigger, params = {}) {
     const task = TaskRegistry[taskName];
@@ -13,6 +14,10 @@ async function runTask(taskName, trigger, params = {}) {
         }
         const summary = task.summarize(details);
         await logger.endTask(logId, 'SUCCESS', summary, details);
+        
+        // Execute hooks generically if defined
+        await runHooks(taskName, details);
+        
         return details;
     } catch (e) {
         const details = { error: e.message, params };

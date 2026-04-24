@@ -1,0 +1,28 @@
+# Stage 1: Build Frontend
+FROM node:20 as builder
+WORKDIR /app/frontend
+COPY frontend/package*.json ./
+RUN npm install
+COPY frontend/ ./
+RUN npm run build
+
+# Stage 2: Serve Backend & Frontend
+FROM node:20
+WORKDIR /app/backend
+
+# Install Backend Deps
+COPY backend/package*.json ./
+RUN npm install --production
+
+# Copy Backend Code
+COPY backend/ ./
+
+# Copy Built Frontend
+COPY --from=builder /app/frontend/dist /app/frontend/dist
+
+# Default config dir
+RUN mkdir -p /app/config
+COPY config/ /app/config/
+
+EXPOSE 3001
+CMD ["node", "src/server.js"]
