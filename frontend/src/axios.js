@@ -66,8 +66,12 @@ axios.interceptors.response.use(
             auth.triggerLogin();
             return new Promise((resolve, reject) => {
                 requestQueue.add((token) => {
-                    originalRequest.headers.Authorization = `Bearer ${token}`;
-                    axios(originalRequest).then(resolve).catch(reject);
+                    if (token instanceof Error) {
+                        reject(token);
+                    } else {
+                        originalRequest.headers.Authorization = `Bearer ${token}`;
+                        axios(originalRequest).then(resolve).catch(reject);
+                    }
                 });
             });
         }

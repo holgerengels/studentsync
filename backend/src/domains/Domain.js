@@ -21,15 +21,21 @@ class Domain {
         }
         
         if (!this._fetchPromise) {
-             this._fetchPromise = this.readIdentities()
+             const promise = this.readIdentities()
                  .then(data => {
-                     this.identities = data;
+                     // Check if this promise is still the active one before caching
+                     if (this._fetchPromise === promise) {
+                         this.identities = data;
+                     }
                      return data;
                  })
                  .catch(err => {
-                     this._fetchPromise = null; // Erlaubt einen neuen Versuch bei Fehlern
+                     if (this._fetchPromise === promise) {
+                         this._fetchPromise = null; // Erlaubt einen neuen Versuch bei Fehlern
+                     }
                      throw err;
                  });
+             this._fetchPromise = promise;
         }
         
         return this._fetchPromise;

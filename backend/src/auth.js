@@ -28,8 +28,14 @@ const MOCK_USERS = [
     { username: 'schulleiter', password: 'password', groups: ['Schulleitung', 'Lehrkräfte'], displayName: 'Thomas Braun' }
 ];
 
-const SECRET_KEY = 'supersecretkey_synx'; // Use ENV in production
-const REFRESH_SECRET_KEY = 'supersecretrefreshkey_synx'; 
+const devMode = settings.devMode !== false;
+const SECRET_KEY = process.env.JWT_SECRET || (settings.server && settings.server.jwtSecret) || (devMode ? 'supersecretkey_synx' : null);
+const REFRESH_SECRET_KEY = process.env.REFRESH_JWT_SECRET || (settings.server && settings.server.refreshJwtSecret) || (devMode ? 'supersecretrefreshkey_synx' : null);
+
+if (!devMode && (!SECRET_KEY || !REFRESH_SECRET_KEY)) {
+    throw new Error('CRITICAL: JWT Secrets must be configured in production (devMode: false). Set process.env.JWT_SECRET or settings.server.jwtSecret.');
+}
+
 const ACCESS_TOKEN_EXPIRY = '1h';
 const REFRESH_TOKEN_EXPIRY = (settings.server && settings.server.refreshTokenExpiry) || '30d';
 
@@ -57,19 +63,19 @@ const login = async (username, password, isPwa = true) => {
 
     const ldapConfig = settings.server.ldap;
 
-    return new Promise((resolve) => {
+    return new Promise((resolve, reject) => {
         const client = ldap.createClient({ url: ldapConfig.url });
 
         client.on('error', (err) => {
             console.error('[Auth] LDAP Client Error:', err);
-            resolve(null);
+            reject(new Error('LDAP Connection Error: ' + err.message));
         });
 
         client.bind(ldapConfig.binddn, ldapConfig.bindpw, (err) => {
             if (err) {
                 console.error('[Auth] LDAP Bind Error:', err);
                 client.unbind();
-                return resolve(null);
+                return reject(new Error('LDAP Bind Error (System Account): ' + err.message));
             }
 
             const escapedUsername = escapeLDAP(username);
@@ -78,7 +84,8 @@ const login = async (username, password, isPwa = true) => {
 
             client.search(ldapConfig.basedn, opts, (err, searchRes) => {
                 if (err) {
-                    client.unbind(); return resolve(null);
+                    client.unbind(); 
+                    return reject(new Error('LDAP Search Error: ' + err.message));
                 }
 
                 let userEntry = null;
@@ -128,7 +135,10 @@ const login = async (username, password, isPwa = true) => {
                     });
                 });
 
-                searchRes.on('error', () => { client.unbind(); resolve(null); });
+                searchRes.on('error', (err) => { 
+                    client.unbind(); 
+                    reject(new Error('LDAP Search Stream Error: ' + err.message)); 
+                });
             });
         });
     });

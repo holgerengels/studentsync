@@ -18,6 +18,12 @@ export const useRequestQueueStore = defineStore('requestQueue', {
 
         clear() {
             this.queue = [];
+        },
+
+        rejectAll(error) {
+            console.log(`Rejecting ${this.queue.length} queued requests...`);
+            this.queue.forEach(factory => factory(error));
+            this.queue = [];
         }
     }
 })

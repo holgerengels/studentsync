@@ -12,7 +12,10 @@
         
         <div v-if="errorMsg" class="error">{{ errorMsg }}</div>
         
-        <wa-button type="submit" variant="primary" style="margin-top: 1rem;" :disabled="loading">Anmelden</wa-button>
+        <div style="display: flex; gap: 1rem; margin-top: 1rem;">
+          <wa-button type="submit" variant="primary" :disabled="loading" style="flex: 1;">Anmelden</wa-button>
+          <wa-button variant="neutral" :disabled="loading" @click="cancelLogin">Abbrechen</wa-button>
+        </div>
       </form>
     </wa-card>
   </div>
@@ -56,6 +59,15 @@ async function handleLogin() {
         errorMsg.value = e.response?.data?.error || e.response?.data?.message || 'Zugriff verweigert (LDAP oder Auth fehlgeschlagen)';
     } finally {
         loading.value = false;
+    }
+}
+
+function cancelLogin() {
+    requestQueue.rejectAll(new Error('Login abgebrochen'));
+    auth.logout(); // Clears user info and local storage
+    auth.showLogin = false; // Hide the overlay explicitly
+    if (router.currentRoute.value.path !== '/login') {
+        router.push('/login');
     }
 }
 </script>

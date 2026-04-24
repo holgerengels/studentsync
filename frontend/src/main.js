@@ -48,7 +48,16 @@ async function bootstrap() {
         const res = await axios.get('/api/config/ui');
         remoteConfig = res.data;
     } catch (e) {
-        console.error("Failed to load config, starting with defaults", e);
+        console.error("Failed to load config", e);
+        document.body.innerHTML = `
+            <div style="display:flex; justify-content:center; align-items:center; height:100vh; font-family:sans-serif; flex-direction:column; background-color:#f8f9fa;">
+                <h2 style="color:#dc3545; margin-bottom: 1rem;">Systemfehler</h2>
+                <p>Die UI-Konfiguration konnte nicht geladen werden.</p>
+                <p style="font-size: 0.9em; color:#6c757d;">Bitte stellen Sie sicher, dass das Backend erreichbar ist.</p>
+                <button onclick="window.location.reload()" style="margin-top: 1rem; padding: 0.5rem 1rem; border:none; background-color:#0d6efd; color:white; border-radius:4px; cursor:pointer;">Neu laden</button>
+            </div>
+        `;
+        return; // Stop initialization
     }
 
     // Pass the config down to app via Provide/Inject

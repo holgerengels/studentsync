@@ -311,11 +311,13 @@ async function runAction(act, contextName) {
         if (act.download && res.data && res.data.report && res.data.report.csvData) {
             const blob = new Blob([res.data.report.csvData], { type: 'text/csv;charset=utf-8;' });
             const link = document.createElement('a');
-            link.href = URL.createObjectURL(blob);
+            const url = URL.createObjectURL(blob);
+            link.href = url;
             link.setAttribute('download', res.data.report.filename || 'export.csv');
             document.body.appendChild(link);
             link.click();
             document.body.removeChild(link);
+            setTimeout(() => URL.revokeObjectURL(url), 100);
         }
         
         // Open Dialog configuration

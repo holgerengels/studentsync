@@ -21,3 +21,11 @@ out/
 
 client/**/*.js
 client/**/*.map
+
+# Tests
+coverage/
+
+# Environment
+.env
+.env.*
+!.env.example

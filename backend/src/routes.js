@@ -14,13 +14,18 @@ router.get('/health', (req, res) => res.json({ status: 'ok' }));
 // ------------------------
 
 router.post('/login', async (req, res) => {
-    const { username, password } = req.body;
-    if (!username || !password) return res.status(400).json({ error: 'Missing credentials' });
-    
-    const result = await login(username, password, true);
-    if (!result) return res.status(401).json({ error: 'Invalid credentials' });
-    
-    res.json(result);
+    try {
+        const { username, password } = req.body;
+        if (!username || !password) return res.status(400).json({ error: 'Missing credentials' });
+        
+        const result = await login(username, password, true);
+        if (!result) return res.status(401).json({ error: 'Invalid credentials' });
+        
+        res.json(result);
+    } catch (e) {
+        console.error('[Auth Route] Login Error:', e.message);
+        res.status(500).json({ error: e.message });
+    }
 });
 
 router.post('/refresh', (req, res) => {
@@ -69,7 +74,7 @@ router.post('/execute/:taskName', verifyToken, async (req, res) => {
         const tasks = require('./tasks/index');
         const task = tasks[req.params.taskName];
         if (!task) return res.status(404).json({ error: `Task ${req.params.taskName} not found` });
-        
+        const startTime = new Date();
         let report;
         if (typeof task.execute === 'function') {
             const parameters = req.body || {};
@@ -91,9 +96,9 @@ router.post('/execute/:taskName', verifyToken, async (req, res) => {
             status: (report && report.syncLog && report.syncLog.errors && report.syncLog.errors.length) ? 'ERROR' : 'SUCCESS',
             details: typeof report === 'object' ? (report.syncLog || report) : { result: String(report) },
             summaryHtml: htmlSnippet,
-            startTime: new Date(),
+            startTime: startTime,
             endTime: new Date(),
-            durationMs: 0 // Will fix when we wrap it completely, for now keep simple
+            durationMs: new Date().getTime() - startTime.getTime()
         });
         await logEntry.save().catch(e => console.error("Logging error during execute:", e.message));
         
@@ -127,6 +132,7 @@ router.post('/sync/:source/:target', verifyToken, async (req, res) => {
     try {
         const { source, target } = req.params;
         const task = new SyncTask(source, target);
+        const startTime = new Date();
         const report = await task.execute({ forceRefresh: req.query.refresh === 'true' });
         
         // Simplified log saving process
@@ -137,9 +143,9 @@ router.post('/sync/:source/:target', verifyToken, async (req, res) => {
             status: report.syncLog?.errors?.length ? 'ERROR' : 'SUCCESS',
             details: typeof report === 'object' ? (report.syncLog || report) : { result: String(report) },
             summaryHtml: htmlSnippet,
-            startTime: new Date(),
+            startTime: startTime,
             endTime: new Date(),
-            durationMs: 0
+            durationMs: new Date().getTime() - startTime.getTime()
         });
         await logEntry.save().catch(e => console.error("Logging error during sync:", e.message));
 
