@@ -12,14 +12,17 @@ describe('IdGenerationTask', () => {
     });
 
     test('execute calls asv.generateIds', async () => {
-        asv.generateIds.mockResolvedValue(['id1', 'id2']);
+        asv.generateIds.mockResolvedValue([{ account: 'id1' }, { account: 'id2' }]);
         const result = await task.execute();
         expect(asv.generateIds).toHaveBeenCalled();
-        expect(result).toEqual(['id1', 'id2']);
+        expect(result).toEqual({
+             syncLog: { generatedIds: ['id1', 'id2'] },
+             generated: [{ account: 'id1' }, { account: 'id2' }]
+        });
     });
 
     test('summarize formats array output nicely', () => {
-        const summary = task.summarize(['1', '2', '3']);
+        const summary = task.summarize({ generated: ['1', '2', '3'] });
         expect(summary).toBe('<span style="color: #10B981; font-weight: bold;">+3 IDs generiert</span>');
     });
 

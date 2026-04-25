@@ -11,7 +11,7 @@ describe('Sync ASV -> Dummy Workflow', () => {
 
     beforeAll(async () => {
         // Connect to an isolated test db so we don't mess with dev 
-        await mongoose.connect('mongodb://localhost:27017/synx_tests');
+        await mongoose.connect('mongodb://admin:password@localhost:27017/synx_tests?authSource=admin');
         
         clearRegistry();
         
@@ -60,9 +60,9 @@ describe('Sync ASV -> Dummy Workflow', () => {
         let dummyAfterFirstSync = await dummyDomain.getIdentities();
         
         expect(dummyAfterFirstSync.length).toBe(asvData.length);
-        expect(report.syncLog.added).toBe(asvData.length);
-        expect(report.syncLog.changed).toBe(0);
-        expect(report.syncLog.removed).toBe(0);
+        expect(report.syncLog.added.length).toBe(asvData.length);
+        expect(report.syncLog.changed ? report.syncLog.changed.length : 0).toBe(0);
+        expect(report.syncLog.removed ? report.syncLog.removed.length : 0).toBe(0);
 
         // 3. Ändere in dummy ein paar identities, füge fiktive hinzu, lösche ein paar
         
@@ -96,9 +96,9 @@ describe('Sync ASV -> Dummy Workflow', () => {
         expect(dummyFinal.length).toBe(asvData.length);
 
         // Prüfe Logs: 1 wiederhergestellt (wurde gelöscht), 1 geändert (wurde falsch editiert), 1 gelöscht (der Fake-User)
-        expect(report2.syncLog.added).toBe(1);
-        expect(report2.syncLog.changed).toBe(1);
-        expect(report2.syncLog.removed).toBe(1);
+        expect(report2.syncLog.added.length).toBe(1);
+        expect(report2.syncLog.changed.length).toBe(1);
+        expect(report2.syncLog.removed.length).toBe(1);
         
         // Verify dass die Attribute wirklich repariert wurden
         if (asvData.length > 0) {

@@ -1,9 +1,9 @@
-const SyncTask = require('../SyncTask');
-const ManagableDomain = require('../../domains/ManagableDomain');
-const { registerDomain } = require('../../domains/registry');
+const SyncTask = require('../../src/tasks/SyncTask');
+const ManagableDomain = require('../../src/domains/ManagableDomain');
+const { registerDomain } = require('../../src/domains/registry');
 
 const mongoose = require('mongoose');
-const DummyDomain = require('../../domains/DummyDomain');
+const DummyDomain = require('../../src/domains/DummyDomain');
 
 // 2. A mock source domain that we control
 class MockSourceDomain extends ManagableDomain {
@@ -22,7 +22,7 @@ describe('SyncTask', () => {
     let syncTask;
 
     beforeAll(async () => {
-        await mongoose.connect('mongodb://localhost:27017/synx_tests');
+        await mongoose.connect('mongodb://admin:password@localhost:27017/synx_tests?authSource=admin');
         sourceDomain = new MockSourceDomain();
         targetDomain = new DummyDomain();
         registerDomain(sourceDomain);
@@ -103,7 +103,7 @@ describe('SyncTask', () => {
     });
 
     it('should fail if trying to sync to a non-managable target', async () => {
-        const NonManagableDomain = require('../../domains/Domain');
+        const NonManagableDomain = require('../../src/domains/Domain');
         class BadTargetDomain extends NonManagableDomain {
             async readIdentities() { return []; }
         }

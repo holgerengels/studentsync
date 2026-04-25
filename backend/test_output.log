@@ -1,0 +1,432 @@
+
+> synx-backend@1.0.0 test
+> jest --detectOpenHandles --forceExit --runInBand
+
+FAIL tests/integration/ASVDummySync.test.js
+  ● Console
+
+    console.error
+      ASV DB Connection failed: connect ECONNREFUSED 127.0.0.1:5130
+
+      37 |             client = await this.pool.connect();
+      38 |         } catch (e) {
+    > 39 |             console.error('ASV DB Connection failed:', e.message);
+         |                     ^
+      40 |             throw new Error('ASV DB Connection failed: ' + e.message);
+      41 |         }
+      42 |         
+
+      at ASV.error [as readIdentities] (src/domains/ASV.js:39:21)
+      at Object.<anonymous> (tests/integration/ASVDummySync.test.js:24:13)
+
+    console.warn
+      ASV unreachable, injecting mocked identities for workflow test.
+
+      24 |             await asv.getIdentities();
+      25 |         } catch(e) {
+    > 26 |             console.warn("ASV unreachable, injecting mocked identities for workflow test.");
+         |                     ^
+      27 |             asv.readIdentities = async () => [
+      28 |                 new Identity('user1', 'Max', 'Mustermann', { clazz: '10A' }),
+      29 |                 new Identity('user2', 'Anna', 'Schmidt', { clazz: '10B' }),
+
+      at Object.warn (tests/integration/ASVDummySync.test.js:26:21)
+
+  ● Sync ASV -> Dummy Workflow › Full ASV to Dummy synchronization and healing workflow
+
+    MongoServerError: Command delete requires authentication
+
+      46 |         
+      47 |         // 1. Mache die dummy collection leer
+    > 48 |         await DummyModel.deleteMany({});
+         |         ^
+      49 |         dummyDomain.invalidate();
+      50 |         asv.invalidate();
+      51 |         
+
+      at Connection.sendCommand (node_modules/mongodb/src/cmap/connection.ts:559:17)
+      at Connection.command (node_modules/mongodb/src/cmap/connection.ts:633:22)
+      at Server.command (node_modules/mongodb/src/sdam/server.ts:350:21)
+      at tryOperation (node_modules/mongodb/src/operations/execute_operation.ts:289:24)
+      at executeOperation (node_modules/mongodb/src/operations/execute_operation.ts:119:12)
+      at Collection.deleteMany (node_modules/mongodb/src/collection.ts:482:12)
+      at model.Query.exec (node_modules/mongoose/lib/query.js:4627:63)
+      at Object.<anonymous> (tests/integration/ASVDummySync.test.js:48:9)
+
+FAIL tests/tasks/SyncTask.test.js
+  ● SyncTask › should sync additions to dummy domain
+
+    MongoServerError: Command delete requires authentication
+
+      36 |     beforeEach(async () => {
+      37 |         const DummyModel = mongoose.model('DummyIdentity');
+    > 38 |         await DummyModel.deleteMany({});
+         |         ^
+      39 |         sourceDomain.data = [];
+      40 |         targetDomain.invalidate();
+      41 |         sourceDomain.invalidate();
+
+      at Connection.sendCommand (node_modules/mongodb/src/cmap/connection.ts:559:17)
+      at Connection.command (node_modules/mongodb/src/cmap/connection.ts:633:22)
+      at Server.command (node_modules/mongodb/src/sdam/server.ts:350:21)
+      at tryOperation (node_modules/mongodb/src/operations/execute_operation.ts:289:24)
+      at executeOperation (node_modules/mongodb/src/operations/execute_operation.ts:119:12)
+      at Collection.deleteMany (node_modules/mongodb/src/collection.ts:482:12)
+      at model.Query.exec (node_modules/mongoose/lib/query.js:4627:63)
+      at Object.<anonymous> (tests/tasks/SyncTask.test.js:38:9)
+
+  ● SyncTask › should sync changes to dummy domain
+
+    MongoServerError: Command delete requires authentication
+
+      36 |     beforeEach(async () => {
+      37 |         const DummyModel = mongoose.model('DummyIdentity');
+    > 38 |         await DummyModel.deleteMany({});
+         |         ^
+      39 |         sourceDomain.data = [];
+      40 |         targetDomain.invalidate();
+      41 |         sourceDomain.invalidate();
+
+      at Connection.sendCommand (node_modules/mongodb/src/cmap/connection.ts:559:17)
+      at Connection.command (node_modules/mongodb/src/cmap/connection.ts:633:22)
+      at Server.command (node_modules/mongodb/src/sdam/server.ts:350:21)
+      at tryOperation (node_modules/mongodb/src/operations/execute_operation.ts:289:24)
+      at executeOperation (node_modules/mongodb/src/operations/execute_operation.ts:119:12)
+      at Collection.deleteMany (node_modules/mongodb/src/collection.ts:482:12)
+      at model.Query.exec (node_modules/mongoose/lib/query.js:4627:63)
+      at Object.<anonymous> (tests/tasks/SyncTask.test.js:38:9)
+
+  ● SyncTask › should sync removals from dummy domain
+
+    MongoServerError: Command delete requires authentication
+
+      36 |     beforeEach(async () => {
+      37 |         const DummyModel = mongoose.model('DummyIdentity');
+    > 38 |         await DummyModel.deleteMany({});
+         |         ^
+      39 |         sourceDomain.data = [];
+      40 |         targetDomain.invalidate();
+      41 |         sourceDomain.invalidate();
+
+      at Connection.sendCommand (node_modules/mongodb/src/cmap/connection.ts:559:17)
+      at Connection.command (node_modules/mongodb/src/cmap/connection.ts:633:22)
+      at Server.command (node_modules/mongodb/src/sdam/server.ts:350:21)
+      at tryOperation (node_modules/mongodb/src/operations/execute_operation.ts:289:24)
+      at executeOperation (node_modules/mongodb/src/operations/execute_operation.ts:119:12)
+      at Collection.deleteMany (node_modules/mongodb/src/collection.ts:482:12)
+      at model.Query.exec (node_modules/mongoose/lib/query.js:4627:63)
+      at Object.<anonymous> (tests/tasks/SyncTask.test.js:38:9)
+
+  ● SyncTask › should fail if trying to sync to a non-managable target
+
+    MongoServerError: Command delete requires authentication
+
+      36 |     beforeEach(async () => {
+      37 |         const DummyModel = mongoose.model('DummyIdentity');
+    > 38 |         await DummyModel.deleteMany({});
+         |         ^
+      39 |         sourceDomain.data = [];
+      40 |         targetDomain.invalidate();
+      41 |         sourceDomain.invalidate();
+
+      at Connection.sendCommand (node_modules/mongodb/src/cmap/connection.ts:559:17)
+      at Connection.command (node_modules/mongodb/src/cmap/connection.ts:633:22)
+      at Server.command (node_modules/mongodb/src/sdam/server.ts:350:21)
+      at tryOperation (node_modules/mongodb/src/operations/execute_operation.ts:289:24)
+      at executeOperation (node_modules/mongodb/src/operations/execute_operation.ts:119:12)
+      at Collection.deleteMany (node_modules/mongodb/src/collection.ts:482:12)
+      at model.Query.exec (node_modules/mongoose/lib/query.js:4627:63)
+      at Object.<anonymous> (tests/tasks/SyncTask.test.js:38:9)
+
+FAIL tests/tasks/DiffTask.test.js
+  ● DiffTask › execute throws without parameters
+
+    expect(received).rejects.toThrow(expected)
+
+    Expected substring: "Missing source or target in params"
+    Received message:   "Domains not found: undefined or undefined"
+
+          15 |
+          16 |         if (!sourceDomain || !targetDomain) {
+        > 17 |             throw new Error(`Domains not found: ${this.sourceName} or ${this.targetName}`);
+             |                   ^
+          18 |         }
+          19 |
+          20 |         if (parameters.forceRefresh) {
+
+      at DiffTask.execute (src/tasks/DiffTask.js:17:19)
+      at Object.execute (tests/tasks/DiffTask.test.js:19:27)
+      at Object.toThrow (node_modules/expect/build/index.js:2155:20)
+      at Object.toThrow (tests/tasks/DiffTask.test.js:19:48)
+
+  ● DiffTask › execute calls diffDomains with parsed parameters
+
+    Domains not found: undefined or undefined
+
+      15 |
+      16 |         if (!sourceDomain || !targetDomain) {
+    > 17 |             throw new Error(`Domains not found: ${this.sourceName} or ${this.targetName}`);
+         |                   ^
+      18 |         }
+      19 |
+      20 |         if (parameters.forceRefresh) {
+
+      at DiffTask.execute (src/tasks/DiffTask.js:17:19)
+      at Object.execute (tests/tasks/DiffTask.test.js:26:35)
+
+  ● DiffTask › summarize produces correct HTML string format
+
+    TypeError: task.summarize is not a function
+
+      38 |         };
+      39 |         
+    > 40 |         const summary = task.summarize(details);
+         |                              ^
+      41 |         
+      42 |         expect(summary).toContain('<strong>asv &rarr; webuntis</strong>');
+      43 |         expect(summary).toContain('<span style="color: #10B981; font-weight: bold;">+1</span>');
+
+      at Object.summarize (tests/tasks/DiffTask.test.js:40:30)
+
+  ● DiffTask › summarize handles errors
+
+    TypeError: task.summarize is not a function
+
+      48 |     test('summarize handles errors', () => {
+      49 |         const errorDetails = { error: 'Unknown Domain' };
+    > 50 |         expect(task.summarize(errorDetails)).toBe('<span style="color: #EF4444;">Fehler: Unknown Domain</span>');
+         |                     ^
+      51 |     });
+      52 |     
+      53 |     test('summarize handles empty correctly', () => {
+
+      at Object.summarize (tests/tasks/DiffTask.test.js:50:21)
+
+  ● DiffTask › summarize handles empty correctly
+
+    TypeError: task.summarize is not a function
+
+      56 |             params: { source: 'asv', target: 'untis' }
+      57 |         };
+    > 58 |         const summary = task.summarize(details);
+         |                              ^
+      59 |         expect(summary).toContain('<strong>asv &rarr; untis</strong>');
+      60 |         expect(summary).toContain('+0');
+      61 |         expect(summary).toContain('~0');
+
+      at Object.summarize (tests/tasks/DiffTask.test.js:58:30)
+
+FAIL tests/tasks/IdGenerationTask.test.js
+  ● IdGenerationTask › execute calls asv.generateIds
+
+    expect(received).toEqual(expected) // deep equality
+
+    Expected: ["id1", "id2"]
+    Received: {"generated": ["id1", "id2"], "syncLog": {"generatedIds": [undefined, undefined]}}
+
+      16 |         const result = await task.execute();
+      17 |         expect(asv.generateIds).toHaveBeenCalled();
+    > 18 |         expect(result).toEqual(['id1', 'id2']);
+         |                        ^
+      19 |     });
+      20 |
+      21 |     test('summarize formats array output nicely', () => {
+
+      at Object.toEqual (tests/tasks/IdGenerationTask.test.js:18:24)
+
+  ● IdGenerationTask › summarize formats array output nicely
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: "<span style=\"color: #10B981; font-weight: bold;\">+3 IDs generiert</span>"
+    Received: "<span style=\"color:var(--wa-color-neutral-500)\">Keine neuen IDs notwendig</span>"
+
+      21 |     test('summarize formats array output nicely', () => {
+      22 |         const summary = task.summarize(['1', '2', '3']);
+    > 23 |         expect(summary).toBe('<span style="color: #10B981; font-weight: bold;">+3 IDs generiert</span>');
+         |                         ^
+      24 |     });
+      25 |
+      26 |     test('summarize formats empty or error elegantly', () => {
+
+      at Object.toBe (tests/tasks/IdGenerationTask.test.js:23:25)
+
+FAIL tests/api_compare.test.js
+  ● Test suite failed to run
+
+    CRITICAL: JWT Secrets must be configured in production (devMode: false). Set process.env.JWT_SECRET or settings.server.jwtSecret.
+
+      34 |
+      35 | if (!devMode && (!SECRET_KEY || !REFRESH_SECRET_KEY)) {
+    > 36 |     throw new Error('CRITICAL: JWT Secrets must be configured in production (devMode: false). Set process.env.JWT_SECRET or settings.server.jwtSecret.');
+         |           ^
+      37 | }
+      38 |
+      39 | const ACCESS_TOKEN_EXPIRY = '1h';
+
+      at Object.<anonymous> (src/auth.js:36:11)
+      at Object.require (src/routes.js:8:52)
+      at Object.require (src/server.js:4:16)
+      at Object.require (tests/api_compare.test.js:3:13)
+
+PASS tests/integration/WebUntis.test.js
+  ● Console
+
+    console.error
+      WebUntis read error: Request failed with status code 403
+
+      166 |
+      167 |         } catch (e) {
+    > 168 |             console.error('WebUntis read error:', e.message);
+          |                     ^
+      169 |             throw new Error('WebUntis read error: ' + e.message);
+      170 |         }
+      171 |     }
+
+      at WebUntisDomain.error [as readIdentities] (src/domains/WebUntis.js:168:21)
+      at Object.<anonymous> (tests/integration/WebUntis.test.js:9:32)
+
+    console.warn
+      Skipping WebUntis test: API unreachable or credentials invalid WebUntis read error: Request failed with status code 403
+
+      13 |             }
+      14 |         } catch (e) {
+    > 15 |             console.warn('Skipping WebUntis test: API unreachable or credentials invalid', e.message);
+         |                     ^
+      16 |         }
+      17 |     });
+      18 | });
+
+      at Object.warn (tests/integration/WebUntis.test.js:15:21)
+
+PASS tests/auth.test.js
+  ● Console
+
+    console.log
+      [Auth] Settings loaded. DevMode: undefined
+
+      at Object.log (src/auth.js:23:9)
+
+    console.error
+      [Auth] LDAP Client Error: Error: Mocked Connection Error
+          at Timeout._onTimeout (/home/holger/jdevel/synx/backend/tests/auth.test.js:14:41)
+          at listOnTimeout (node:internal/timers:581:17)
+          at processTimers (node:internal/timers:519:7)
+
+      68 |
+      69 |         client.on('error', (err) => {
+    > 70 |             console.error('[Auth] LDAP Client Error:', err);
+         |                     ^
+      71 |             reject(new Error('LDAP Connection Error: ' + err.message));
+      72 |         });
+      73 |
+
+      at error (src/auth.js:70:21)
+      at Timeout.cb [as _onTimeout] (tests/auth.test.js:14:38)
+
+    console.error
+      [Auth] LDAP Bind Error: Error: Mocked Bind Error
+          at Object.<anonymous> (/home/holger/jdevel/synx/backend/tests/auth.test.js:22:31)
+          at /home/holger/jdevel/synx/backend/node_modules/jest-mock/build/index.js:305:39
+          at Object.<anonymous> (/home/holger/jdevel/synx/backend/node_modules/jest-mock/build/index.js:312:13)
+          at Object.mockConstructor [as bind] (/home/holger/jdevel/synx/backend/node_modules/jest-mock/build/index.js:67:19)
+          at bind (/home/holger/jdevel/synx/backend/src/auth.js:74:16)
+          at new Promise (<anonymous>)
+          at Object.login (/home/holger/jdevel/synx/backend/src/auth.js:66:12)
+          at Object.login (/home/holger/jdevel/synx/backend/tests/auth.test.js:114:31)
+          at Promise.finally.completed (/home/holger/jdevel/synx/backend/node_modules/jest-circus/build/jestAdapterInit.js:1557:28)
+          at new Promise (<anonymous>)
+          at callAsyncCircusFn (/home/holger/jdevel/synx/backend/node_modules/jest-circus/build/jestAdapterInit.js:1497:10)
+          at _callCircusTest (/home/holger/jdevel/synx/backend/node_modules/jest-circus/build/jestAdapterInit.js:1007:40)
+          at _runTest (/home/holger/jdevel/synx/backend/node_modules/jest-circus/build/jestAdapterInit.js:947:3)
+          at /home/holger/jdevel/synx/backend/node_modules/jest-circus/build/jestAdapterInit.js:849:7
+          at _runTestsForDescribeBlock (/home/holger/jdevel/synx/backend/node_modules/jest-circus/build/jestAdapterInit.js:862:11)
+          at _runTestsForDescribeBlock (/home/holger/jdevel/synx/backend/node_modules/jest-circus/build/jestAdapterInit.js:857:11)
+          at _runTestsForDescribeBlock (/home/holger/jdevel/synx/backend/node_modules/jest-circus/build/jestAdapterInit.js:857:11)
+          at run (/home/holger/jdevel/synx/backend/node_modules/jest-circus/build/jestAdapterInit.js:761:3)
+          at runAndTransformResultsToJestFormat (/home/holger/jdevel/synx/backend/node_modules/jest-circus/build/jestAdapterInit.js:1918:21)
+          at jestAdapter (/home/holger/jdevel/synx/backend/node_modules/jest-circus/build/runner.js:101:19)
+          at runTestInternal (/home/holger/jdevel/synx/backend/node_modules/jest-runner/build/index.js:275:16)
+          at runTest (/home/holger/jdevel/synx/backend/node_modules/jest-runner/build/index.js:343:7)
+
+      74 |         client.bind(ldapConfig.binddn, ldapConfig.bindpw, (err) => {
+      75 |             if (err) {
+    > 76 |                 console.error('[Auth] LDAP Bind Error:', err);
+         |                         ^
+      77 |                 client.unbind();
+      78 |                 return reject(new Error('LDAP Bind Error (System Account): ' + err.message));
+      79 |             }
+
+      at error (src/auth.js:76:25)
+      at Object.cb (tests/auth.test.js:22:28)
+      at bind (src/auth.js:74:16)
+      at Object.login (src/auth.js:66:12)
+      at Object.login (tests/auth.test.js:114:31)
+
+PASS tests/domains/Schulkonsole.test.js
+  ● Console
+
+    console.error
+      Schulkonsole read error: connect ECONNREFUSED 127.0.0.1:43001
+
+      77 |             });
+      78 |         } catch (e) {
+    > 79 |             console.error('Schulkonsole read error:', e.message);
+         |                     ^
+      80 |             throw new Error('Schulkonsole read error: ' + e.message);
+      81 |         }
+      82 |     }
+
+      at Schulkonsole.error [as readIdentities] (src/domains/Schulkonsole.js:79:21)
+      at Object.<anonymous> (tests/domains/Schulkonsole.test.js:8:32)
+
+    console.warn
+      Skipping Schulkonsole test: API unreachable or credentials invalid Schulkonsole read error: connect ECONNREFUSED 127.0.0.1:43001
+
+      12 |             }
+      13 |         } catch (e) {
+    > 14 |             console.warn('Skipping Schulkonsole test: API unreachable or credentials invalid', e.message);
+         |                     ^
+      15 |         }
+      16 |     });
+      17 | });
+
+      at Object.warn (tests/domains/Schulkonsole.test.js:14:21)
+
+PASS tests/integration/Untis.test.js
+  ● Console
+
+    console.error
+      Untis DB Connection failed: connect ECONNREFUSED 127.0.0.1:5138
+
+      45 |             connection = await mysql.createConnection(this.dbConfig);
+      46 |         } catch (e) {
+    > 47 |             console.error('Untis DB Connection failed:', e.message);
+         |                     ^
+      48 |             throw new Error('Untis DB Connection failed: ' + e.message);
+      49 |         }
+      50 |
+
+      at Untis.error [as readIdentities] (src/domains/Untis.js:47:21)
+      at Object.<anonymous> (tests/integration/Untis.test.js:8:32)
+
+    console.warn
+      Skipping Untis test: Database unreachable Untis DB Connection failed: connect ECONNREFUSED 127.0.0.1:5138
+
+      12 |             }
+      13 |         } catch (e) {
+    > 14 |             console.warn('Skipping Untis test: Database unreachable', e.message);
+         |                     ^
+      15 |         }
+      16 |     });
+      17 | });
+
+      at Object.warn (tests/integration/Untis.test.js:14:21)
+
+PASS tests/utils/userIds.test.js
+
+Test Suites: 5 failed, 5 passed, 10 total
+Tests:       12 failed, 17 passed, 29 total
+Snapshots:   0 total
+Time:        3.7 s, estimated 4 s
+Ran all test suites.

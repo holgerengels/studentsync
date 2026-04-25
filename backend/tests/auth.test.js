@@ -2,7 +2,7 @@ process.env.JWT_SECRET = 'test_secret';
 process.env.REFRESH_JWT_SECRET = 'test_refresh_secret';
 
 const jwt = require('jsonwebtoken');
-const auth = require('../auth');
+const auth = require('../src/auth');
 
 // Mock ldapjs
 jest.mock('ldapjs', () => {
@@ -57,7 +57,7 @@ jest.mock('ldapjs', () => {
 });
 
 // Mock config
-jest.mock('../config', () => ({
+jest.mock('../src/config', () => ({
     settings: {
         devMode: false,
         server: {

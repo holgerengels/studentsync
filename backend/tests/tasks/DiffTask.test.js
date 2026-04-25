@@ -1,43 +1,63 @@
 const DiffTask = require('../../src/tasks/DiffTask');
-const { diffDomains } = require('../../src/domains/index');
+const { getDomain } = require('../../src/domains/registry');
 
-jest.mock('../../src/domains/index', () => {
-    return {
-        diffDomains: jest.fn()
-    };
-});
+jest.mock('../../src/domains/registry', () => ({
+    getDomain: jest.fn()
+}));
 
 describe('DiffTask', () => {
     let task;
 
     beforeEach(() => {
-        task = new DiffTask();
         jest.clearAllMocks();
     });
 
     test('execute throws without parameters', async () => {
-        await expect(task.execute({})).rejects.toThrow('Missing source or target in params');
+        getDomain.mockReturnValue(null);
+        task = new DiffTask('asv', 'untis');
+        await expect(task.execute({})).rejects.toThrow('Domains not found: asv or untis');
     });
 
-    test('execute calls diffDomains with parsed parameters', async () => {
-        diffDomains.mockResolvedValue({ added: [], removed: [], changed: [] });
+    test('execute performs diff with parsed parameters', async () => {
+        const mockSource = {
+            invalidate: jest.fn(),
+            getIdentities: jest.fn().mockResolvedValue([{ userId: 'u1', firstName: 'A', lastName: 'B' }]),
+            supportedProperties: ['userId', 'firstName', 'lastName']
+        };
+        const mockTarget = {
+            invalidate: jest.fn(),
+            getIdentities: jest.fn().mockResolvedValue([{ userId: 'u1', firstName: 'C', lastName: 'B' }]),
+            supportedProperties: ['userId', 'firstName', 'lastName']
+        };
         
-        const params = { source: 'asv', target: 'untis', forceRefresh: true };
+        getDomain.mockImplementation((name) => {
+            if (name === 'asv') return mockSource;
+            if (name === 'untis') return mockTarget;
+            return null;
+        });
+
+        task = new DiffTask('asv', 'untis');
+        
+        const params = { forceRefresh: true };
         const result = await task.execute(params);
         
-        expect(diffDomains).toHaveBeenCalledWith('asv', 'untis', true);
-        expect(result).toEqual({ added: [], removed: [], changed: [] }); // DiffTask doesn't append params!
+        expect(mockSource.invalidate).toHaveBeenCalled();
+        expect(mockTarget.invalidate).toHaveBeenCalled();
+        expect(result.diff.changed).toHaveLength(1);
     });
 
-    test('summarize produces correct HTML string format', () => {
+    test('format produces correct HTML string format', () => {
+        task = new DiffTask('asv', 'untis');
         const details = {
-            added: [{}],
-            removed: [{}, {}, {}],
-            changed: [{}, {}],
+            diff: {
+                added: [{}],
+                removed: [{}, {}, {}],
+                changed: [{}, {}]
+            },
             params: { source: 'asv', target: 'webuntis' }
         };
         
-        const summary = task.summarize(details);
+        const summary = task.format(details);
         
         expect(summary).toContain('<strong>asv &rarr; webuntis</strong>');
         expect(summary).toContain('<span style="color: #10B981; font-weight: bold;">+1</span>');
@@ -45,20 +65,19 @@ describe('DiffTask', () => {
         expect(summary).toContain('<span style="color: #EF4444; font-weight: bold;">-3</span>');
     });
 
-    test('summarize handles errors', () => {
+    test('format handles errors', () => {
+        task = new DiffTask('asv', 'untis');
         const errorDetails = { error: 'Unknown Domain' };
-        expect(task.summarize(errorDetails)).toBe('<span style="color: #EF4444;">Fehler: Unknown Domain</span>');
+        expect(task.format(errorDetails)).toBe('<span style="color: #EF4444;">Fehler: Unknown Domain</span>');
     });
     
-    test('summarize handles empty correctly', () => {
+    test('format handles empty correctly', () => {
+        task = new DiffTask('asv', 'untis');
         const details = {
-            added: [], removed: [], changed: [],
+            diff: { added: [], removed: [], changed: [] },
             params: { source: 'asv', target: 'untis' }
         };
-        const summary = task.summarize(details);
-        expect(summary).toContain('<strong>asv &rarr; untis</strong>');
-        expect(summary).toContain('+0');
-        expect(summary).toContain('~0');
-        expect(summary).toContain('-0');
+        const summary = task.format(details);
+        expect(summary).toBe('-');
     });
 });
