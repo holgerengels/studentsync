@@ -44,7 +44,7 @@ class Untis extends Domain {
         try {
             connection = await mysql.createConnection(this.dbConfig);
         } catch (e) {
-            console.error('Untis DB Connection failed:', e.message);
+            // console.error('Untis DB Connection failed:', e.message);
             throw new Error('Untis DB Connection failed: ' + e.message);
         }
 

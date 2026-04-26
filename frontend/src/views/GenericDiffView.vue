@@ -29,35 +29,77 @@
     <div v-if="error" class="error">{{ error }}</div>
     
     <wa-card v-if="report && report.diff" class="table-card">
-        <div style="display: flex; gap: 2rem;">
-            <div>
-                 <h3 style="color: var(--wa-color-success-600)">Added ({{ report.diff.added.length }})</h3>
-                 <ul>
-                     <li v-for="item in report.diff.added.slice(0, 20)">{{ item.userId }} - {{ item.lastName }}</li>
-                 </ul>
-            </div>
-            <div>
-                 <h3 style="color: var(--wa-color-warning-600)">Changed ({{ report.diff.changed.length }})</h3>
-                 <ul>
-                     <li v-for="item in report.diff.changed.slice(0, 20)">{{ item.source.userId }} - {{ item.source.lastName }}</li>
-                 </ul>
-            </div>
-            <div>
-                 <h3 style="color: var(--wa-color-danger-600)">Removed ({{ report.diff.removed.length }})</h3>
-                 <ul>
-                     <li v-for="item in report.diff.removed.slice(0, 20)">{{ item.userId }} - {{ item.lastName }}</li>
-                 </ul>
-            </div>
-        </div>
-        <div style="padding: 1rem; color: gray;" v-if="report.diff.added.length > 20 || report.diff.changed.length > 20 || report.diff.removed.length > 20">
-            Preview limited to 20 items per section.
+        <div class="table-container">
+            <table class="diff-table">
+                <thead>
+                    <tr>
+                        <th style="width: 50px; text-align: center;"></th>
+                        <th>ID</th>
+                        <th>Vorname</th>
+                        <th>Nachname</th>
+                        <th v-for="prop in extraProps" :key="prop">{{ formatPropName(prop) }}</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <!-- Added -->
+                    <tr v-for="item in report.diff.added" :key="'add-'+item.userId" class="diff-row diff-added">
+                        <td class="diff-action" title="Hinzugefügt">
+                            <wa-icon name="plus-circle-fill" style="color: var(--wa-color-success-600)"></wa-icon>
+                        </td>
+                        <td>{{ item.userId }}</td>
+                        <td>{{ item.firstName }}</td>
+                        <td>{{ item.lastName }}</td>
+                        <td v-for="prop in extraProps" :key="prop">{{ item[prop] }}</td>
+                    </tr>
+                    
+                    <!-- Changed -->
+                    <tr v-for="change in report.diff.changed" :key="'change-'+change.source.userId" class="diff-row diff-changed">
+                        <td class="diff-action" title="Geändert">
+                            <wa-icon name="pencil-fill" style="color: var(--wa-color-warning-600)"></wa-icon>
+                        </td>
+                        <td>{{ change.source.userId }}</td>
+                        
+                        <td :class="{'is-modified': change.source.firstName !== change.target.firstName}">
+                            <div v-if="change.source.firstName !== change.target.firstName" class="old-val">{{ change.target.firstName || '-' }}</div> → 
+                            <div class="new-val">{{ change.source.firstName || '-' }}</div>
+                        </td>
+                        
+                        <td :class="{'is-modified': change.source.lastName !== change.target.lastName}">
+                            <div v-if="change.source.lastName !== change.target.lastName" class="old-val">{{ change.target.lastName || '-' }}</div> → 
+                            <div class="new-val">{{ change.source.lastName || '-' }}</div>
+                        </td>
+                        
+                        <td v-for="prop in extraProps" :key="prop" :class="{'is-modified': change.source[prop] !== change.target[prop]}">
+                            <div v-if="change.source[prop] !== change.target[prop]" class="old-val">{{ change.target[prop] || '-' }}</div> → 
+                            <div class="new-val">{{ change.source[prop] || '-' }}</div>
+                        </td>
+                    </tr>
+
+                    <!-- Removed -->
+                    <tr v-for="item in report.diff.removed" :key="'rm-'+item.userId" class="diff-row diff-removed">
+                        <td class="diff-action" title="Entfernt">
+                            <wa-icon name="dash-circle-fill" style="color: var(--wa-color-danger-600)"></wa-icon>
+                        </td>
+                        <td>{{ item.userId }}</td>
+                        <td>{{ item.firstName }}</td>
+                        <td>{{ item.lastName }}</td>
+                        <td v-for="prop in extraProps" :key="prop">{{ item[prop] }}</td>
+                    </tr>
+                    
+                    <tr v-if="!report.diff.added.length && !report.diff.changed.length && !report.diff.removed.length">
+                        <td :colspan="4 + extraProps.length" style="text-align: center; padding: 2rem; color: var(--wa-color-neutral-500);">
+                            Keine Änderungen gefunden.
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
         </div>
     </wa-card>
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted, watch, inject } from 'vue';
+import { ref, onMounted, watch, inject, computed } from 'vue';
 import axios from 'axios';
 import { getBrandColor } from '../utils/brandColors.js';
 
@@ -72,6 +114,21 @@ const loading = ref(false);
 const actionLoading = ref('');
 const error = ref('');
 const resultMessage = ref('');
+
+const extraProps = computed(() => {
+    if (!report.value || !report.value.intersectedProperties) return [];
+    return report.value.intersectedProperties.filter(p => !['userId', 'firstName', 'lastName'].includes(p));
+});
+
+function formatPropName(prop) {
+    const names = {
+        'birthday': 'Geburtsdatum',
+        'clazz': 'Klasse',
+        'gender': 'Geschlecht',
+        'email': 'E-Mail'
+    };
+    return names[prop] || prop;
+}
 
 onMounted(() => {
     calculateDiff(false);
@@ -150,6 +207,64 @@ async function runAction(act) {
 }
 .table-card {
     width: 100%;
+}
+.table-container {
+    width: 100%;
     overflow-x: auto;
+    border-radius: 8px;
+    border: 1px solid var(--wa-color-neutral-200);
+}
+.diff-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.95rem;
+    text-align: left;
+}
+.diff-table th {
+    background-color: var(--wa-color-neutral-100);
+    padding: 0.75rem 1rem;
+    font-weight: 600;
+    color: var(--wa-color-neutral-700);
+    border-bottom: 2px solid var(--wa-color-neutral-200);
+    white-space: nowrap;
+}
+.diff-table td {
+    padding: 0.6rem 1rem;
+    border-bottom: 1px solid var(--wa-color-neutral-100);
+    vertical-align: middle;
+}
+.diff-table tbody tr:hover {
+    background-color: var(--wa-color-neutral-90);
+}
+.diff-action {
+    text-align: center;
+    font-size: 1.1rem;
+}
+.diff-added td {
+    background-color: rgba(16, 185, 129, 0.05); /* success ultra-light */
+}
+.diff-removed td {
+    background-color: rgba(239, 68, 68, 0.05); /* danger ultra-light */
+    text-decoration: line-through;
+    color: var(--wa-color-neutral-500);
+}
+.diff-removed .diff-action {
+    text-decoration: none;
+}
+.is-modified {
+    background-color: rgba(245, 158, 11, 0.1); /* warning ultra-light */
+    border-radius: 4px;
+}
+.old-val {
+    text-decoration: line-through;
+    color: var(--wa-color-neutral-500);
+    margin-bottom: 0.15rem;
+}
+.new-val {
+    color: var(--wa-color-neutral-900);
+    font-weight: 500;
+}
+.old-val, .new-val {
+    display: inline-block;
 }
 </style>

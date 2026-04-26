@@ -5,14 +5,13 @@
     </div>
     
     <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 0.5rem 0; margin-bottom: 0.5rem;">
-      <div style="font-size: 1.6rem; font-weight: bold; color: var(--card-brand-color); line-height: 1;">
+      <div :style="{ fontSize: count === 'Error' ? '1.2rem' : '1.6rem', fontWeight: 'bold', color: count === 'Error' ? 'var(--wa-color-danger-600)' : 'var(--card-brand-color)', lineHeight: 1 }">
         {{ count !== undefined ? count : '-' }}
       </div>
       <div style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--wa-color-neutral-500); margin-top: 0.25rem;">
         Identities
       </div>
     </div>
-    <div v-if="result" class="result-msg" style="text-align: center; margin-bottom: 0.5rem;" v-html="result"></div>
     
     <div slot="footer" style="display: flex; justify-content: flex-end; gap: 0.25rem; align-items: center; flex-wrap: wrap;">
       <template v-if="domain.actions && domain.actions.length">
@@ -39,8 +38,7 @@ import { getBrandColor } from '../utils/brandColors.js';
 defineProps({
   domain: { type: Object, required: true },
   count: { type: [Number, String], default: '-' },
-  loading: { type: Boolean, default: false },
-  result: { type: String, default: '' }
+  loading: { type: Boolean, default: false }
 });
 defineEmits(['run-action', 'refresh']);
 </script>
@@ -62,10 +60,5 @@ defineEmits(['run-action', 'refresh']);
 }
 .dashboard-card::part(header) {
     border-bottom: 3px solid var(--card-brand-color) !important;
-}
-.result-msg {
-    margin-top: 0.5rem;
-    font-size: 0.9rem;
-    color: var(--wa-color-success-600);
 }
 </style>

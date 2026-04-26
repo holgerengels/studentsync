@@ -5,7 +5,7 @@
     </div>
     
     <div class="vd-body">
-        <div class="vd-grid">
+        <div class="vd-grid" v-if="stats && stats !== 'Error'">
             <!-- Header Row -->
             <div style="text-align: right; font-size: 1rem; font-weight: bold; color: var(--source-color);">{{ diff.source }}</div>
             <div style="font-size: 1rem; font-weight: bold;">&rarr;</div>
@@ -44,9 +44,12 @@
                 <div class="vd-op-label">löschen</div>
             </template>
         </div>
+        <div v-else-if="stats === 'Error'" style="font-weight: bold; font-size: 1.2rem; color: var(--wa-color-danger-600); padding: 1.5rem 0;">
+            Error
+        </div>
     </div>
     
-    <div v-if="result" class="result-msg" v-html="result"></div>
+
     
     <div slot="footer" style="display: flex; justify-content: flex-end; gap: 0.25rem; align-items: center; flex-wrap: wrap;">
         <!-- Custom tasks attached to diffs -->
@@ -80,9 +83,8 @@ const config = inject('synxConfig', { domains: [] });
 
 defineProps({
   diff: { type: Object, required: true },
-  stats: { type: Object, default: () => ({}) },
-  loading: { type: Boolean, default: false },
-  result: { type: String, default: '' }
+  stats: { type: [Object, String], default: () => ({}) },
+  loading: { type: Boolean, default: false }
 });
 defineEmits(['run-action', 'refresh', 'sync']);
 </script>
@@ -151,10 +153,5 @@ defineEmits(['run-action', 'refresh', 'sync']);
     padding: 0 0.15rem;
     color: var(--wa-color-neutral-500);
     font-size: 0.85rem;
-}
-.result-msg {
-    margin-top: 0.5rem;
-    font-size: 0.9rem;
-    color: var(--wa-color-success-600);
 }
 </style>

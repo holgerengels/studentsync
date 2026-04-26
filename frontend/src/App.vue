@@ -1,6 +1,8 @@
 <template>
   <div class="app-container" :class="{ 'with-sidebar': auth.isAuthenticated, 'sidebar-collapsed': !sidebarOpen && !isMobile }">
     
+    <ToastContainer />
+    
     <Login v-if="auth.showLogin" />
 
     <div v-if="isMobile && sidebarOpen && auth.isAuthenticated" class="sidebar-backdrop" @click="sidebarOpen = false"></div>
@@ -51,6 +53,7 @@ import { inject, ref, onMounted, onUnmounted, computed } from 'vue';
 import { useRouter } from 'vue-router';
 import { useAuthStore } from './stores/auth';
 import Login from './views/Login.vue';
+import ToastContainer from './components/ToastContainer.vue';
 
 const config = inject('synxConfig');
 const router = useRouter();

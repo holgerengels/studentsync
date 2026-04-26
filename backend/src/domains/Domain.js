@@ -33,7 +33,7 @@ class Domain {
         this._fetchPromise = null;
         
         if (wasLoaded) {
-            console.log(`[Domain] Identities invalidated for '${this.domainName}'`);
+            // console.log(`[Domain] Identities invalidated for '${this.domainName}'`);
         }
     }
 

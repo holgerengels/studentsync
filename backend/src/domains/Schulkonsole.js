@@ -76,7 +76,7 @@ class Schulkonsole extends ManagableDomain {
                 );
             });
         } catch (e) {
-            console.error('Schulkonsole read error:', e.message);
+            // console.error('Schulkonsole read error:', e.message);
             throw new Error('Schulkonsole read error: ' + e.message);
         }
     }

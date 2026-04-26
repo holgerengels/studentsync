@@ -119,7 +119,7 @@ class WebUntisDomain extends ManagableDomain {
                     }
 
                     if (lastName === 'Tester_Schüler' || accountId === 'Tester_Schüler') {
-                        console.log(`[CSV DUMP] Tester_Schüler columns:`, cols);
+                        // console.log(`[CSV DUMP] Tester_Schüler columns:`, cols);
                         this.testerCsv = cols; // Expose for our HTTP API inspection route!
                     }
 
@@ -235,7 +235,7 @@ class WebUntisDomain extends ManagableDomain {
             savePayload.set('_active', 'on');
 
             const payloadString = savePayload.toString();
-            console.log(`[Domain] Prepared sparse POST payload for student ${internalId}`);
+            // console.log(`[Domain] Prepared sparse POST payload for student ${internalId}`);
 
             const saveRes = await this.authClient.post(this.url + `studentform.do`, payloadString, {
                 headers: {
@@ -247,7 +247,7 @@ class WebUntisDomain extends ManagableDomain {
             });
             this.lastSaveStatus = saveRes.status;
             this.lastSaveHtml = typeof saveRes.data === 'string' ? saveRes.data.substring(0, 1500) : "JSON";
-            console.log(`[WebUntis] studentform.do save result: HTTP ${saveRes.status} Location: ${saveRes.headers['location']}`);
+            // console.log(`[WebUntis] studentform.do save result: HTTP ${saveRes.status} Location: ${saveRes.headers['location']}`);
             
             if (saveRes.status === 200 && typeof saveRes.data === 'string') {
                 if (saveRes.data.includes('this.setError(')) {

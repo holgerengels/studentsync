@@ -36,7 +36,7 @@ class ASV extends Domain {
         try {
             client = await this.pool.connect();
         } catch (e) {
-            console.error('ASV DB Connection failed:', e.message);
+            // console.error('ASV DB Connection failed:', e.message);
             throw new Error('ASV DB Connection failed: ' + e.message);
         }
         
@@ -119,7 +119,7 @@ class ASV extends Domain {
         try {
             client = await this.pool.connect();
         } catch (e) {
-            console.error('ASV DB Connection failed:', e.message);
+            // console.error('ASV DB Connection failed:', e.message);
             throw new Error('ASV DB Connection failed: ' + e.message);
         }
 
@@ -209,7 +209,7 @@ class ASV extends Domain {
         try {
             client = await this.pool.connect();
         } catch (e) {
-            console.error('ASV DB Connection failed:', e.message);
+            // console.error('ASV DB Connection failed:', e.message);
             throw new Error('ASV DB Connection failed: ' + e.message);
         }
 

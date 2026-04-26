@@ -135,7 +135,7 @@ class NextcloudService extends Domain {
             return identities;
 
         } catch (e) {
-            console.error('Nextcloud SSH readIdentities error:', e.message);
+            // console.error('Nextcloud SSH readIdentities error:', e.message);
             throw e;
         } finally {
             ssh.dispose();
