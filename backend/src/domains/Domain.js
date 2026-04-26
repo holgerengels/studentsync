@@ -9,10 +9,36 @@ class Domain {
         return ['userId', 'firstName', 'lastName'];
     }
 
+    lock() {
+        this._isLocked = true;
+    }
+
+    unlock() {
+        this._isLocked = false;
+        if (this._needsInvalidation) {
+            this._needsInvalidation = false;
+            this.invalidate();
+        }
+    }
+
     invalidate() {
+        if (this._isLocked) {
+            this._needsInvalidation = true;
+            return;
+        }
+        
+        const wasLoaded = this.identities !== undefined || this._fetchPromise !== null;
+        
         this.identities = undefined;
         this._fetchPromise = null;
-        console.log(`[Domain] Identities invalidated for '${this.domainName}'`);
+        
+        if (wasLoaded) {
+            console.log(`[Domain] Identities invalidated for '${this.domainName}'`);
+        }
+    }
+
+    invalidateCache() {
+        this.invalidate();
     }
 
     async getIdentities() {

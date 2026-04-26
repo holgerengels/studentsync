@@ -35,38 +35,48 @@ class SyncTask extends DiffTask {
         const removedArr = [];
         const errorsArr = [];
 
-        for (const identity of additions) {
-            try {
-                await targetDomain.addIdentity(identity);
-                addedArr.push(identity.userId);
-            } catch (err) {
-                if (err.name !== 'NotImplementedError') {
-                    errorsArr.push(`Add error for ${identity.userId}: ${err.message}`);
-                }
-            }
+        if (typeof targetDomain.lock === 'function') {
+            targetDomain.lock();
         }
 
-        for (const item of changes) {
-            try {
-                // Send the target identity layered with the source properties that need updating
-                const updatedIdentity = { ...item.target, ...item.source };
-                await targetDomain.changeIdentity(updatedIdentity);
-                changedArr.push(item.source.userId || item.target.userId);
-            } catch (err) {
-                if (err.name !== 'NotImplementedError') {
-                    errorsArr.push(`Change error for ${item.source.userId}: ${err.message}`);
+        try {
+            for (const identity of additions) {
+                try {
+                    await targetDomain.addIdentity(identity);
+                    addedArr.push(identity.userId);
+                } catch (err) {
+                    if (err.name !== 'NotImplementedError') {
+                        errorsArr.push(`Add error for ${identity.userId}: ${err.message}`);
+                    }
                 }
             }
-        }
 
-        for (const identity of removals) {
-            try {
-                 await targetDomain.removeIdentity(identity);
-                 removedArr.push(identity.userId);
-            } catch (err) {
-                if (err.name !== 'NotImplementedError') {
-                    errorsArr.push(`Remove error for ${identity.userId}: ${err.message}`);
+            for (const item of changes) {
+                try {
+                    // Send the target identity layered with the source properties that need updating
+                    const updatedIdentity = { ...item.target, ...item.source };
+                    await targetDomain.changeIdentity(updatedIdentity);
+                    changedArr.push(item.source.userId || item.target.userId);
+                } catch (err) {
+                    if (err.name !== 'NotImplementedError') {
+                        errorsArr.push(`Change error for ${item.source.userId}: ${err.message}`);
+                    }
                 }
+            }
+
+            for (const identity of removals) {
+                try {
+                     await targetDomain.removeIdentity(identity);
+                     removedArr.push(identity.userId);
+                } catch (err) {
+                    if (err.name !== 'NotImplementedError') {
+                        errorsArr.push(`Remove error for ${identity.userId}: ${err.message}`);
+                    }
+                }
+            }
+        } finally {
+            if (typeof targetDomain.unlock === 'function') {
+                targetDomain.unlock();
             }
         }
         const syncLog = {};

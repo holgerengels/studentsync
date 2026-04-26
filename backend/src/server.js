@@ -47,13 +47,28 @@ app.get('*', (req, res) => {
 
 // Start Server
 if (require.main === module) {
-    app.listen(PORT, () => {
+    const server = app.listen(PORT, () => {
         console.log(`Synx Node Server running on port ${PORT}`);
         
         // Start Background Jobs via Unified Scheduler
         const { startScheduler } = require('./scheduler');
         startScheduler();
     });
+
+    // Graceful Shutdown Handler (für Nodemon und reguläres Beenden)
+    const gracefulShutdown = (signal) => {
+        console.log(`[Server] Received ${signal}. Shutting down gracefully...`);
+        server.close();
+        if (mongoose.connection.readyState === 1) {
+            mongoose.connection.close(false);
+        }
+        
+        // Nodemon restart or normal exit - force exit to free port instantly
+        process.exit(0);
+    };
+
+    process.on('SIGINT', () => gracefulShutdown('SIGINT')); // Ctrl+C
+    process.on('SIGTERM', () => gracefulShutdown('SIGTERM')); // Docker stop
 }
 
 module.exports = app;

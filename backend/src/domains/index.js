@@ -1,22 +1,28 @@
-const Identity = require('../models/Identity');
+const useMocks = process.env.MOCK_DOMAINS === 'true';
 
-const asv = require('./ASV');
-const untis = require('./Untis');
-const schulkonsole = require('./Schulkonsole');
-const webuntis = require('./WebUntis');
-const nextcloud = require('./Nextcloud');
+let domains;
 
-const Domain = require('./Domain');
+if (useMocks) {
+    domains = require('./mocks/index');
+    console.log('[Domains] Running in MOCK_DOMAINS mode. Using mock domains.');
+} else {
+    const asv = require('./ASV');
+    const untis = require('./Untis');
+    const schulkonsole = require('./Schulkonsole');
+    const webuntis = require('./WebUntis');
+    const nextcloud = require('./Nextcloud');
+    const Domain = require('./Domain');
 
-const domains = {
-    asv,
-    untis,
-    schulkonsole,
-    webuntis,
-    nextcloud,
-    dummy: new (require('./DummyDomain'))(),
-    relution: new Domain('relution')
-};
+    domains = {
+        asv,
+        untis,
+        schulkonsole,
+        webuntis,
+        nextcloud,
+        dummy: new (require('./DummyDomain'))(),
+        relution: new Domain('relution')
+    };
+}
 
 async function diffDomains(source, target, forceRefresh = false) {
     if (!domains[source]) throw new Error(`Domain ${source} not found`);

@@ -52,7 +52,7 @@ class NextcloudService extends Domain {
         const safePassword = sudoPassword.replace(/'/g, "'\\''");
         const command = `echo '${safePassword}' | sudo -S -u www-data php /var/www/nextcloud/occ ${occCommand}`;
         
-        console.log(`[DEBUG Nextcloud] User: ${this.config.user}, Password Length: ${sudoPassword.length}, Passphrase Length: ${(this.config.passphrase||'').length}`);
+
         
         const result = await ssh.execCommand(command);
 

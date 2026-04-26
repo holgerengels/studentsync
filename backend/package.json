@@ -6,6 +6,7 @@
     "scripts": {
         "start": "node src/server.js",
         "dev": "nodemon --watch src --watch ../config src/server.js",
+        "dev:mock": "JWT_SECRET=mock_secret REFRESH_JWT_SECRET=mock_refresh_secret MOCK_DOMAINS=true nodemon --watch src --watch ../config src/server.js",
         "test": "jest --detectOpenHandles --forceExit --runInBand"
     },
     "dependencies": {

@@ -142,7 +142,7 @@ function selectTeachersInDialog() {
 
 function selectStudentsInDialog() {
     reportDialogRemnants.value.forEach(r => {
-        r.selected = r.uid && r.uid.charAt(1) !== '.';
+        r.selected = r.uid && r.uid.includes('.') && r.uid.charAt(1) !== '.';
     });
     reportDialogRemnants.value = [...reportDialogRemnants.value];
 }

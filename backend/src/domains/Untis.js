@@ -69,7 +69,7 @@ class Untis extends Domain {
                         const year = parseInt(str.substring(0, 4), 10);
                         const month = parseInt(str.substring(4, 6), 10) - 1;
                         const day = parseInt(str.substring(6, 8), 10);
-                        const d = new Date(Date.UTC(year, month, day - 1));
+                        const d = new Date(Date.UTC(year, month, day));
                         birthday = d.toISOString().split('T')[0];
                     }
                 }

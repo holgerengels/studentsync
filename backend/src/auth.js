@@ -20,7 +20,7 @@ const escapeLDAP = (str) => {
 const config = require('./config');
 const settings = config.settings || {};
 
-console.log(`[Auth] Settings loaded. DevMode: ${settings.devmode}`);
+console.log(`[Auth] Settings loaded. DevMode: ${settings.devMode}`);
 
 const MOCK_USERS = [
     { username: 'admin', password: 'password', groups: ['Administration'], displayName: 'Holger Engels' },
@@ -41,7 +41,7 @@ const REFRESH_TOKEN_EXPIRY = (settings.server && settings.server.refreshTokenExp
 
 const login = async (username, password, isPwa = true) => {
     username = username.toLowerCase();
-    
+
     // 1. DevMode Check
     if (settings.devMode !== false && (!settings.server || !settings.server.ldap)) {
         const user = MOCK_USERS.find(u => u.username === username && u.password === password);
@@ -79,29 +79,45 @@ const login = async (username, password, isPwa = true) => {
             }
 
             const escapedUsername = escapeLDAP(username);
-            const filter = `(&${ldapConfig.userfilter}(sAMAccountName=${escapedUsername}))`;
+            const baseFilter = ldapConfig.userfilter || '(objectClass=person)';
+            const filter = `(&${baseFilter}(sAMAccountName=${escapedUsername}))`;
             const opts = { filter, scope: 'sub', attributes: ['dn', 'memberOf', 'givenName', 'sn'] };
+
+            console.log(`[Auth] Executing LDAP search in base: ${ldapConfig.basedn}`);
+            console.log(`[Auth] Filter: ${filter}`);
 
             client.search(ldapConfig.basedn, opts, (err, searchRes) => {
                 if (err) {
-                    client.unbind(); 
+                    client.unbind();
                     return reject(new Error('LDAP Search Error: ' + err.message));
                 }
 
                 let userEntry = null;
 
                 searchRes.on('searchEntry', (entry) => {
-                    userEntry = entry.object;
+                    if (entry.object) {
+                        userEntry = entry.object;
+                    } else {
+                        // Fallback: Parse attributes manually if entry.object is missing
+                        userEntry = { dn: entry.objectName ? entry.objectName.toString() : '' };
+                        if (entry.attributes) {
+                            entry.attributes.forEach(attr => {
+                                userEntry[attr.type] = attr.values;
+                            });
+                        }
+                    }
                 });
 
                 searchRes.on('end', (result) => {
                     if (result.status !== 0 || !userEntry) {
+                        console.log(`[Auth] LDAP Search returned no user for ${username}. Status: ${result.status}`);
                         client.unbind(); return resolve(null);
                     }
 
                     const userClient = ldap.createClient({ url: ldapConfig.url });
                     userClient.bind(userEntry.dn, password, (err) => {
                         if (err) {
+                            console.log(`[Auth] Failed to bind with user's DN (${userEntry.dn}): ${err.message}`);
                             userClient.unbind(); client.unbind(); return resolve(null);
                         }
 
@@ -121,12 +137,25 @@ const login = async (username, password, isPwa = true) => {
                                 }
                             });
                         }
-                        
+
                         let givenName = userEntry.givenName || '';
                         let sn = userEntry.sn || '';
                         if (Array.isArray(givenName)) givenName = givenName[0];
                         if (Array.isArray(sn)) sn = sn[0];
                         const displayName = [givenName, sn].filter(Boolean).join(' ') || username;
+
+                        console.log(`[Auth] User ${username} found. Raw AD Groups count: ${rawGroups ? rawGroups.length : 0}`);
+                        console.log(`[Auth] Parsed internal groups:`, groups);
+
+                        if (ldapConfig.allowedGroups && Array.isArray(ldapConfig.allowedGroups) && ldapConfig.allowedGroups.length > 0) {
+                            const hasAccess = groups.some(g => ldapConfig.allowedGroups.includes(g));
+                            if (!hasAccess) {
+                                console.log(`[Auth] REJECTED: User ${username} does not belong to any allowed group.`);
+                                console.log(`[Auth]   - User has: ${groups.join(', ') || 'none'}`);
+                                console.log(`[Auth]   - Required: ${ldapConfig.allowedGroups.join(', ')}`);
+                                return resolve(null);
+                            }
+                        }
 
                         const token = jwt.sign({ username: username, groups: groups }, SECRET_KEY, { expiresIn: ACCESS_TOKEN_EXPIRY });
                         const resObj = { token, user: { username, groups, displayName } };
@@ -135,9 +164,9 @@ const login = async (username, password, isPwa = true) => {
                     });
                 });
 
-                searchRes.on('error', (err) => { 
-                    client.unbind(); 
-                    reject(new Error('LDAP Search Stream Error: ' + err.message)); 
+                searchRes.on('error', (err) => {
+                    client.unbind();
+                    reject(new Error('LDAP Search Stream Error: ' + err.message));
                 });
             });
         });
@@ -163,7 +192,7 @@ const refreshAccessToken = (refreshToken) => {
     try {
         const decoded = jwt.verify(refreshToken, REFRESH_SECRET_KEY);
         if (decoded.type !== 'refresh') return null;
-        
+
         const newAccessToken = jwt.sign(
             { username: decoded.username, groups: decoded.groups },
             SECRET_KEY,

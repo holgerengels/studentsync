@@ -8,21 +8,23 @@ class TaskManager {
 
     /**
      * Initializes the TaskManager with the given configuration object.
-     * Looks for a 'task-scheduler' array and parses the string mappings.
-     * Format: [ { "taskname": "cron string" } ]
+     * Iterates over config.tasks and schedules any task that has a 'schedule' property.
+     * Example: "schedule": "0 2 * * *"
      */
     init(config) {
         console.log('[TaskManager] Initializing from configuration...');
-        const scheduleConfig = config['task-scheduler'];
-        if (!scheduleConfig || !Array.isArray(scheduleConfig)) {
-            console.log('[TaskManager] No "task-scheduler" array found in config. Skipping automatic scheduling.');
+        const tasksConfig = config.tasks;
+        if (!tasksConfig || !Array.isArray(tasksConfig)) {
+            console.log('[TaskManager] No "tasks" array found in config. Skipping automatic scheduling.');
             return;
         }
 
-        // Parse each task object. e.g. { "dummy": "0 10 * * *" }
-        scheduleConfig.forEach(scheduleItem => {
-            const taskName = Object.keys(scheduleItem)[0];
-            const rawCron = scheduleItem[taskName];
+        let scheduledCount = 0;
+        tasksConfig.forEach(taskDef => {
+            if (!taskDef.schedule) return;
+
+            const taskName = taskDef.name;
+            const rawCron = taskDef.schedule;
 
             // Convert older "HH:MM" patterns gracefully to "MM HH * * *" just in case
             let cronStr = rawCron;
@@ -55,7 +57,12 @@ class TaskManager {
             });
 
             console.log(`[TaskManager] Scheduled '${taskName}' with cron '${cronStr}'`);
+            scheduledCount++;
         });
+
+        if (scheduledCount === 0) {
+            console.log('[TaskManager] No tasks with a "schedule" property found in config. Skipping automatic scheduling.');
+        }
     }
 
     /**
