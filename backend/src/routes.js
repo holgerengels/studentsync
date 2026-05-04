@@ -3,7 +3,6 @@ const router = express.Router();
 const { getDomain, getAllDomains } = require('./domains/registry');
 const DiffTask = require('./tasks/DiffTask');
 const SyncTask = require('./tasks/SyncTask');
-const Log = require('./models/Log'); // assuming Log exists
 const config = require('./config');
 const { login, refreshAccessToken, verifyToken } = require('./auth');
 
@@ -68,40 +67,20 @@ router.get('/identities/:domainName', verifyToken, async (req, res) => {
     }
 });
 
-// Generic Task Execution Endpoint
+// Generic Task Execution Endpoint — delegates to centralized taskRunner for consistent logging
 router.post('/execute/:taskName', verifyToken, async (req, res) => {
     try {
+        const { runTask } = require('./utils/taskRunner');
+        const parameters = req.body || {};
+        const report = await runTask(req.params.taskName, 'MANUAL', parameters);
+
         const tasks = require('./tasks/index');
         const task = tasks[req.params.taskName];
-        if (!task) return res.status(404).json({ error: `Task ${req.params.taskName} not found` });
-        const startTime = new Date();
-        let report;
-        if (typeof task.execute === 'function') {
-            const parameters = req.body || {};
-            report = await task.execute(parameters);
-        } else {
-            return res.status(501).json({ error: `Task ${req.params.taskName} has no execute method` });
-        }
         let htmlSnippet = '';
-        if (typeof task.summarize === 'function') {
-            htmlSnippet = task.summarize(report);
-        } else if (typeof task.format === 'function') {
-            htmlSnippet = task.format(report);
+        if (task) {
+            htmlSnippet = typeof task.summarize === 'function' ? task.summarize(report) : task.format(report);
         }
-        
-        // Ensure all modifying tasks invoked manually store a log trail
-        const logEntry = new Log({
-            task: req.params.taskName,
-            trigger: 'MANUAL',
-            status: (report && report.syncLog && report.syncLog.errors && report.syncLog.errors.length) ? 'ERROR' : 'SUCCESS',
-            details: typeof report === 'object' ? (report.syncLog || report) : { result: String(report) },
-            summaryHtml: htmlSnippet,
-            startTime: startTime,
-            endTime: new Date(),
-            durationMs: new Date().getTime() - startTime.getTime()
-        });
-        await logEntry.save().catch(e => console.error("Logging error during execute:", e.message));
-        
+
         res.json({ status: 'success', report, html: htmlSnippet });
     } catch (e) {
         res.status(500).json({ error: e.message });
@@ -115,7 +94,7 @@ router.post('/diff/:source/:target', verifyToken, async (req, res) => {
         const task = new DiffTask(source, target);
         const report = await task.execute({ forceRefresh: req.query.refresh === 'true' });
         
-        // In real execution, we'd log this, but this is explicit diff calculation API
+        // Read-only diff calculation — no logging needed
         res.json({ status: 'success', summary: { 
             added: report.diff.added.length, 
             removed: report.diff.removed.length, 
@@ -127,27 +106,19 @@ router.post('/diff/:source/:target', verifyToken, async (req, res) => {
     }
 });
 
-// Execute Sync
+// Execute Sync — uses centralized logger for consistent log entries
 router.post('/sync/:source/:target', verifyToken, async (req, res) => {
     try {
         const { source, target } = req.params;
         const task = new SyncTask(source, target);
-        const startTime = new Date();
+        const logger = require('./utils/logger');
+
+        const logId = await logger.startTask(task.name, 'MANUAL');
         const report = await task.execute({ forceRefresh: req.query.refresh === 'true' });
-        
-        // Simplified log saving process
         const htmlSnippet = task.format(report);
-        const logEntry = new Log({
-            task: task.name,
-            trigger: 'MANUAL',
-            status: report.syncLog?.errors?.length ? 'ERROR' : 'SUCCESS',
-            details: typeof report === 'object' ? (report.syncLog || report) : { result: String(report) },
-            summaryHtml: htmlSnippet,
-            startTime: startTime,
-            endTime: new Date(),
-            durationMs: new Date().getTime() - startTime.getTime()
-        });
-        await logEntry.save().catch(e => console.error("Logging error during sync:", e.message));
+
+        const status = report.syncLog?.errors?.length ? 'ERROR' : 'SUCCESS';
+        await logger.endTask(logId, status, htmlSnippet, report.syncLog || report);
 
         res.json({ status: 'success', syncLog: report.syncLog, devMode: report.devMode, html: htmlSnippet });
     } catch(e) {
@@ -158,6 +129,7 @@ router.post('/sync/:source/:target', verifyToken, async (req, res) => {
 // Logs API
 router.get('/logs', verifyToken, async (req, res) => {
     try {
+        const Log = require('./models/Log');
         const limit = parseInt(req.query.limit) || 50;
         const logs = await Log.find().sort({ startTime: -1 }).limit(limit);
         res.json(logs);

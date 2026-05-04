@@ -76,14 +76,14 @@ class NextcloudService extends Domain {
             const result = await this._execOcc(ssh, 'user:list -l 0 --info --output=json');
             
             if (result.stderr && result.stderr.trim().length > 0 && !result.stdout) {
-                 console.error('Nextcloud OCC user:list stderr:', result.stderr);
+                 throw new Error('Nextcloud OCC user:list failed: ' + result.stderr.trim());
+            }
+
+            if (!result.stdout) {
+                throw new Error('Nextcloud OCC user:list returned empty output. Backend may be misconfigured.');
             }
 
             const identities = [];
-            if (!result.stdout) {
-                return identities;
-            }
-
             try {
                 // Nextcloud JSON for users normally looks like:
                 // { "userid": { "display_name": "John Doe", "email": "john@doe.com", ... } }

@@ -42,6 +42,13 @@ class Domain {
     }
 
     async getIdentities() {
+        // Auto-invalidate if cache has expired
+        if (this.identities !== undefined && this._cacheTime && this.cacheTTL) {
+            if (Date.now() - this._cacheTime > this.cacheTTL) {
+                this.invalidate();
+            }
+        }
+
         if (this.identities !== undefined) {
              return this.identities;
         }
@@ -52,6 +59,7 @@ class Domain {
                      // Check if this promise is still the active one before caching
                      if (this._fetchPromise === promise) {
                          this.identities = data;
+                         this._cacheTime = Date.now();
                      }
                      return data;
                  })

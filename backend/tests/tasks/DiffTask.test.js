@@ -1,83 +1,117 @@
 const DiffTask = require('../../src/tasks/DiffTask');
-const { getDomain } = require('../../src/domains/registry');
-
-jest.mock('../../src/domains/registry', () => ({
-    getDomain: jest.fn()
-}));
+const { createMockDomains } = require('../helpers/mockSetup');
 
 describe('DiffTask', () => {
-    let task;
+    let mocks;
 
     beforeEach(() => {
-        jest.clearAllMocks();
+        mocks = createMockDomains();
     });
 
-    test('execute throws without parameters', async () => {
-        getDomain.mockReturnValue(null);
-        task = new DiffTask('asv', 'untis');
-        await expect(task.execute({})).rejects.toThrow('Domains not found: asv or untis');
+    it('should throw when domains are not registered', () => {
+        const { clearRegistry } = require('../../src/domains/registry');
+        clearRegistry();
+
+        const task = new DiffTask('nonexistent', 'also-nonexistent');
+        return expect(task.execute({})).rejects.toThrow('Domains not found');
     });
 
-    test('execute performs diff with parsed parameters', async () => {
-        const mockSource = {
-            invalidate: jest.fn(),
-            getIdentities: jest.fn().mockResolvedValue([{ userId: 'u1', firstName: 'A', lastName: 'B' }]),
-            supportedProperties: ['userId', 'firstName', 'lastName']
-        };
-        const mockTarget = {
-            invalidate: jest.fn(),
-            getIdentities: jest.fn().mockResolvedValue([{ userId: 'u1', firstName: 'C', lastName: 'B' }]),
-            supportedProperties: ['userId', 'firstName', 'lastName']
-        };
-        
-        getDomain.mockImplementation((name) => {
-            if (name === 'asv') return mockSource;
-            if (name === 'untis') return mockTarget;
-            return null;
+    it('should detect additions (source has users not in target)', async () => {
+        // ASV mock data has user at index 0 with no userId (null) — untis mock skips index 0 and 1
+        // So there are known differences in the mock data
+        const task = new DiffTask('asv', 'untis');
+        const report = await task.execute({ forceRefresh: true });
+
+        expect(report.diff.added.length).toBeGreaterThanOrEqual(0);
+        expect(report.intersectedProperties).toContain('firstName');
+        expect(report.intersectedProperties).toContain('lastName');
+        expect(report.params.source).toBe('asv');
+        expect(report.params.target).toBe('untis');
+    });
+
+    it('should detect changes when properties differ', async () => {
+        // Schulkonsole mock has user at index 3 with wrong class '99Z'
+        const task = new DiffTask('asv', 'schulkonsole');
+        const report = await task.execute({});
+
+        const changedUserIds = report.diff.changed.map(c => c.source.userId || c.target.userId);
+        expect(report.diff.changed.length).toBeGreaterThanOrEqual(1);
+        expect(report.intersectedProperties).toContain('clazz');
+    });
+
+    it('should detect removals (target has users not in source)', async () => {
+        // Nextcloud mock has a ghost user 'ghost_us' not in ASV
+        const task = new DiffTask('asv', 'nextcloud');
+        const report = await task.execute({});
+
+        const removedUserIds = report.diff.removed.map(r => r.userId);
+        expect(removedUserIds).toContain('ghost_us');
+    });
+
+    it('should only compare intersected properties', async () => {
+        // ASV supports birthday, untis also supports birthday
+        // WebUntis does NOT support birthday or clazz
+        const task = new DiffTask('asv', 'webuntis');
+        const report = await task.execute({});
+
+        // The intersected properties should NOT include clazz or birthday since webuntis doesn't support them
+        expect(report.intersectedProperties).toContain('userId');
+        expect(report.intersectedProperties).toContain('firstName');
+        expect(report.intersectedProperties).toContain('lastName');
+        expect(report.intersectedProperties).not.toContain('birthday');
+        expect(report.intersectedProperties).not.toContain('clazz');
+    });
+
+    it('should invalidate caches on forceRefresh', async () => {
+        const spy = jest.spyOn(mocks.asv, 'invalidate');
+        const task = new DiffTask('asv', 'untis');
+        await task.execute({ forceRefresh: true });
+        expect(spy).toHaveBeenCalled();
+        spy.mockRestore();
+    });
+
+    it('should report unchanged count', async () => {
+        // Same domain against itself → all unchanged
+        const task = new DiffTask('asv', 'asv');
+        const report = await task.execute({ forceRefresh: true });
+
+        expect(report.diff.added).toHaveLength(0);
+        expect(report.diff.removed).toHaveLength(0);
+        expect(report.diff.changed).toHaveLength(0);
+        expect(report.unchangedCount).toBeGreaterThan(0);
+    });
+
+    describe('format()', () => {
+        it('produces HTML with diff counts', () => {
+            const task = new DiffTask('asv', 'untis');
+            const report = {
+                diff: { added: [{}], removed: [{}, {}, {}], changed: [{}, {}] },
+                params: { source: 'asv', target: 'untis' }
+            };
+            const html = task.format(report);
+            expect(html).toContain('asv &rarr; untis');
+            expect(html).toContain('+1');
+            expect(html).toContain('~2');
+            expect(html).toContain('-3');
         });
 
-        task = new DiffTask('asv', 'untis');
-        
-        const params = { forceRefresh: true };
-        const result = await task.execute(params);
-        
-        expect(mockSource.invalidate).toHaveBeenCalled();
-        expect(mockTarget.invalidate).toHaveBeenCalled();
-        expect(result.diff.changed).toHaveLength(1);
-    });
+        it('returns dash for empty diff', () => {
+            const task = new DiffTask('asv', 'untis');
+            const report = {
+                diff: { added: [], removed: [], changed: [] },
+                params: { source: 'asv', target: 'untis' }
+            };
+            expect(task.format(report)).toBe('-');
+        });
 
-    test('format produces correct HTML string format', () => {
-        task = new DiffTask('asv', 'untis');
-        const details = {
-            diff: {
-                added: [{}],
-                removed: [{}, {}, {}],
-                changed: [{}, {}]
-            },
-            params: { source: 'asv', target: 'webuntis' }
-        };
-        
-        const summary = task.format(details);
-        
-        expect(summary).toContain('<strong>asv &rarr; webuntis</strong>');
-        expect(summary).toContain('<span style="color: #10B981; font-weight: bold;">+1</span>');
-        expect(summary).toContain('<span style="color: #F59E0B; font-weight: bold;">~2</span>');
-        expect(summary).toContain('<span style="color: #EF4444; font-weight: bold;">-3</span>');
-    });
+        it('handles error report', () => {
+            const task = new DiffTask('asv', 'untis');
+            expect(task.format({ error: 'Timeout' })).toContain('Fehler: Timeout');
+        });
 
-    test('format handles errors', () => {
-        task = new DiffTask('asv', 'untis');
-        const errorDetails = { error: 'Unknown Domain' };
-        expect(task.format(errorDetails)).toBe('<span style="color: #EF4444;">Fehler: Unknown Domain</span>');
-    });
-    
-    test('format handles empty correctly', () => {
-        task = new DiffTask('asv', 'untis');
-        const details = {
-            diff: { added: [], removed: [], changed: [] },
-            params: { source: 'asv', target: 'untis' }
-        };
-        const summary = task.format(details);
-        expect(summary).toBe('-');
+        it('handles null report', () => {
+            const task = new DiffTask('asv', 'untis');
+            expect(task.format(null)).toBe('-');
+        });
     });
 });

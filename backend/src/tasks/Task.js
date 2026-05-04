@@ -11,6 +11,10 @@ class Task {
         if (!report) return '-';
         return `<div>Task ${this.name} executed successfully.</div>`;
     }
+
+    summarize(report) {
+        return this.format(report);
+    }
 }
 
 module.exports = Task;

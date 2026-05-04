@@ -2,23 +2,21 @@ const DiffTask = require('./DiffTask');
 const SyncTask = require('./SyncTask');
 const config = require('../config');
 
+// All tasks registered as instances with kebab-case names
 const registry = {
-    'ID_GENERATION': require('./IdGenerationTask'),
     'asv-generate-ids': require('./IdGenerationTask'),
-    'DIFF': new DiffTask(),
-    'SYNC': new SyncTask(),
-    'DUMMY': new (require('./DummyTask'))(),
     'dummy': new (require('./DummyTask'))(),
     'dummy-random-modifications': new (require('./DummyRandomModificationsTask'))(),
     'untis-generate-import': new (require('./UntisGenerateImportTask'))(),
-    'web-untis-set-exit-dates': new (require('./WebUntisSetExitDatesTask'))(),
     'untis-teacher-external-ids': require('./UntisTeacherExternalIdsTask'),
+    'web-untis-set-exit-dates': new (require('./WebUntisSetExitDatesTask'))(),
     'web-untis-guardian-sync': new (require('./WebUntisGuardianSyncTask'))(),
     'web-untis-majority': new (require('./WebUntisMajorityTask'))(),
     'nextcloud-remnants-list': new (require('./NextcloudRemnantsListTask'))(),
     'nextcloud-remnants-purge': new (require('./NextcloudRemnantsPurgeTask'))()
 };
 
+// Dynamically register SyncTask and DiffTask instances from config
 if (config && config.tasks) {
     for (const t of config.tasks) {
         if (t.class === 'SyncTask' && t.source && t.target) {

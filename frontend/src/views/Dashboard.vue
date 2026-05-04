@@ -82,7 +82,6 @@ function formatTitel(titelString) {
 
 async function refreshDiff(diffName, forceRefresh = false) {
     loading.value[diffName] = true;
-    results.value[diffName] = '';
     try {
         const [source, target] = diffName.split('-');
         const url = `/api/diff/${source}/${target}` + (forceRefresh ? '?refresh=true' : '');
@@ -126,6 +125,14 @@ async function refreshDomain(name) {
     try {
         const res = await axios.get(`/api/identities/${name}?refresh=true`);
         counts.value[name] = res.data?.length || 0;
+        
+        if (props.config && props.config.diffs) {
+            for (const df of props.config.diffs) {
+                if (df.name.includes(name)) {
+                    refreshDiff(df.name, true);
+                }
+            }
+        }
     } catch(e) {
         counts.value[name] = 'Error';
         const explanation = e.response?.data?.error || e.message;

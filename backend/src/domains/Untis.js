@@ -92,32 +92,36 @@ class Untis extends Domain {
         }
     }
 
-    async teacherExternalIds() {
+    async teacherExternalIds(isDevMode = false) {
         let connection;
         try {
             connection = await mysql.createConnection(this.dbConfig);
             const [rows] = await connection.execute("SELECT name, email, foreignkey FROM Teacher");
             
-            const updatedIds = [];
-            const missingDomain = [];
+            const updatedIds = new Set();
+            const missingDomain = new Set();
             const suffix = '@' + this.emailDomain;
             
             for (const row of rows) {
                 if (!row.email || !row.email.endsWith(suffix)) {
-                    missingDomain.push(row.name);
+                    missingDomain.add(row.name);
                 } else {
                     const expectedForeignKey = row.email.substring(0, row.email.length - suffix.length);
-                    if (row.foreignkey !== expectedForeignKey) {
+                    if (!updatedIds.has(row.name) && row.foreignkey !== expectedForeignKey) {
                         await connection.execute(
                             "UPDATE Teacher SET foreignkey = ? WHERE name = ?",
                             [expectedForeignKey, row.name]
                         );
-                        updatedIds.push(row.name);
+                        updatedIds.add(row.name);
+                        
+                        if (isDevMode && updatedIds.size >= 1) {
+                            break;
+                        }
                     }
                 }
             }
             
-            return { updatedIds, missingDomain };
+            return { updatedIds: Array.from(updatedIds), missingDomain: Array.from(missingDomain) };
         } catch(e) {
             console.error('Untis teacherExternalIds query failed', e);
             throw new Error('Untis teacherExternalIds query failed: ' + e.message);

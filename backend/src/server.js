@@ -32,7 +32,7 @@ mongoose.connect(mongoUri)
 
 // Middleware
 const cookieParser = require('cookie-parser');
-app.use(cors({ credentials: true, origin: 'http://localhost:5173' }));
+app.use(cors({ credentials: true, origin: process.env.CORS_ORIGIN || config.settings?.server?.corsOrigin || 'http://localhost:5173' }));
 app.use(bodyParser.json());
 app.use(cookieParser());
 
@@ -50,9 +50,9 @@ if (require.main === module) {
     const server = app.listen(PORT, () => {
         console.log(`Synx Node Server running on port ${PORT}`);
         
-        // Start Background Jobs via Unified Scheduler
-        const { startScheduler } = require('./scheduler');
-        startScheduler();
+        // Initialize TaskManager for scheduled background jobs
+        const TaskManager = require('./TaskManager');
+        TaskManager.init(config);
     });
 
     // Graceful Shutdown Handler (für Nodemon und reguläres Beenden)

@@ -60,7 +60,7 @@ class Logger {
         try {
             const start = new Date();
             const logEntry = new Log({
-                task, trigger, status, changes, details,
+                task, trigger, status, summaryHtml, details,
                 startTime: start,
                 endTime: start,
                 durationMs: 0
