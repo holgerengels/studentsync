@@ -1,5 +1,6 @@
 const Task = require('./Task');
 const nextcloud = require('../domains/Nextcloud');
+const { isDevMode, limitInDevMode, devModeSuffix } = require('../utils/devMode');
 
 class NextcloudRemnantsPurgeTask extends Task {
     constructor() {
@@ -13,15 +14,11 @@ class NextcloudRemnantsPurgeTask extends Task {
                 throw new Error("Für die Bereinigung muss eine explizite Liste von UIDs (uids) übergeben werden.");
             }
 
-            const config = require('../config');
-            const isDevMode = !(config && config.settings && config.settings.devMode === false);
-            
-            if (isDevMode && uids.length > 1) {
-                uids = uids.slice(0, 1);
-            }
+            const devMode = isDevMode();
+            const { items: uidsToProcess } = limitInDevMode(uids);
 
-            const result = await nextcloud.purgeRemnants(uids);
-            return { success: true, purged: result.purged, details: result.details, devMode: isDevMode };
+            const result = await nextcloud.purgeRemnants(uidsToProcess);
+            return { success: true, purged: result.purged, details: result.details, devMode };
         } catch (e) {
             return { success: false, error: e.message };
         }
@@ -30,7 +27,9 @@ class NextcloudRemnantsPurgeTask extends Task {
     format(report) {
         if (!report) return '-';
         if (!report.success) return `<div class="text-danger">Fehler beim Bereinigen der Remnants: ${report.error}</div>`;
-        return `<div><strong>Nextcloud Remnants Bereinigung:</strong> Es wurden ${report.purged} Remnant(s) erfolgreich gelöscht.</div>`;
+        let msg = `<strong>Nextcloud Remnants Bereinigung:</strong> Es wurden ${report.purged} Remnant(s) erfolgreich gelöscht.`;
+        msg += devModeSuffix(report.devMode);
+        return `<div>${msg}</div>`;
     }
 }
 

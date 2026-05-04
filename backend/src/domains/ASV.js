@@ -114,62 +114,75 @@ class ASV extends Domain {
         }
     }
 
-    async generateIds() {
+    /**
+     * Read-only: Returns students that don't have a user ID yet.
+     * @returns {Array<{id: string, firstName: string, lastName: string}>}
+     */
+    async readStudentsWithoutIds() {
         let client;
         try {
             client = await this.pool.connect();
         } catch (e) {
-            // console.error('ASV DB Connection failed:', e.message);
             throw new Error('ASV DB Connection failed: ' + e.message);
         }
 
         try {
-            await client.query('BEGIN'); // wrap in transaction for safety
-            
-            const len = config.account?.maxlength || 18;
-
-            // Fetch students without an ID in sync.user_id
             const missingRes = await client.query(`
                 select id, vornamen, familienname 
                 from asv.svp_schueler_stamm 
                 where id not in (select id from sync.user_id)
             `);
-            
-            const missing = missingRes.rows;
-            const generated = [];
 
-            for (const student of missing) {
-                let like = encode(student.familienname);
-                if (like.length > len - 6) {
-                    like = like.substring(0, len - 6);
-                }
-
-                // Fetch similar userids
-                const similarRes = await client.query(`
-                    select userid from sync.user_id where userid like $1
-                `, [like + '%']);
-                
-                const similar = similarRes.rows.map(r => r.userid);
-
-                const userid = next(len, similar, student.vornamen, student.familienname);
-
-                // Insert new userid mapping
-                await client.query(`
-                    insert into sync.user_id (id, userid) values ($1, $2)
-                `, [student.id, userid]);
-
-                generated.push({ id: student.id, account: userid, firstName: student.vornamen, lastName: student.familienname });
-            }
-
-            await client.query('COMMIT');
-            if (generated.length > 0) {
-                console.log(`ASV ID Generator: Created ${generated.length} new IDs.`);
-            }
-            return generated;
+            return missingRes.rows.map(r => ({
+                id: r.id,
+                firstName: r.vornamen,
+                lastName: r.familienname
+            }));
         } catch(e) {
-            await client.query('ROLLBACK');
-            console.error('ASV ID Generator failed', e);
-            throw new Error('ASV ID Generator failed: ' + e.message);
+            console.error('ASV readStudentsWithoutIds failed', e);
+            throw new Error('ASV readStudentsWithoutIds failed: ' + e.message);
+        } finally {
+            client.release();
+        }
+    }
+
+    /**
+     * Generate a unique userId for a student and write it to the database.
+     * @returns {{id: string, account: string, firstName: string, lastName: string}}
+     */
+    async writeGeneratedId(student) {
+        let client;
+        try {
+            client = await this.pool.connect();
+        } catch (e) {
+            throw new Error('ASV DB Connection failed: ' + e.message);
+        }
+
+        try {
+            const len = config.account?.maxlength || 18;
+
+            let like = encode(student.lastName);
+            if (like.length > len - 6) {
+                like = like.substring(0, len - 6);
+            }
+
+            // Fetch similar userids to avoid collisions
+            const similarRes = await client.query(`
+                select userid from sync.user_id where userid like $1
+            `, [like + '%']);
+
+            const similar = similarRes.rows.map(r => r.userid);
+            const userid = next(len, similar, student.firstName, student.lastName);
+
+            // Insert new userid mapping
+            await client.query(`
+                insert into sync.user_id (id, userid) values ($1, $2)
+            `, [student.id, userid]);
+
+            return { id: student.id, account: userid, firstName: student.firstName, lastName: student.lastName };
+        } catch(e) {
+            console.error(`ASV writeGeneratedId failed for ${student.id}`, e);
+            throw new Error(`ASV writeGeneratedId failed for ${student.id}: ${e.message}`);
         } finally {
             client.release();
         }

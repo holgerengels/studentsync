@@ -1,5 +1,6 @@
 const DiffTask = require('./DiffTask');
 const { getDomain } = require('../domains/registry');
+const { isDevMode, limitInDevMode, devModeSuffix } = require('../utils/devMode');
 
 class WebUntisSetExitDatesTask {
     async execute() {
@@ -7,31 +8,24 @@ class WebUntisSetExitDatesTask {
         const diffTask = new DiffTask('asv', 'webuntis');
         const report = await diffTask.execute({ forceRefresh: false });
         
-        const config = require('../config');
-        let isDevMode = process.env.NODE_ENV !== 'production';
-        if (config && config.settings && config.settings.devMode === false) {
-             isDevMode = false;
-        }
+        const devMode = isDevMode();
         
         let removed = report.diff.removed.map(i => i.userId);
+        const { items: removedToProcess } = limitInDevMode(removed);
         
-        if (isDevMode && removed.length > 0) {
-            removed = removed.slice(0, 1);
-        }
-        
-        if (removed.length === 0) {
-            return { syncLog: {}, message: 'Nothing to do', dateCount: 0, devMode: isDevMode };
+        if (removedToProcess.length === 0) {
+            return { syncLog: {}, message: 'Nothing to do', dateCount: 0, devMode };
         }
         
         const asv = getDomain('asv');
         const webuntis = getDomain('webuntis');
         
         // Fetch exact exit dates natively from ASV (returns map of { userId: 'YYYY-MM-DD' })
-        const exitDates = await asv.readExitDates(removed);
+        const exitDates = await asv.readExitDates(removedToProcess);
         
         const idsToProcess = Object.keys(exitDates).length;
         if (idsToProcess === 0) {
-             return { syncLog: {}, message: 'No exact dates found for removed users.', dateCount: 0, devMode: isDevMode };
+             return { syncLog: {}, message: 'No exact dates found for removed users.', dateCount: 0, devMode };
         }
 
         // Post exit dates sequentially to WebUntis
@@ -44,16 +38,13 @@ class WebUntisSetExitDatesTask {
             message: `Austrittsdatum für ${updatedUsers.length} von ${idsToProcess} Schülern gesetzt.`,
             syncLog: syncLog,
             dateCount: updatedUsers.length,
-            devMode: isDevMode
+            devMode
         };
     }
 
     summarize(report) {
          if (!report) return '-';
-         let suffix = '';
-         if (report.devMode) {
-              suffix = ' <span style="font-size: smaller; opacity: 0.7;">[DEV MODE LIMIT]</span>';
-         }
+         const suffix = devModeSuffix(report.devMode);
          
           if (report.dateCount > 0) {
                return `<div style="text-align: right;"><span style="color:var(--wa-color-success-600)">${report.message}</span>${suffix}</div>`;

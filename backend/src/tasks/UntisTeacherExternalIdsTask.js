@@ -1,5 +1,5 @@
 const untis = require('../domains/Untis');
-const config = require('../config');
+const { isDevMode, limitInDevMode, devModeSuffix } = require('../utils/devMode');
 
 class UntisTeacherExternalIdsTask {
     constructor() {
@@ -7,24 +7,36 @@ class UntisTeacherExternalIdsTask {
     }
 
     async execute() {
-        let isDevMode = process.env.NODE_ENV !== 'production';
-        if (config && config.settings && config.settings.devMode !== undefined) {
-             isDevMode = config.settings.devMode;
+        const devMode = isDevMode();
+
+        // Step 1: Read which teachers need an update (pure read, no writes)
+        const { pending, missingDomain } = await untis.readTeachersWithMissingExternalIds();
+
+        // Step 2: Limit writes in devMode
+        const { items: toProcess } = limitInDevMode(pending);
+
+        // Step 3: Write each external ID individually
+        const updatedIds = [];
+        const errors = [];
+        for (const { name, foreignKey } of toProcess) {
+            try {
+                await untis.writeTeacherExternalId(name, foreignKey);
+                updatedIds.push(name);
+            } catch (e) {
+                errors.push(`${name}: ${e.message}`);
+            }
         }
 
-        const result = await untis.teacherExternalIds(isDevMode);
-        
         return {
-            changedCount: result.updatedIds.length,
-            missingCount: result.missingDomain.length,
+            changedCount: updatedIds.length,
+            totalPending: pending.length,
+            missingCount: missingDomain.length,
             syncLog: {
-                added: [],
-                changed: result.updatedIds, 
-                removed: [],
-                errors: [],
-                missingDomain: result.missingDomain
+                changed: updatedIds,
+                errors,
+                missingDomain
             },
-            devMode: isDevMode
+            devMode
         };
     }
 
@@ -34,14 +46,10 @@ class UntisTeacherExternalIdsTask {
          }
 
          let html = '';
-         
-         let suffix = '';
-         if (report.devMode) {
-              suffix = ' <span style="font-size: smaller; opacity: 0.7;">[DEV MODE LIMIT]</span>';
-         }
+         const suffix = devModeSuffix(report.devMode);
 
          if (report.changedCount > 0) {
-             html += `<div style="color: #10B981; font-weight: bold;">${report.changedCount} Lehrer-IDs aktualisiert${suffix}</div>`;
+             html += `<div style="color: #10B981; font-weight: bold;">${report.changedCount}/${report.totalPending} Lehrer-IDs aktualisiert${suffix}</div>`;
          } else {
              html += `<div style="color:var(--wa-color-neutral-500)">Keine Lehrer-IDs zu aktualisieren</div>`;
          }

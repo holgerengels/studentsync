@@ -1,6 +1,7 @@
 const DiffTask = require('./DiffTask');
 const { getDomain } = require('../domains/registry');
 const ManagableDomain = require('../domains/ManagableDomain');
+const { isDevMode, limitInDevMode, devModeSuffix } = require('../utils/devMode');
 
 class SyncTask extends DiffTask {
     constructor(sourceName, targetName) {
@@ -18,17 +19,11 @@ class SyncTask extends DiffTask {
             throw new Error(`Target domain ${this.targetName} is not managable. Sync aborted.`);
         }
 
-        const config = require('../config');
-        
-        // Allow overriding dev mode through config, default to true unless NODE_ENV=production or explicitly disabled
-        let isDevMode = process.env.NODE_ENV !== 'production';
-        if (config && config.settings && config.settings.devMode === false) {
-             isDevMode = false;
-        }
+        const devMode = isDevMode();
 
-        const additions = isDevMode ? diff.added.slice(0, 1) : diff.added;
-        const changes = isDevMode ? diff.changed.slice(0, 1) : diff.changed;
-        const removals = isDevMode ? diff.removed.slice(0, 1) : diff.removed;
+        const additions = devMode ? diff.added.slice(0, 1) : diff.added;
+        const changes = devMode ? diff.changed.slice(0, 1) : diff.changed;
+        const removals = devMode ? diff.removed.slice(0, 1) : diff.removed;
 
         const addedArr = [];
         const changedArr = [];
@@ -86,7 +81,7 @@ class SyncTask extends DiffTask {
         if (errorsArr.length > 0) syncLog.errors = errorsArr;
         
         report.syncLog = syncLog;
-        report.devMode = isDevMode;
+        report.devMode = devMode;
         return report;
     }
 
@@ -99,9 +94,7 @@ class SyncTask extends DiffTask {
          const rmCount = syncLog.removed ? syncLog.removed.length : 0;
          
          let msg = `Sync completed. <span style="color: var(--wa-color-success-600)">Added: ${addCount}</span>, <span style="color: var(--wa-color-warning-600)">Changed: ${changeCount}</span>, <span style="color: var(--wa-color-danger-600)">Removed: ${rmCount}</span>.`;
-         if (devMode) {
-             msg += ' <span style="font-size: smaller; opacity: 0.7;">[DEV MODE LIMIT]</span>';
-         }
+         msg += devModeSuffix(devMode);
          if (syncLog.errors && syncLog.errors.length > 0) {
               msg += ` <br/><span style="color:#EF4444;">Errors: ${syncLog.errors.length}</span>`;
          }

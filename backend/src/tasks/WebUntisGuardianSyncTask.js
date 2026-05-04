@@ -1,7 +1,7 @@
 const Task = require('./Task');
 const asv = require('../domains/ASV');
 const untis = require('../domains/WebUntis');
-const config = require('../config');
+const { isDevMode, limitInDevMode, devModeSuffix } = require('../utils/devMode');
 
 class WebUntisGuardianSyncTask extends Task {
     constructor() {
@@ -9,10 +9,7 @@ class WebUntisGuardianSyncTask extends Task {
     }
 
     async execute(parameters = {}) {
-        let isDevMode = process.env.NODE_ENV !== 'production';
-        if (config && config.settings && config.settings.devMode === false) {
-             isDevMode = false;
-        }
+        const devMode = isDevMode();
 
         const [asvGuardians, untisGuardians] = await Promise.all([
             asv.readGuardians(),
@@ -58,8 +55,8 @@ class WebUntisGuardianSyncTask extends Task {
             }
         }
 
-        const addsToProcess = isDevMode ? additions.slice(0, 1) : additions;
-        const updatesToProcess = isDevMode ? updates.slice(0, 1) : updates;
+        const { items: addsToProcess } = limitInDevMode(additions);
+        const { items: updatesToProcess } = limitInDevMode(updates);
 
         const addedLog = [];
         const updatedLog = [];
@@ -89,7 +86,7 @@ class WebUntisGuardianSyncTask extends Task {
         if (errorLog.length > 0) syncLog.errors = errorLog;
 
         return {
-             devMode: isDevMode,
+             devMode,
              totalAdditionsDiscovered: additions.length,
              totalUpdatesDiscovered: updates.length,
              syncLog: syncLog,
@@ -108,10 +105,7 @@ class WebUntisGuardianSyncTask extends Task {
          const errorCount = report.syncLog && report.syncLog.errors ? report.syncLog.errors.length : 0;
 
          let msg = `Guardian Sync. <span style="color: var(--wa-color-success-600)">Added: ${addCount}/${report.totalAdditionsDiscovered}</span>, <span style="color: var(--wa-color-warning-600)">Updated: ${changeCount}/${report.totalUpdatesDiscovered}</span>.`;
-         
-         if (report.devMode) {
-             msg += ' <span style="font-size: smaller; opacity: 0.7;">[DEV MODE LIMIT]</span>';
-         }
+         msg += devModeSuffix(report.devMode);
          if (errorCount > 0) {
               msg += ` <br/><span style="color:#EF4444;">Errors: ${errorCount}</span>`;
          }

@@ -22,22 +22,28 @@ function createMockDomains() {
 
     // Add ASV-specific methods that tasks like IdGenerationTask expect
     const { encode, next } = require('../../src/utils/userIds');
-    asv.generateIds = async function() {
-        const generated = [];
-        for (let user of this.data) {
-            if (!user.userId && !user.account) {
-                const len = 18;
-                let like = encode(user.lastName);
-                if (like.length > len - 6) like = like.substring(0, len - 6);
-                const similar = this.data.filter(u => u.userId && u.userId.startsWith(like)).map(u => u.userId);
-                const userid = next(len, similar, user.firstName, user.lastName);
-                user.userId = userid;
-                user.account = userid;
-                generated.push({ id: user.id, account: userid, firstName: user.firstName, lastName: user.lastName });
-            }
+
+    asv.readStudentsWithoutIds = async function() {
+        return this.data
+            .filter(user => !user.userId && !user.account)
+            .map(user => ({ id: user.id, firstName: user.firstName, lastName: user.lastName }));
+    };
+
+    asv.writeGeneratedId = async function(student) {
+        const len = 18;
+        let like = encode(student.lastName);
+        if (like.length > len - 6) like = like.substring(0, len - 6);
+        const similar = this.data.filter(u => u.userId && u.userId.startsWith(like)).map(u => u.userId);
+        const userid = next(len, similar, student.firstName, student.lastName);
+
+        // Update the in-memory data
+        const entry = this.data.find(u => u.id === student.id);
+        if (entry) {
+            entry.userId = userid;
+            entry.account = userid;
         }
-        if (generated.length > 0) this.invalidate();
-        return generated;
+        this.invalidate();
+        return { id: student.id, account: userid, firstName: student.firstName, lastName: student.lastName };
     };
 
     asv.readExitDates = async function() { return {}; };
