@@ -1,6 +1,5 @@
 const Task = require('./Task');
-const asv = require('../domains/ASV');
-const untis = require('../domains/WebUntis');
+const { getDomain } = require('../domains/registry');
 const { isDevMode, limitInDevMode, devModeSuffix } = require('../utils/devMode');
 
 class WebUntisGuardianSyncTask extends Task {
@@ -10,6 +9,8 @@ class WebUntisGuardianSyncTask extends Task {
 
     async execute(parameters = {}) {
         const devMode = isDevMode();
+        const asv = getDomain('asv');
+        const untis = getDomain('webuntis');
 
         const [asvGuardians, untisGuardians] = await Promise.all([
             asv.readGuardians(),
@@ -38,16 +39,20 @@ class WebUntisGuardianSyncTask extends Task {
             } else {
                 const untisStudentAccounts = untisG.students.map(s => s.account);
                 let needsUpdate = false;
+                const reasons = [];
                 const missingStudents = studentAccounts.filter(acc => !untisStudentAccounts.includes(acc));
                 
                 if (guardian.lastName !== untisG.lastName || guardian.firstName !== untisG.firstName) {
                     needsUpdate = true;
+                    reasons.push(`Name: ASV="${guardian.firstName} ${guardian.lastName}" vs WebUntis="${untisG.firstName} ${untisG.lastName}"`);
                 }
                 if (missingStudents.length > 0) {
                     needsUpdate = true;
+                    reasons.push(`Missing students in WebUntis: [${missingStudents.join(', ')}] (ASV has: [${studentAccounts.join(', ')}], WebUntis has: [${untisStudentAccounts.join(', ')}])`);
                 }
 
                 if (needsUpdate) {
+                    console.log(`[Guardian Sync] Update needed for ${email}: ${reasons.join('; ')}`);
                     // Inject the ID from WebUntis so we update the correct mapped record
                     guardian.id = untisG.id;
                     updates.push({ guardian, studentAccounts });

@@ -5,6 +5,7 @@ const otpauth = require('otpauth');
 const Identity = require('./Identity');
 const config = require('../config');
 const ManagableDomain = require('./ManagableDomain');
+const { parseTsvLine } = require('../utils/csvParser');
 
 class WebUntisDomain extends ManagableDomain {
     get supportedProperties() { return ['userId', 'firstName', 'lastName', 'clazz', 'birthday']; }
@@ -32,6 +33,41 @@ class WebUntisDomain extends ManagableDomain {
         if (!this.user || !this.password) {
             throw new Error('WebUntis configuration incomplete. Missing user or password.');
         }
+    }
+
+    /**
+     * Poll for a WebUntis report until CSV data is returned.
+     * WebUntis generates reports asynchronously — the initial request returns a messageId,
+     * and the report may not be ready immediately.
+     * 
+     * @param {object} client - authenticated axios client
+     * @param {string} messageId - report message ID from the generation request
+     * @param {string} reportParams - query parameters for the report
+     * @param {string} label - human-readable label for logging
+     * @returns {string} CSV content
+     */
+    async _pollReport(client, messageId, reportParams, label = 'report') {
+        const maxAttempts = 5;
+        const delays = [2000, 4000, 6000, 8000, 10000]; // escalating wait times
+
+        for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+            const delay = delays[attempt - 1] || 10000;
+            await new Promise(r => setTimeout(r, delay));
+
+            const res = await client.get(this.url + this.reportPath + '?msgId=' + messageId + '&' + reportParams);
+            const data = res.data;
+
+            if (typeof data === 'string' && data.trim().length > 0) {
+                if (attempt > 1) {
+                    console.log(`[WebUntis] ${label} ready after attempt ${attempt} (${delays.slice(0, attempt).reduce((a, b) => a + b, 0) / 1000}s total)`);
+                }
+                return data;
+            }
+
+            console.warn(`[WebUntis] ${label} not ready after ${delay / 1000}s (attempt ${attempt}/${maxAttempts}). Retrying...`);
+        }
+
+        throw new Error(`WebUntis ${label} did not become ready after ${maxAttempts} attempts. Server may be overloaded.`);
     }
 
     async readIdentities() {
@@ -79,19 +115,16 @@ class WebUntisDomain extends ManagableDomain {
             const messageId = data.messageId;
             const reportParams = data.reportParams;
 
-            await new Promise(r => setTimeout(r, 4000));
+            const csv = await this._pollReport(client, messageId, reportParams, 'Student CSV');
 
-            const repRes = await client.get(this.url + this.reportPath + '?msgId=' + messageId + '&' + reportParams);
-            const csv = repRes.data;
-
-            const lines = (typeof csv === 'string') ? csv.split('\n') : [];
+            const lines = csv.split('\n');
             const identities = [];
             this.internalIds = {};
 
             // Parse headers
             let majorityColIdx = -1;
             if (lines.length > 0) {
-                const headers = lines[0].split('\t');
+                const headers = parseTsvLine(lines[0].trim());
                 majorityColIdx = headers.indexOf('majority');
                 if (majorityColIdx === -1) {
                     console.warn('[WebUntis Info] "majority" column missing in WebUntis CSV export headers. Automatic majority resolving disabled.');
@@ -101,7 +134,7 @@ class WebUntisDomain extends ManagableDomain {
             for (let i = 1; i < lines.length; i++) {
                 const line = lines[i].trim();
                 if (!line) continue;
-                const cols = line.split('\t');
+                const cols = parseTsvLine(line);
                 if (cols.length >= 6) {
                     const externKey = cols[0];
                     const lastName = cols[1];
@@ -380,19 +413,16 @@ class WebUntisDomain extends ManagableDomain {
             const messageId = data.messageId;
             const reportParams = data.reportParams;
 
-            await new Promise(r => setTimeout(r, 4000));
+            const csv = await this._pollReport(client, messageId, reportParams, 'Guardian CSV');
 
-            const repRes = await client.get(this.url + this.reportPath + '?msgId=' + messageId + '&' + reportParams);
-            const csv = repRes.data;
-
-            const lines = (typeof csv === 'string') ? csv.split('\n') : [];
+            const lines = csv.split('\n');
             const guardiansMap = {};
             const guardians = [];
 
             for (let i = 1; i < lines.length; i++) {
                 const line = lines[i].trim();
                 if (!line) continue;
-                const cols = line.split('\t');
+                const cols = parseTsvLine(line);
                 if (cols.length >= 14) {
                     const id = cols[0]; // Guardian ID
                     const lastName = cols[1];
@@ -449,12 +479,18 @@ class WebUntisDomain extends ManagableDomain {
 
         try {
             // Determine internal student IDs
+            console.log(`[WebUntis Guardian] Processing ${guardian.email}: studentAccounts=${JSON.stringify(studentAccounts)}, internalIds keys sample: ${Object.keys(this.internalIds).slice(0, 5).join(', ')}...`);
             const studentInternalIds = [];
             for (const acc of studentAccounts) {
                 const intId = this.internalIds[acc];
-                if (intId) studentInternalIds.push(intId);
-                else console.warn(`[WebUntis Sync] Warning: Student account ${acc} has no internalId mapped in WebUntis. Skipping attachment.`);
+                if (intId) {
+                    studentInternalIds.push(intId);
+                    console.log(`[WebUntis Guardian]   ${acc} → internalId ${intId}`);
+                } else {
+                    console.warn(`[WebUntis Sync] Warning: Student account ${acc} has no internalId mapped in WebUntis. Skipping attachment. Available keys containing '${acc.substring(0, 8)}': ${Object.keys(this.internalIds).filter(k => k.includes(acc.substring(0, 8))).join(', ') || 'NONE'}`);
+                }
             }
+            console.log(`[WebUntis Guardian] Final relatedStudentIds for ${guardian.email}: [${studentInternalIds.join(', ')}]`);
 
             // Fetch CSRF token
             const indexRes = await client.get(this.url + addGuardianPath, { validateStatus: false });

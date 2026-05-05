@@ -1,5 +1,5 @@
 const Task = require('./Task');
-const nextcloud = require('../domains/Nextcloud');
+const { getDomain } = require('../domains/registry');
 const { isDevMode, limitInDevMode, devModeSuffix } = require('../utils/devMode');
 
 class NextcloudRemnantsPurgeTask extends Task {
@@ -15,6 +15,7 @@ class NextcloudRemnantsPurgeTask extends Task {
             }
 
             const devMode = isDevMode();
+            const nextcloud = getDomain('nextcloud');
             const { items: uidsToProcess } = limitInDevMode(uids);
 
             const result = await nextcloud.purgeRemnants(uidsToProcess);

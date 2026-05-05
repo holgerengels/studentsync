@@ -1,5 +1,5 @@
 const Task = require('./Task');
-const nextcloud = require('../domains/Nextcloud');
+const { getDomain } = require('../domains/registry');
 
 class NextcloudRemnantsListTask extends Task {
     constructor() {
@@ -8,6 +8,7 @@ class NextcloudRemnantsListTask extends Task {
 
     async execute(parameters = {}) {
         try {
+            const nextcloud = getDomain('nextcloud');
             const rawRemnants = await nextcloud.getRemnants();
             
             const remnants = [];

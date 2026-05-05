@@ -1,4 +1,4 @@
-const untis = require('../domains/Untis');
+const { getDomain } = require('../domains/registry');
 const { isDevMode, limitInDevMode, devModeSuffix } = require('../utils/devMode');
 
 class UntisTeacherExternalIdsTask {
@@ -8,6 +8,7 @@ class UntisTeacherExternalIdsTask {
 
     async execute() {
         const devMode = isDevMode();
+        const untis = getDomain('untis');
 
         // Step 1: Read which teachers need an update (pure read, no writes)
         const { pending, missingDomain } = await untis.readTeachersWithMissingExternalIds();

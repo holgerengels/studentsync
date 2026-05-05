@@ -1,5 +1,5 @@
 const Task = require('./Task');
-const untis = require('../domains/WebUntis');
+const { getDomain } = require('../domains/registry');
 const { isDevMode, limitInDevMode, devModeSuffix } = require('../utils/devMode');
 
 class WebUntisMajorityTask extends Task {
@@ -9,6 +9,7 @@ class WebUntisMajorityTask extends Task {
 
     async execute(parameters = {}) {
         const devMode = isDevMode();
+        const untis = getDomain('webuntis');
 
         console.log(`[WebUntisMajorityTask] Fetching identities from WebUntis...`);
         const identities = await untis.readIdentities();
