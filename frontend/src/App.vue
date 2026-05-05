@@ -22,6 +22,10 @@
             {{ df.titel || df.name }}
         </router-link>
       </nav>
+      <div v-if="config?.devMode" class="dev-mode-badge">
+        <span class="dev-dot"></span>
+        DEV MODE
+      </div>
       <div class="footer">
            <div class="user-info" v-if="auth.user && auth.user.username">
               <wa-avatar :initials="userInitials" shape="circle" size="small"></wa-avatar>
@@ -185,11 +189,40 @@ nav a.router-link-active {
     letter-spacing: 0.5px;
 }
 
+.dev-mode-badge {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    margin: auto 1rem 0;
+    padding: 0.35rem 0.75rem;
+    background: linear-gradient(135deg, #fef3c7, #fde68a);
+    border: 1px solid #f59e0b;
+    border-radius: 6px;
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 1.5px;
+    color: #92400e;
+    text-transform: uppercase;
+}
+
+.dev-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background-color: #f59e0b;
+    animation: dev-pulse 2s ease-in-out infinite;
+}
+
+@keyframes dev-pulse {
+    0%, 100% { opacity: 1; box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.5); }
+    50% { opacity: 0.6; box-shadow: 0 0 6px 2px rgba(245, 158, 11, 0.3); }
+}
+
 .footer {
     display: flex;
     align-items: center;
     padding: 1rem;
-    margin-top: auto;
+    margin-top: 0.75rem;
     border-top: 1px solid var(--wa-color-neutral-80);
 }
 

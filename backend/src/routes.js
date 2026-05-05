@@ -43,10 +43,12 @@ router.post('/refresh', (req, res) => {
 
 // Expose configuration for frontend dynamic rendering
 router.get('/config/ui', (req, res) => {
+    const { isDevMode } = require('./utils/devMode');
     res.json({
         domains: config.domains || [],
         diffs: config.diffs || [],
-        tasks: config.tasks || []
+        tasks: config.tasks || [],
+        devMode: isDevMode()
     });
 });
 
