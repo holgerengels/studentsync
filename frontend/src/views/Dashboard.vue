@@ -128,7 +128,7 @@ async function refreshDomain(name) {
         
         if (props.config && props.config.diffs) {
             for (const df of props.config.diffs) {
-                if (df.name.includes(name)) {
+                if (df.name.split('-').includes(name)) {
                     refreshDiff(df.name, true);
                 }
             }
@@ -233,7 +233,7 @@ async function runAction(act, contextName) {
                 // Diff tables connected to this domain also likely changed!
                 if(props.config && props.config.diffs) {
                     for(const df of props.config.diffs) {
-                        if(df.name.includes(contextName)) {
+                        if(df.name.split('-').includes(contextName)) {
                             refreshDiff(df.name, true);
                         }
                     }

@@ -13,6 +13,8 @@ class WebUntisSetExitDatesTask {
         let removed = report.diff.removed.map(i => i.userId);
         const { items: removedToProcess } = limitInDevMode(removed);
         
+        console.log(`[ExitDates] ${removed.length} Schüler in WebUntis aber nicht in ASV. Verarbeite ${removedToProcess.length}.`);
+
         if (removedToProcess.length === 0) {
             return { syncLog: {}, message: 'Nothing to do', dateCount: 0, devMode };
         }
@@ -23,7 +25,17 @@ class WebUntisSetExitDatesTask {
         // Fetch exact exit dates natively from ASV (returns map of { userId: 'YYYY-MM-DD' })
         const exitDates = await asv.readExitDates(removedToProcess);
         
-        const idsToProcess = Object.keys(exitDates).length;
+        // Log which students have exit dates and which don't
+        const withDate = Object.keys(exitDates);
+        const withoutDate = removedToProcess.filter(u => !exitDates[u]);
+        if (withDate.length > 0) {
+            console.log(`[ExitDates] Austrittsdatum gefunden für: ${withDate.map(u => `${u} (${exitDates[u]})`).join(', ')}`);
+        }
+        if (withoutDate.length > 0) {
+            console.log(`[ExitDates] Kein Austrittsdatum in ASV für: ${withoutDate.join(', ')} — diese werden übersprungen.`);
+        }
+
+        const idsToProcess = withDate.length;
         if (idsToProcess === 0) {
              return { syncLog: {}, message: 'No exact dates found for removed users.', dateCount: 0, devMode };
         }

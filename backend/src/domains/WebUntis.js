@@ -18,7 +18,8 @@ class WebUntisDomain extends ManagableDomain {
         if (!this.url) throw new Error('WebUntis url missing');
         if (!this.url.endsWith('/')) this.url += '/';
 
-        this.loginPath = c.login || 'j_spring_security_check?school=VU';
+        this.school = c.school || '';
+        this.loginPath = c.login || 'j_spring_security_check';
         if (this.loginPath.startsWith('/')) this.loginPath = this.loginPath.substring(1);
 
         this.reportPath = c.report || 'reports.do';
@@ -71,136 +72,156 @@ class WebUntisDomain extends ManagableDomain {
     }
 
     async readIdentities() {
+        let client = this.authClient;
+
+        // Reuse existing session if available, otherwise create a new one
+        if (!client) {
+            client = await this._login();
+        }
+
+        try {
+            return await this._fetchStudentReport(client);
+        } catch (e) {
+            // If the existing session is stale, retry with a fresh login
+            if (this.authClient && (e.message.includes('400') || e.message.includes('403') || e.message.includes('401'))) {
+                console.log('[WebUntis] Re-authenticating...');
+                client = await this._login();
+                return await this._fetchStudentReport(client);
+            }
+            throw e;
+        }
+    }
+
+    async _login() {
         const jar = new CookieJar();
         const client = wrapper(axios.create({ jar, timeout: 5000 }));
 
-        try {
-            let token = '';
-            if (this.secret) {
-                const totp = new otpauth.TOTP({
-                    issuer: 'WebUntis',
-                    label: this.user,
-                    algorithm: 'SHA1',
-                    digits: 6,
-                    period: 30,
-                    secret: this.secret
-                });
-                token = totp.generate();
-            }
-
-            // WebUntis requires initial GET for JSESSIONID before POSTing spring security check
-            await client.get(this.url, { validateStatus: false });
-
-            const params = new URLSearchParams();
-            params.append('j_username', this.user);
-            params.append('j_password', this.password);
-            if (token) params.append('token', token);
-
-            await client.post(this.url + this.loginPath, params, {
-                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-                maxRedirects: 0,
-                validateStatus: false
+        let token = '';
+        if (this.secret) {
+            const totp = new otpauth.TOTP({
+                issuer: 'WebUntis',
+                label: this.user,
+                algorithm: 'SHA1',
+                digits: 6,
+                period: 30,
+                secret: this.secret
             });
-
-            // Keep the authenticated client for potential updates
-            this.authClient = client;
-
-            const genRes = await client.get(this.url + this.reportPath + '?' + this.fetchStudents);
-            if (!genRes.data || !genRes.data.data) {
-                console.error('WebUntis genRes.data.data is undefined!', genRes.data);
-                throw new Error('WebUntis did not return valid report data. Login or configuration issue possibly occurred.');
-            }
-
-            const data = genRes.data.data;
-            const messageId = data.messageId;
-            const reportParams = data.reportParams;
-
-            const csv = await this._pollReport(client, messageId, reportParams, 'Student CSV');
-
-            const lines = csv.split('\n');
-            const identities = [];
-            this.internalIds = {};
-
-            // Parse headers
-            let majorityColIdx = -1;
-            if (lines.length > 0) {
-                const headers = parseTsvLine(lines[0].trim());
-                majorityColIdx = headers.indexOf('majority');
-                if (majorityColIdx === -1) {
-                    console.warn('[WebUntis Info] "majority" column missing in WebUntis CSV export headers. Automatic majority resolving disabled.');
-                }
-            }
-
-            for (let i = 1; i < lines.length; i++) {
-                const line = lines[i].trim();
-                if (!line) continue;
-                const cols = parseTsvLine(line);
-                if (cols.length >= 6) {
-                    const externKey = cols[0];
-                    const lastName = cols[1];
-                    const firstName = cols[2];
-                    const genderStr = cols[3];
-                    const birthdayStr = cols[4];
-                    const clazz = cols[5];
-                    const internalId = cols.length > 9 ? cols[9] : undefined;
-                    const accountId = externKey || internalId || `idx-${i}`;
-
-                    let majorityFlag = false;
-                    if (majorityColIdx !== -1 && cols.length > majorityColIdx) {
-                        const val = cols[majorityColIdx] ? cols[majorityColIdx].toLowerCase() : '';
-                        majorityFlag = (val === 'true');
-                    }
-
-                    if (lastName === 'Tester_Schüler' || accountId === 'Tester_Schüler') {
-                        // console.log(`[CSV DUMP] Tester_Schüler columns:`, cols);
-                        this.testerCsv = cols; // Expose for our HTTP API inspection route!
-                    }
-
-                    if (internalId && accountId) {
-                        this.internalIds[accountId] = internalId;
-                    }
-
-                    let birthday = null;
-                    if (birthdayStr && birthdayStr.includes('.')) {
-                        const parts = birthdayStr.split('.');
-                        if (parts.length === 3) {
-                            const day = parts[0];
-                            const month = parts[1];
-                            const year = parts[2];
-                            birthday = `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
-                        }
-                    }
-
-                    let normGender = null;
-                    if (genderStr) {
-                        const str = genderStr.toUpperCase();
-                        if (str.startsWith('M') || str === '1ÄNNLICH') normGender = 'M';
-                        else if (str.startsWith('W') || str.startsWith('F')) normGender = 'W';
-                        else normGender = 'D';
-                    }
-
-                    identities.push(new Identity(
-                        accountId,
-                        firstName,
-                        lastName,
-                        {
-                            domain: 'webuntis',
-                            id: accountId,
-                            gender: normGender,
-                            clazz,
-                            birthday,
-                            majority: majorityFlag
-                        }
-                    ));
-                }
-            }
-
-            return identities.sort((a, b) => (a.lastName + a.firstName).localeCompare(b.lastName + b.firstName));
-
-        } catch (e) {
-            console.error('WebUntis read error:', e.message);
-            throw new Error('WebUntis read error: ' + e.message);
+            token = totp.generate();
         }
+
+        // WebUntis requires initial GET for JSESSIONID before POSTing spring security check.
+        // The school parameter must be present on this initial request to bind the session.
+        const initUrl = this.school ? `${this.url}?school=${this.school}` : this.url;
+        await client.get(initUrl, { validateStatus: false });
+
+        const params = new URLSearchParams();
+        params.append('j_username', this.user);
+        params.append('j_password', this.password);
+        if (token) params.append('token', token);
+
+        await client.post(this.url + this.loginPath, params, {
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            maxRedirects: 0,
+            validateStatus: false
+        });
+
+        // Keep the authenticated client for potential updates
+        this.authClient = client;
+        return client;
+    }
+
+    async _fetchStudentReport(client) {
+        const genRes = await client.get(this.url + this.reportPath + '?' + this.fetchStudents);
+        if (!genRes.data || !genRes.data.data) {
+            console.error('WebUntis genRes.data.data is undefined!', genRes.data);
+            throw new Error('WebUntis did not return valid report data. Login or configuration issue possibly occurred.');
+        }
+
+        const data = genRes.data.data;
+        const messageId = data.messageId;
+        const reportParams = data.reportParams;
+
+        const csv = await this._pollReport(client, messageId, reportParams, 'Student CSV');
+
+        const lines = csv.split('\n');
+        const identities = [];
+        this.internalIds = {};
+
+        // Parse headers
+        let majorityColIdx = -1;
+        if (lines.length > 0) {
+            const headers = parseTsvLine(lines[0].trim());
+            majorityColIdx = headers.indexOf('majority');
+            if (majorityColIdx === -1) {
+                console.warn('[WebUntis Info] "majority" column missing in WebUntis CSV export headers. Automatic majority resolving disabled.');
+            }
+        }
+
+        for (let i = 1; i < lines.length; i++) {
+            const line = lines[i].trim();
+            if (!line) continue;
+            const cols = parseTsvLine(line);
+            if (cols.length >= 6) {
+                const externKey = cols[0];
+                const lastName = cols[1];
+                const firstName = cols[2];
+                const genderStr = cols[3];
+                const birthdayStr = cols[4];
+                const clazz = cols[5];
+                const internalId = cols.length > 9 ? cols[9] : undefined;
+                const accountId = externKey || internalId || `idx-${i}`;
+
+                let majorityFlag = false;
+                if (majorityColIdx !== -1 && cols.length > majorityColIdx) {
+                    const val = cols[majorityColIdx] ? cols[majorityColIdx].toLowerCase() : '';
+                    majorityFlag = (val === 'true');
+                }
+
+                if (lastName === 'Tester_Schüler' || accountId === 'Tester_Schüler') {
+                    // console.log(`[CSV DUMP] Tester_Schüler columns:`, cols);
+                    this.testerCsv = cols; // Expose for our HTTP API inspection route!
+                }
+
+                if (internalId && accountId) {
+                    this.internalIds[accountId] = internalId;
+                }
+
+                let birthday = null;
+                if (birthdayStr && birthdayStr.includes('.')) {
+                    const parts = birthdayStr.split('.');
+                    if (parts.length === 3) {
+                        const day = parts[0];
+                        const month = parts[1];
+                        const year = parts[2];
+                        birthday = `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
+                    }
+                }
+
+                let normGender = null;
+                if (genderStr) {
+                    const str = genderStr.toUpperCase();
+                    if (str.startsWith('M') || str === '1ÄNNLICH') normGender = 'M';
+                    else if (str.startsWith('W') || str.startsWith('F')) normGender = 'W';
+                    else normGender = 'D';
+                }
+
+                identities.push(new Identity(
+                    accountId,
+                    firstName,
+                    lastName,
+                    {
+                        domain: 'webuntis',
+                        id: accountId,
+                        gender: normGender,
+                        clazz,
+                        birthday,
+                        majority: majorityFlag
+                    }
+                ));
+            }
+        }
+
+        return identities.sort((a, b) => (a.lastName + a.firstName).localeCompare(b.lastName + b.firstName));
     }
 
     async changeIdentity(identity) {
@@ -233,12 +254,14 @@ class WebUntisDomain extends ManagableDomain {
             savePayload.append('selId', internalId);
             savePayload.append('id', internalId);
 
-            // In WebUntis: name = short name, longName = last name, foreName = first name
-            // Use .set() to replace the scraped values
-            savePayload.set('name', identity.userId || '');
-            savePayload.set('longName', identity.lastName || identity.userId || '');
+            // Only set fields that are explicitly provided to avoid overwriting with empty values.
+            // Spring preserves unsubmitted fields automatically (see comment above).
+            if (identity.userId) {
+                savePayload.set('name', identity.userId);
+                savePayload.set('externKey', identity.userId);
+            }
+            if (identity.lastName) savePayload.set('longName', identity.lastName);
             if (identity.firstName) savePayload.set('foreName', identity.firstName);
-            savePayload.set('externKey', identity.userId || '');
 
             // Format YYYY-MM-DD as explicitly required by Dojo for birthDate
             if (identity.birthday) {
@@ -262,6 +285,16 @@ class WebUntisDomain extends ManagableDomain {
             } else if (identity.majority === false) {
                 // To set a checkbox to false in Spring, omit the boolean value but send the hidden _ parameter
                 savePayload.set('_majority', 'on');
+            }
+
+            // Set exit date via entryExitDateRanges if provided (YYYYMMDD as number)
+            if (identity.exitDate) {
+                const exitDateNum = parseInt(identity.exitDate.replace(/-/g, ''), 10);
+                const entryExitDateRanges = JSON.stringify([
+                    { startDate: 0, endDate: exitDateNum },
+                    { startDate: 0, endDate: 0 }
+                ]);
+                savePayload.set('entryExitDateRanges', entryExitDateRanges);
             }
 
             savePayload.set('active', 'true');
@@ -307,84 +340,17 @@ class WebUntisDomain extends ManagableDomain {
         }
     }
     async writeExitDates(map) {
-        if (!map || Object.keys(map).length === 0) return 0;
+        if (!map || Object.keys(map).length === 0) return [];
 
-        let client = this.authClient;
-        if (!client) {
-            await this.readIdentities(); // this establishes authClient
-            client = this.authClient;
-        }
-
-        const exitPath = config.webuntis?.exitDate || 'setStudentExitDate.do';
-
-        // 1. Fetch initial CSRF token from exitDate page
-        const initialRes = await client.get(this.url + exitPath, { validateStatus: false });
-        let htmlStr = typeof initialRes.data === 'string' ? initialRes.data : JSON.stringify(initialRes.data);
-
-        let csrfMatch = htmlStr.match(/"csrfToken"\s*:\s*"([^"]+)"/) || htmlStr.match(/csrfToken":"([^"]+)"/);
-        let currentCsrf = csrfMatch ? csrfMatch[1] : '';
-        if (!currentCsrf) {
-            const fallbackCsrf = htmlStr.match(/<input[^>]+type="hidden"[^>]+name="_csrf"[^>]+value="([^"]+)"/i);
-            if (fallbackCsrf) currentCsrf = fallbackCsrf[1];
-        }
-
-        let updatedUsers = [];
+        const updatedUsers = [];
 
         for (const [userId, exitDateStr] of Object.entries(map)) {
             try {
-                // Step 1: Search for user on exit date form to get their selId checkbox
-                const searchPayload = new URLSearchParams();
-                searchPayload.append('exitDateFilter', '');
-                searchPayload.append('klasseId', '-1');
-                searchPayload.append('schoolyearId', '-1');
-                searchPayload.append('searchString', userId);
-                searchPayload.append('_studentsForDate', 'on');
-                if (currentCsrf) searchPayload.append('_csrf', currentCsrf);
-
-                const searchRes = await client.post(this.url + exitPath, searchPayload.toString(), {
-                    headers: {
-                        'Content-Type': 'application/x-www-form-urlencoded',
-                        'X-Requested-With': 'XMLHttpRequest',
-                        'X-CSRF-TOKEN': currentCsrf || ''
-                    },
-                    validateStatus: false
-                });
-
-                const searchHtml = typeof searchRes.data === 'string' ? searchRes.data : JSON.stringify(searchRes.data);
-
-                const newCsrfMatch = searchHtml.match(/<input[^>]+type="hidden"[^>]+name="_csrf"[^>]+value="([^"]+)"/i);
-                if (newCsrfMatch) currentCsrf = newCsrfMatch[1];
-
-                const selIdMatch = searchHtml.match(/<input[^>]+type="checkbox"[^>]+name="selId"[^>]+value="([^"]+)"/i);
-
-                if (!selIdMatch) {
-                    console.log(`[WebUntis] No checkbox (selId) found for user ${userId}.`);
-                    continue;
-                }
-                const selId = selIdMatch[1];
-
-                // Step 2: Post the actual exit date
-                const setPayload = new URLSearchParams();
-                setPayload.append('setexitdate', '1');
-                setPayload.append('exitDate', exitDateStr);
-                setPayload.append('selId', selId);
-                if (currentCsrf) setPayload.append('_csrf', currentCsrf);
-
-                const setRes = await client.post(this.url + exitPath, setPayload.toString(), {
-                    headers: {
-                        'Content-Type': 'application/x-www-form-urlencoded',
-                        'X-Requested-With': 'XMLHttpRequest',
-                        'X-CSRF-TOKEN': currentCsrf || ''
-                    },
-                    validateStatus: false
-                });
-
-                if (setRes.status >= 200 && setRes.status < 400) {
-                    updatedUsers.push(userId);
-                }
-
-                await new Promise(r => setTimeout(r, 100)); // Be gentle
-
+                console.log(`[WebUntis] Setting exit date for ${userId}: ${exitDateStr}`);
+                await this.changeIdentity({ userId, exitDate: exitDateStr });
+                updatedUsers.push(userId);
+                console.log(`[WebUntis] Exit date ${exitDateStr} set for ${userId}`);
+                await new Promise(r => setTimeout(r, 200));
             } catch (err) {
                 console.error(`[WebUntis] Error setting exit date for ${userId}:`, err.message);
             }

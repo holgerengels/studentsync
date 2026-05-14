@@ -59,12 +59,12 @@ fi
 
 # --- Lokale Datenbank leeren und neu erstellen ---
 echo "→ Lokale Datenbank '${LOCAL_DB}' wird zurückgesetzt …"
-mysql -h "$LOCAL_HOST" -P "$LOCAL_PORT" -u "$LOCAL_USER" -p"$LOCAL_PASSWORD" \
+mysql --protocol=TCP -h "$LOCAL_HOST" -P "$LOCAL_PORT" -u "$LOCAL_USER" -p"$LOCAL_PASSWORD" \
   -e "DROP DATABASE IF EXISTS \`${LOCAL_DB}\`; CREATE DATABASE \`${LOCAL_DB}\`;"
 
 # --- Datenbankgröße ermitteln ---
 echo "→ Ermittle Größe der Remote-Datenbank …"
-DB_SIZE_BYTES=$(mysql -h "$REMOTE_HOST" -P "$REMOTE_PORT" -u "$REMOTE_USER" -p"$REMOTE_PASSWORD" \
+DB_SIZE_BYTES=$(mysql --protocol=TCP -h "$REMOTE_HOST" -P "$REMOTE_PORT" -u "$REMOTE_USER" -p"$REMOTE_PASSWORD" \
   -sNe "SELECT SUM(data_length + index_length) FROM information_schema.tables WHERE table_schema = '${REMOTE_DB}';" \
   2>/dev/null || echo "0")
 DB_SIZE_BYTES="${DB_SIZE_BYTES//[[:space:]]/}"
@@ -88,18 +88,18 @@ if command -v pv &>/dev/null; then
   else
     PV_ARGS="-pterb -N 'Dump→Import'"
   fi
-  mysqldump -h "$REMOTE_HOST" -P "$REMOTE_PORT" -u "$REMOTE_USER" -p"$REMOTE_PASSWORD" \
-    --single-transaction --routines --triggers --set-gtid-purged=OFF \
+  mysqldump --protocol=TCP -h "$REMOTE_HOST" -P "$REMOTE_PORT" -u "$REMOTE_USER" -p"$REMOTE_PASSWORD" \
+    --single-transaction --routines --triggers --set-gtid-purged=OFF --no-tablespaces \
     "$REMOTE_DB" \
     | eval pv $PV_ARGS \
-    | mysql -h "$LOCAL_HOST" -P "$LOCAL_PORT" -u "$LOCAL_USER" -p"$LOCAL_PASSWORD" "$LOCAL_DB"
+    | mysql --protocol=TCP -h "$LOCAL_HOST" -P "$LOCAL_PORT" -u "$LOCAL_USER" -p"$LOCAL_PASSWORD" "$LOCAL_DB"
 else
   echo "→ Dumpe Remote-Datenbank und importiere lokal …"
   echo "  (Tipp: 'sudo apt install pv' für eine bessere Fortschrittsanzeige)"
-  mysqldump -h "$REMOTE_HOST" -P "$REMOTE_PORT" -u "$REMOTE_USER" -p"$REMOTE_PASSWORD" \
-    --single-transaction --routines --triggers --set-gtid-purged=OFF --verbose \
+  mysqldump --protocol=TCP -h "$REMOTE_HOST" -P "$REMOTE_PORT" -u "$REMOTE_USER" -p"$REMOTE_PASSWORD" \
+    --single-transaction --routines --triggers --set-gtid-purged=OFF --no-tablespaces --verbose \
     "$REMOTE_DB" \
-    | mysql -h "$LOCAL_HOST" -P "$LOCAL_PORT" -u "$LOCAL_USER" -p"$LOCAL_PASSWORD" "$LOCAL_DB"
+    | mysql --protocol=TCP -h "$LOCAL_HOST" -P "$LOCAL_PORT" -u "$LOCAL_USER" -p"$LOCAL_PASSWORD" "$LOCAL_DB"
 fi
 
 END_TIME=$(date +%s)
