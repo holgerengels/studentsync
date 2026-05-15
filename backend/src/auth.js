@@ -23,10 +23,8 @@ const settings = config.settings || {};
 console.log(`[Auth] Settings loaded. DevMode: ${settings.devMode}`);
 
 const MOCK_USERS = [
-    { username: 'holger_engels', password: 'password', groups: ['Abteilungsleitung', 'Netzwerkteam'], displayName: 'Holger Engels' },
-    { username: 'admin', password: 'password', groups: ['Administration'], displayName: 'Admin' },
-    { username: 'lehrer1', password: 'password', groups: ['Lehrkräfte'], displayName: 'Max Mustermann' },
-    { username: 'schulleiter', password: 'password', groups: ['Schulleitung', 'Lehrkräfte'], displayName: 'Thomas Braun' }
+    { username: 'holger_engels', password: 'password', groups: ['Netzwerkteam'], displayName: 'Holger Engels' },
+    { username: 'admin', password: 'password', groups: ['Netzwerkteam'], displayName: 'Admin' },
 ];
 
 const devMode = settings.devMode !== false;
