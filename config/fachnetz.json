@@ -1,0 +1,34 @@
+{
+  "domains": [
+    {
+      "name": "fachnetz",
+      "titel": "Fachnetz",
+      "category": "fachnetz",
+      "color": "#E91E63"
+    },
+    {
+      "name": "arbeitsheft",
+      "titel": "Arbeitsheft",
+      "category": "fachnetz",
+      "color": "#9C27B0"
+    }
+  ],
+  "diffs": [
+    {
+      "name": "fachnetz-arbeitsheft",
+      "titel": "Fachnetz → Arbeitsheft",
+      "category": "fachnetz",
+      "source": "Fachnetz",
+      "target": "Arbeitsheft"
+    }
+  ],
+  "tasks": [
+    {
+      "name": "fachnetz-arbeitsheft-sync",
+      "titel": "Sync",
+      "class": "SyncTask",
+      "source": "fachnetz",
+      "target": "Arbeitsheft"
+    }
+  ]
+}

@@ -10,17 +10,28 @@
     <aside v-if="auth.isAuthenticated" class="sidebar" :class="{ 'mobile-open': sidebarOpen && isMobile, 'mobile-closed': !sidebarOpen && isMobile }">
       <div class="logo"><img src="/vu.svg" alt="Synx" height="44"/>&nbsp;SYNX</div>
       <nav v-if="config">
-        <router-link to="/" @click="closeMobileSidebar">Dashboard</router-link>
+        <template v-for="cat in config.categories" :key="cat.name">
+          <router-link :to="'/' + cat.name" class="nav-category" @click="closeMobileSidebar">
+            {{ cat.label }}
+          </router-link>
+          <router-link 
+            v-for="d in domainsByCategory(cat.name)" :key="d.name" 
+            :to="'/domain/'+d.name" 
+            class="nav-sub"
+            @click="closeMobileSidebar">
+              {{ d.titel || d.name }}
+          </router-link>
+          <router-link 
+            v-for="df in diffsByCategory(cat.name)" :key="df.name" 
+            :to="'/diff/'+df.name" 
+            class="nav-sub"
+            @click="closeMobileSidebar">
+              {{ df.titel || df.name }}
+          </router-link>
+        </template>
+
+        <span class="nav-spacer"></span>
         <router-link to="/logs" @click="closeMobileSidebar">Logs (History)</router-link>
-        <span class="nav-header">Domains</span>
-        <router-link v-for="d in config.domains" :key="d.name" :to="'/domain/'+d.name" @click="closeMobileSidebar">
-            {{ d.titel || d.name }}
-        </router-link>
-        
-        <span class="nav-header">Diffs</span>
-        <router-link v-for="df in config.diffs" :key="df.name" :to="'/diff/'+df.name" @click="closeMobileSidebar">
-            {{ df.titel || df.name }}
-        </router-link>
       </nav>
       <div v-if="config?.devMode" class="dev-mode-badge">
         <span class="dev-dot"></span>
@@ -62,6 +73,14 @@ import ToastContainer from './components/ToastContainer.vue';
 const config = inject('synxConfig');
 const router = useRouter();
 const auth = useAuthStore();
+
+function domainsByCategory(cat) {
+    return (config?.domains || []).filter(d => d.category === cat);
+}
+
+function diffsByCategory(cat) {
+    return (config?.diffs || []).filter(d => d.category === cat);
+}
 
 const userInitials = computed(() => {
     const name = auth.user?.displayName || auth.user?.username;
@@ -160,6 +179,7 @@ body {
 nav {
     display: flex;
     flex-direction: column;
+    flex: 1;
 }
 nav a {
     padding: 0.75rem 1.5rem;
@@ -180,13 +200,40 @@ nav a.router-link-active {
     background-color: var(--wa-color-brand-80);
     color: var(--wa-color-brand-15);
 }
-.nav-header {
-    padding: 1.5rem 1.5rem 0.25rem;
-    font-size: 0.9rem;
-    font-weight: 600;
+.nav-category {
+    padding: 0.6rem 1.5rem;
+    font-size: 0.85rem;
+    font-weight: 700;
     text-transform: uppercase;
-    color: var(--wa-color-neutral-500);
     letter-spacing: 0.5px;
+    color: var(--wa-color-neutral-500);
+    margin-top: 0.75rem;
+}
+.nav-category:first-child {
+    margin-top: 0;
+}
+.nav-category:hover {
+    color: var(--wa-color-brand-20);
+}
+.nav-category.router-link-active {
+    color: var(--wa-color-brand-15);
+    background-color: transparent;
+}
+.nav-sub {
+    padding: 0.4rem 1.5rem 0.4rem 2.25rem;
+    font-size: 0.9rem;
+    font-weight: 400;
+    color: var(--wa-color-neutral-400);
+}
+.nav-sub:hover {
+    color: var(--wa-color-brand-20);
+}
+.nav-sub.router-link-active {
+    color: var(--wa-color-brand-15);
+    font-weight: 600;
+}
+.nav-spacer {
+    flex: 1;
 }
 
 .dev-mode-badge {

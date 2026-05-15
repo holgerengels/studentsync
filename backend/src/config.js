@@ -2,9 +2,8 @@ const fs = require('fs');
 const path = require('path');
 
 const configDir = path.join(__dirname, '../../config');
-const defaultPath = path.join(configDir, 'default.json');
-const settingsPath = path.join(configDir, 'settings.json');
-const testPath = path.join(configDir, 'test.json');
+
+const RESERVED_FILES = new Set(['settings.json', 'config.json', 'test.json']);
 
 function loadJson(filePath) {
     try {
@@ -54,15 +53,35 @@ function deepMerge(target, source) {
     return target;
 }
 
-const defaultData = loadJson(defaultPath);
-const settingsData = loadJson(settingsPath);
-const testData = loadJson(testPath);
+// 1. Load settings.json — endpoint credentials & server infrastructure
+const settingsData = loadJson(path.join(configDir, 'settings.json'));
 
-let config = deepMerge({}, defaultData);
-config = deepMerge(config, settingsData);
+// 2. Load config.json — runtime overrides (devMode, Schuljahr, mappings, etc.)
+const configData = loadJson(path.join(configDir, 'config.json'));
 
-// Note: Ensure tests load testData on demand or apply it generally for local dev?
-// For synx, including test.json is allowed generally if present. 
+// 3. Merge settings + config overrides
+let config = deepMerge({}, settingsData);
+config = deepMerge(config, configData);
+
+// 4. Dynamically discover category files (all *.json except reserved files)
+const categoryFiles = fs.readdirSync(configDir)
+    .filter(f => f.endsWith('.json') && !RESERVED_FILES.has(f))
+    .sort();
+
+config.domains = [];
+config.diffs = [];
+config.tasks = [];
+
+for (const file of categoryFiles) {
+    const categoryData = loadJson(path.join(configDir, file));
+    if (categoryData.domains) config.domains.push(...categoryData.domains);
+    if (categoryData.diffs) config.diffs.push(...categoryData.diffs);
+    if (categoryData.tasks) config.tasks.push(...categoryData.tasks);
+    console.log(`[Config] Loaded category: ${file}`);
+}
+
+// 5. Apply test.json overlay (deep merge, can override individual entries)
+const testData = loadJson(path.join(configDir, 'test.json'));
 config = deepMerge(config, testData);
 
 module.exports = config;

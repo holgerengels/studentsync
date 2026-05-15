@@ -1,5 +1,5 @@
-const { getDomain } = require('../domains/registry');
-const { isDevMode, limitInDevMode, devModeSuffix } = require('../utils/devMode');
+const { getDomain } = require('../../domains/registry');
+const { isDevMode, limitInDevMode, devModeSuffix } = require('../../utils/devMode');
 
 class UntisTeacherExternalIdsTask {
     constructor() {
@@ -8,10 +8,10 @@ class UntisTeacherExternalIdsTask {
 
     async execute() {
         const devMode = isDevMode();
-        const untis = getDomain('untis');
+        const untisTeacher = getDomain('untis-teacher');
 
         // Step 1: Read which teachers need an update (pure read, no writes)
-        const { pending, missingDomain } = await untis.readTeachersWithMissingExternalIds();
+        const { pending, missingDomain } = await untisTeacher.readTeachersWithMissingExternalIds();
 
         // Step 2: Limit writes in devMode
         const { items: toProcess } = limitInDevMode(pending);
@@ -21,7 +21,7 @@ class UntisTeacherExternalIdsTask {
         const errors = [];
         for (const { name, foreignKey } of toProcess) {
             try {
-                await untis.writeTeacherExternalId(name, foreignKey);
+                await untisTeacher.writeTeacherExternalId(name, foreignKey);
                 updatedIds.push(name);
             } catch (e) {
                 errors.push(`${name}: ${e.message}`);

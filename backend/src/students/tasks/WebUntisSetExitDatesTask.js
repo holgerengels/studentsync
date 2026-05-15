@@ -1,6 +1,6 @@
-const DiffTask = require('./DiffTask');
-const { getDomain } = require('../domains/registry');
-const { isDevMode, limitInDevMode, devModeSuffix } = require('../utils/devMode');
+const DiffTask = require('../../tasks/DiffTask');
+const { getDomain } = require('../../domains/registry');
+const { isDevMode, limitInDevMode, devModeSuffix } = require('../../utils/devMode');
 
 class WebUntisSetExitDatesTask {
     async execute() {

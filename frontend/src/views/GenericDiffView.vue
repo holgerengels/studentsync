@@ -1,9 +1,9 @@
 <template>
-  <div :style="`--source-color: ${getBrandColor(diff.source || diff.name?.split('-')[0], config)}; --target-color: ${getBrandColor(diff.target || diff.name?.split('-')[1], config)};`">
+  <div :style="`--source-color: ${getBrandColor(diff.source, config)}; --target-color: ${getBrandColor(diff.target, config)};`">
     <h2 style="border-bottom: 3px solid transparent; border-image: linear-gradient(to right, var(--source-color), var(--target-color)) 1; padding-bottom: 0.5rem; margin-bottom: 1rem;">
-      <span style="color: var(--source-color);">{{ diff.source || diff.name?.split('-')[0] }}</span>
+      <span style="color: var(--source-color);">{{ diff.source }}</span>
       <span style="color: var(--wa-color-neutral-500); margin: 0 0.5rem;">&rarr;</span>
-      <span style="color: var(--target-color);">{{ diff.target || diff.name?.split('-')[1] }}</span>
+      <span style="color: var(--target-color);">{{ diff.target }}</span>
     </h2>
     
     <div style="margin-bottom: 1rem; display: flex; gap: 0.5rem; justify-content: space-between; align-items: center;">
@@ -102,6 +102,7 @@
 import { ref, onMounted, watch, inject, computed } from 'vue';
 import axios from 'axios';
 import { getBrandColor } from '../utils/brandColors.js';
+import { getDiffDomains } from '../utils/diffDomains.js';
 
 const config = inject('synxConfig', { domains: [] });
 
@@ -144,7 +145,7 @@ async function calculateDiff(refresh) {
     error.value = '';
     resultMessage.value = '';
     try {
-        const [source, target] = props.diff.name.split('-');
+        const { source, target } = getDiffDomains(props.diff);
         const res = await axios.post(`/api/diff/${source}/${target}${refresh ? '?refresh=true' : ''}`);
         report.value = res.data.report;
     } catch(e) {
@@ -159,7 +160,7 @@ async function runSync() {
     error.value = '';
     resultMessage.value = '';
     try {
-        const [source, target] = props.diff.name.split('-');
+        const { source, target } = getDiffDomains(props.diff);
         const res = await axios.post(`/api/sync/${source}/${target}`);
         resultMessage.value = res.data.html || '<span style="color:var(--wa-color-success-600)">Synchronisierung erfolgreich</span>';
         

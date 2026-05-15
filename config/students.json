@@ -1,0 +1,139 @@
+{
+  "domains": [
+    {
+      "name": "dummy",
+      "titel": "Dummy Domain",
+      "category": "students",
+      "actions": [
+        {
+          "name": "Zufällige Änderungen",
+          "run": "dummy-random-modifications"
+        }
+      ],
+      "color": "var(--wa-color-primary-600)"
+    },
+    {
+      "name": "asv",
+      "titel": "ASV",
+      "category": "students",
+      "actions": [
+        {
+          "name": "IDs generieren",
+          "run": "asv-generate-ids"
+        }
+      ],
+      "color": "#00457D"
+    },
+    {
+      "name": "schulkonsole",
+      "titel": "Schulkonsole",
+      "category": "students",
+      "color": "#00965E"
+    },
+    {
+      "name": "untis",
+      "titel": "Untis",
+      "category": "students",
+      "color": "#FF7A00"
+    },
+    {
+      "name": "webuntis",
+      "titel": "WebUntis",
+      "category": "students",
+      "actions": [
+        {
+          "name": "Volljährigkeit",
+          "run": "web-untis-majority"
+        }
+      ],
+      "color": "#FF7A00"
+    },
+    {
+      "name": "nextcloud",
+      "titel": "NextCloud",
+      "category": "students",
+      "actions": [
+        {
+          "name": "Remnants",
+          "run": "nextcloud-remnants-list"
+        }
+      ],
+      "color": "#0082C9"
+    }
+  ],
+  "diffs": [
+    {
+      "name": "asv-schulkonsole",
+      "titel": "ASV → Schulkonsole",
+      "category": "students",
+      "source": "ASV",
+      "target": "Schulkonsole"
+    },
+    {
+      "name": "asv-untis",
+      "titel": "ASV → Untis",
+      "category": "students",
+      "source": "ASV",
+      "target": "Untis",
+      "actions": [
+        {
+          "name": "Import generieren",
+          "download": "untis-generate-import"
+        }
+      ]
+    },
+    {
+      "name": "asv-webuntis",
+      "titel": "ASV → WebUntis",
+      "category": "students",
+      "source": "ASV",
+      "target": "WebUntis",
+      "actions": [
+        {
+          "name": "Austrittsdatum",
+          "run": "web-untis-set-exit-dates"
+        },
+        {
+          "name": "Erziehungsberechtigte",
+          "run": "web-untis-guardian-sync"
+        }
+      ]
+    }
+  ],
+  "tasks": [
+    {
+      "name": "asv-schulkonsole-diff",
+      "titel": "Diff",
+      "class": "DiffTask",
+      "source": "ASV",
+      "target": "Schulkonsole"
+    },
+    {
+      "name": "asv-schulkonsole-sync",
+      "titel": "Sync",
+      "class": "SyncTask",
+      "source": "ASV",
+      "target": "Schulkonsole"
+    },
+    {
+      "name": "asv-untis-sync",
+      "titel": "Sync",
+      "class": "SyncTask",
+      "source": "ASV",
+      "target": "Untis"
+    },
+    {
+      "name": "asv-webuntis-sync",
+      "titel": "Sync",
+      "class": "SyncTask",
+      "source": "ASV",
+      "target": "WebUntis"
+    },
+    {
+      "name": "asv-generate-ids",
+      "titel": "IDs generieren",
+      "class": "ASVGenerateIDsTask",
+      "schedule": "0 2 * * *"
+    }
+  ]
+}

@@ -67,6 +67,7 @@ class Domain {
                      if (this._fetchPromise === promise) {
                          this._fetchPromise = null; // Erlaubt einen neuen Versuch bei Fehlern
                      }
+                     console.error(`[Domain] getIdentities('${this.domainName}') failed:`, err.message);
                      throw err;
                  });
              this._fetchPromise = promise;

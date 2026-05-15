@@ -18,12 +18,21 @@ if (useMocks) {
     }
 
     domains = {
-        asv:          tryCreate('asv', () => require('./ASV')),
-        untis:        tryCreate('untis', () => require('./Untis')),
-        schulkonsole: tryCreate('schulkonsole', () => require('./Schulkonsole')),
-        webuntis:     tryCreate('webuntis', () => require('./WebUntis')),
-        nextcloud:    tryCreate('nextcloud', () => require('./Nextcloud')),
-        dummy:        tryCreate('dummy', () => new (require('./DummyDomain'))()),
+        // Students
+        asv:          tryCreate('asv', () => require('../students/domains/ASV')),
+        untis:        tryCreate('untis', () => require('../students/domains/Untis')),
+        schulkonsole: tryCreate('schulkonsole', () => require('../students/domains/Schulkonsole')),
+        webuntis:     tryCreate('webuntis', () => require('../students/domains/WebUntis')),
+        nextcloud:    tryCreate('nextcloud', () => require('../students/domains/Nextcloud')),
+        dummy:        tryCreate('dummy', () => new (require('../students/domains/DummyDomain'))()),
+        // Teachers
+        'asv-teacher':         tryCreate('asv-teacher', () => require('../teachers/domains/ASVTeacher')),
+        'untis-teacher':       tryCreate('untis-teacher', () => require('../teachers/domains/UntisTeacher')),
+        'schulkonsole-teacher': tryCreate('schulkonsole-teacher', () => require('../teachers/domains/SchulkonsoleTeacher')),
+        // Fachnetz
+        fachnetz:      tryCreate('fachnetz', () => require('../fachnetz/domains/Fachnetz')),
+        arbeitsheft:   tryCreate('arbeitsheft', () => require('../fachnetz/domains/Arbeitsheft')),
+        // Other
         relution:     new Domain('relution')
     };
 

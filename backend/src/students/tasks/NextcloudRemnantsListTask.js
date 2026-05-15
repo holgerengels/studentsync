@@ -1,5 +1,5 @@
-const Task = require('./Task');
-const { getDomain } = require('../domains/registry');
+const Task = require('../../tasks/Task');
+const { getDomain } = require('../../domains/registry');
 
 class NextcloudRemnantsListTask extends Task {
     constructor() {

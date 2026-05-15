@@ -1,8 +1,8 @@
 const axios = require('axios');
 const https = require('https');
-const Identity = require('./Identity');
-const config = require('../config');
-const ManagableDomain = require('./ManagableDomain');
+const Identity = require('../../domains/Identity');
+const config = require('../../config');
+const ManagableDomain = require('../../domains/ManagableDomain');
 
 class Schulkonsole extends ManagableDomain {
     get supportedProperties() { return ['userId', 'firstName', 'lastName', 'clazz']; }

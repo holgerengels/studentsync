@@ -52,9 +52,8 @@ async function handleLogin() {
         // Retry any queued requests that failed due to 401
         requestQueue.retryAll(token);
         
-        if (router.currentRoute.value.path === '/login') {
-            router.push('/');
-        }
+        // Reload to re-bootstrap with fresh config (config/ui requires auth)
+        window.location.reload();
     } catch(e) {
         errorMsg.value = e.response?.data?.error || e.response?.data?.message || 'Zugriff verweigert (LDAP oder Auth fehlgeschlagen)';
     } finally {

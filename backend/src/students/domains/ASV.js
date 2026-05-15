@@ -1,11 +1,11 @@
 const { Pool } = require('pg');
 const fs = require('fs');
 const path = require('path');
-const Identity = require('./Identity');
-const { encode, next } = require('../utils/userIds');
-const Domain = require('./Domain');
+const Identity = require('../../domains/Identity');
+const { encode, next } = require('../../utils/userIds');
+const Domain = require('../../domains/Domain');
 
-const config = require('../config');
+const config = require('../../config');
 
 class ASV extends Domain {
     get supportedProperties() { return ['userId', 'firstName', 'lastName', 'birthday', 'clazz']; }

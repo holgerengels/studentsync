@@ -1,4 +1,4 @@
-const ManagableDomain = require('./ManagableDomain');
+const ManagableDomain = require('../../domains/ManagableDomain');
 const mongoose = require('mongoose');
 
 const dummySchema = new mongoose.Schema({

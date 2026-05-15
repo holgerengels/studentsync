@@ -2,10 +2,10 @@ const axios = require('axios');
 const { wrapper } = require('axios-cookiejar-support');
 const { CookieJar } = require('tough-cookie');
 const otpauth = require('otpauth');
-const Identity = require('./Identity');
-const config = require('../config');
-const ManagableDomain = require('./ManagableDomain');
-const { parseTsvLine } = require('../utils/csvParser');
+const Identity = require('../../domains/Identity');
+const config = require('../../config');
+const ManagableDomain = require('../../domains/ManagableDomain');
+const { parseTsvLine } = require('../../utils/csvParser');
 
 class WebUntisDomain extends ManagableDomain {
     get supportedProperties() { return ['userId', 'firstName', 'lastName', 'clazz', 'birthday']; }

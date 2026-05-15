@@ -1,0 +1,117 @@
+{
+  "settings": {
+    "devMode": true
+  },
+  "asv": {
+    "schuljahr": "2025/26"
+  },
+  "untis": {
+    "schulid": "1",
+    "schuljahr": "20252026",
+    "emailDomain": "valckenburgschule.de"
+  },
+  "ldap": {
+    "schuljahr": "2025"
+  },
+  "categories": [
+    {
+      "name": "students",
+      "label": "Schüler*innen",
+      "access": [
+        {
+          "group": "Abteilungsleitung"
+        },
+        {
+          "group": "Netzwerkteam"
+        }
+      ]
+    },
+    {
+      "name": "teachers",
+      "label": "Lehrer*innen",
+      "access": [
+        {
+          "group": "Netzwerkteam"
+        }
+      ]
+    },
+    {
+      "name": "fachnetz",
+      "label": "Fachnetz",
+      "access": [
+        {
+          "user": "holger_engels"
+        }
+      ]
+    }
+  ],
+  "relution": {
+    "tabletClasses": [
+      "AV1",
+      "AV2",
+      "AV3",
+      "AV4",
+      "LS1",
+      "L2",
+      "L3",
+      "1BK2P",
+      "1BKFHB",
+      "1BKFHW",
+      "GYM01E",
+      "GYM02E",
+      "GYM03B",
+      "GYM04B",
+      "GYM05S",
+      "GYM06S",
+      "GYM07G",
+      "GYM08G",
+      "GYM11E",
+      "GYM12E",
+      "GYM13B",
+      "GYM14B",
+      "GYM15S",
+      "GYM16S",
+      "GYM17G",
+      "GYM18G",
+      "GYM22E",
+      "GYM28G"
+    ]
+  },
+  "classMapping": [
+    {
+      "H11": "H123"
+    },
+    {
+      "H12": "H123"
+    },
+    {
+      "H13": "H123"
+    },
+    {
+      "3BFP11": "3BFP1"
+    },
+    {
+      "3BFP12": "3BFP1"
+    },
+    {
+      "3BFP21": "3BFP2"
+    },
+    {
+      "3BFP22": "3BFP2"
+    },
+    {
+      "3BFP31": "3BFP3"
+    },
+    {
+      "3BFP32": "3BFP3"
+    }
+  ],
+  "hooks": [
+    {
+      "task": "asv-untis-sync",
+      "script": "asv-untis",
+      "condition": "true",
+      "action": "maintainTicket"
+    }
+  ]
+}

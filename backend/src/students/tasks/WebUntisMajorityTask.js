@@ -1,6 +1,6 @@
-const Task = require('./Task');
-const { getDomain } = require('../domains/registry');
-const { isDevMode, limitInDevMode, devModeSuffix } = require('../utils/devMode');
+const Task = require('../../tasks/Task');
+const { getDomain } = require('../../domains/registry');
+const { isDevMode, limitInDevMode, devModeSuffix } = require('../../utils/devMode');
 
 class WebUntisMajorityTask extends Task {
     constructor() {

@@ -1,8 +1,8 @@
 const { NodeSSH } = require('node-ssh');
 const fs = require('fs');
-const config = require('../config');
-const Domain = require('./Domain');
-const Identity = require('./Identity');
+const config = require('../../config');
+const Domain = require('../../domains/Domain');
+const Identity = require('../../domains/Identity');
 
 class NextcloudService extends Domain {
     constructor() {

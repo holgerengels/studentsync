@@ -1,4 +1,4 @@
-const DiffTask = require('./DiffTask');
+const DiffTask = require('../../tasks/DiffTask');
 
 class UntisGenerateImportTask {
     async execute() {

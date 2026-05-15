@@ -42,30 +42,35 @@ async function bootstrap() {
     const pinia = createPinia();
     app.use(pinia);
 
-    // Fetch config for dynamic routing
-    let remoteConfig = { domains: [], diffs: [], tasks: [] };
-    try {
-        const res = await axios.get('/api/config/ui');
-        remoteConfig = res.data;
-    } catch (e) {
-        console.error("Failed to load config", e);
-        document.body.innerHTML = `
-            <div style="display:flex; justify-content:center; align-items:center; height:100vh; font-family:sans-serif; flex-direction:column; background-color:#f8f9fa;">
-                <h2 style="color:#dc3545; margin-bottom: 1rem;">Systemfehler</h2>
-                <p>Die UI-Konfiguration konnte nicht geladen werden.</p>
-                <p style="font-size: 0.9em; color:#6c757d;">Bitte stellen Sie sicher, dass das Backend erreichbar ist.</p>
-                <button onclick="window.location.reload()" style="margin-top: 1rem; padding: 0.5rem 1rem; border:none; background-color:#0d6efd; color:white; border-radius:4px; cursor:pointer;">Neu laden</button>
-            </div>
-        `;
-        return; // Stop initialization
+    // Fetch config for dynamic routing (only if we have a token)
+    let remoteConfig = { categories: [], domains: [], diffs: [], tasks: [] };
+    const storedToken = localStorage.getItem('token');
+    if (storedToken) {
+        try {
+            const res = await axios.get('/api/config/ui');
+            remoteConfig = res.data;
+        } catch (e) {
+            console.error("Failed to load config", e);
+        }
     }
 
     // Pass the config down to app via Provide/Inject
     app.provide('synxConfig', remoteConfig);
 
+    const categories = remoteConfig.categories || [];
     const dynamicRoutes = [];
+
+    // Per-category dashboard routes (cat.name is the URL slug)
+    categories.forEach(cat => {
+        dynamicRoutes.push({
+            path: `/${cat.name}`,
+            name: `dashboard-${cat.name}`,
+            component: Dashboard,
+            props: { config: remoteConfig, category: cat.name }
+        });
+    });
     
-    // Generate Routes from config
+    // Domain detail routes
     remoteConfig.domains?.forEach(domain => {
         dynamicRoutes.push({
             path: `/domain/${domain.name}`,
@@ -75,6 +80,7 @@ async function bootstrap() {
         });
     });
 
+    // Diff detail routes
     remoteConfig.diffs?.forEach(diff => {
         dynamicRoutes.push({
             path: `/diff/${diff.name}`,
@@ -84,8 +90,11 @@ async function bootstrap() {
         });
     });
 
+    // Default route redirects to first category
+    const defaultRedirect = categories.length > 0 ? `/${categories[0].name}` : '/logs';
+
     const routes = [
-        { path: '/', name: 'Dashboard', component: Dashboard, props: { config: remoteConfig } },
+        { path: '/', redirect: defaultRedirect },
         { path: '/login', name: 'Login', component: Login },
         { path: '/logs', name: 'Logs', component: Logs },
         ...dynamicRoutes
@@ -100,6 +109,13 @@ async function bootstrap() {
 
     app.use(router);
     app.mount('#app');
+
+    // Show login overlay if not authenticated
+    if (!storedToken) {
+        const { useAuthStore } = await import('./stores/auth');
+        const auth = useAuthStore();
+        auth.triggerLogin();
+    }
 }
 
 bootstrap();

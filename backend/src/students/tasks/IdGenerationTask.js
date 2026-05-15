@@ -1,5 +1,5 @@
-const { getDomain } = require('../domains/registry');
-const { isDevMode, limitInDevMode, devModeSuffix } = require('../utils/devMode');
+const { getDomain } = require('../../domains/registry');
+const { isDevMode, limitInDevMode, devModeSuffix } = require('../../utils/devMode');
 
 class IdGenerationTask {
     async execute() {

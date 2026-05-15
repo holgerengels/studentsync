@@ -1,5 +1,5 @@
 <template>
-  <wa-card class="dashboard-card visual-diff-card" :style="`--source-color: ${getBrandColor(diff.source || diff.name?.split('-')[0], config)}; --target-color: ${getBrandColor(diff.target || diff.name?.split('-')[1], config)};`">
+  <wa-card class="dashboard-card visual-diff-card" :style="`--source-color: ${getBrandColor(diff.source, config)}; --target-color: ${getBrandColor(diff.target, config)};`">
     <div slot="header" style="font-size: 1.1rem; font-weight: bold;">
         {{ diff.titel }}
     </div>

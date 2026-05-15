@@ -1,0 +1,50 @@
+{
+  "domains": [
+    {
+      "name": "asv-teacher",
+      "titel": "ASV",
+      "category": "teachers",
+      "color": "#00457D"
+    },
+    {
+      "name": "untis-teacher",
+      "titel": "Untis",
+      "category": "teachers",
+      "actions": [
+        {
+          "name": "externIDs",
+          "run": "untis-teacher-external-ids",
+          "icon": "person-badge"
+        }
+      ],
+      "color": "#FF7A00"
+    },
+    {
+      "name": "schulkonsole-teacher",
+      "titel": "Schulkonsole",
+      "category": "teachers",
+      "color": "#00965E"
+    }
+  ],
+  "diffs": [
+    {
+      "name": "asv-teacher--untis-teacher",
+      "titel": "ASV → Untis",
+      "category": "teachers",
+      "source": "ASV",
+      "target": "Untis",
+      "sourceDomain": "asv-teacher",
+      "targetDomain": "untis-teacher"
+    },
+    {
+      "name": "asv-teacher--schulkonsole-teacher",
+      "titel": "ASV → Schulkonsole",
+      "category": "teachers",
+      "source": "ASV",
+      "target": "Schulkonsole",
+      "sourceDomain": "asv-teacher",
+      "targetDomain": "schulkonsole-teacher"
+    }
+  ],
+  "tasks": []
+}
