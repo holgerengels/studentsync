@@ -10,22 +10,20 @@
         {
             "name": "dummy",
             "titel": "Dummy",
+            "category": "students",
             "actions": [
                 {
                     "name": "Zufällige Änderungen",
                     "run": "dummy-random-modifications"
                 }
             ]
-        },
-        {
-            "name": "asv",
-            "titel": "ASV"
         }
     ],
     "diffs": [
         {
             "name": "asv-dummy",
             "titel": "ASV → Dummy",
+            "category": "students",
             "source": "ASV",
             "target": "Dummy"
         }

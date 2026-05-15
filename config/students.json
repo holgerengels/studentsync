@@ -1,18 +1,6 @@
 {
   "domains": [
     {
-      "name": "dummy",
-      "titel": "Dummy Domain",
-      "category": "students",
-      "actions": [
-        {
-          "name": "Zufällige Änderungen",
-          "run": "dummy-random-modifications"
-        }
-      ],
-      "color": "var(--wa-color-primary-600)"
-    },
-    {
       "name": "asv",
       "titel": "ASV",
       "category": "students",
