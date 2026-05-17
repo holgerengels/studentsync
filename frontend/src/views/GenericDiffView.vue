@@ -24,8 +24,11 @@
             </wa-button>
         </div>
     </div>
-    
-    <div v-if="resultMessage" class="result-msg" v-html="resultMessage"></div>
+
+    <!-- Action Report Dialog -->
+    <wa-dialog :label="dialogTitle" :open="isDialogOpen" @wa-after-hide="isDialogOpen = false" style="--width: 800px; --body-spacing: 0;">
+      <div v-if="dialogContent" v-html="dialogContent" style="padding: 1rem; font-size: 0.9em;"></div>
+    </wa-dialog>
     <div v-if="error" class="error">{{ error }}</div>
     
     <wa-card v-if="report && report.diff" class="table-card">
@@ -110,11 +113,17 @@ const props = defineProps({
     diff: Object
 });
 
+import { useToast } from '../composables/useToast';
+
+const toast = useToast();
+
 const report = ref(null);
 const loading = ref(false);
 const actionLoading = ref('');
 const error = ref('');
-const resultMessage = ref('');
+const dialogTitle = ref('');
+const dialogContent = ref('');
+const isDialogOpen = ref(false);
 
 const extraProps = computed(() => {
     if (!report.value || !report.value.intersectedProperties) return [];
@@ -143,7 +152,6 @@ watch(() => props.diff.name, () => {
 async function calculateDiff(refresh) {
     loading.value = true;
     error.value = '';
-    resultMessage.value = '';
     try {
         const { source, target } = getDiffDomains(props.diff);
         const res = await axios.post(`/api/diff/${source}/${target}${refresh ? '?refresh=true' : ''}`);
@@ -158,15 +166,21 @@ async function calculateDiff(refresh) {
 async function runSync() {
     actionLoading.value = 'sync';
     error.value = '';
-    resultMessage.value = '';
     try {
         const { source, target } = getDiffDomains(props.diff);
         const res = await axios.post(`/api/sync/${source}/${target}`);
-        resultMessage.value = res.data.html || '<span style="color:var(--wa-color-success-600)">Synchronisierung erfolgreich</span>';
-        
+
+        if (res.data?.html) {
+            dialogTitle.value = 'Synchronisierung';
+            dialogContent.value = res.data.html;
+            isDialogOpen.value = true;
+        }
+
+        toast.success('Synchronisierung erfolgreich');
         await calculateDiff(true);
     } catch(e) {
-        error.value = 'Sync fehlgeschlagen';
+        const explanation = e.response?.data?.error || e.message;
+        toast.danger(`Sync fehlgeschlagen: ${explanation}`);
     } finally {
         actionLoading.value = '';
     }
@@ -182,14 +196,21 @@ async function runAction(act) {
     
     actionLoading.value = act.name;
     error.value = '';
-    resultMessage.value = '';
     
     try {
         const res = await axios.post(actionKey.startsWith('/') ? actionKey : `/api/execute/${actionKey}`);
-        resultMessage.value = res.data.html || `<span style="color:var(--wa-color-success-600)">Aktion ${act.name} ausgeführt</span>`;
+
+        if (res.data?.html) {
+            dialogTitle.value = act.name || 'Aktionsbericht';
+            dialogContent.value = res.data.html;
+            isDialogOpen.value = true;
+        }
+
+        toast.success(`Aktion ${act.name} ausgeführt`);
         await calculateDiff(true);
     } catch(e) {
-        error.value = `Aktion ${act.name} fehlgeschlagen`;
+        const explanation = e.response?.data?.error || e.message;
+        toast.danger(`Aktion ${act.name} fehlgeschlagen: ${explanation}`);
     } finally {
         actionLoading.value = '';
     }
@@ -201,11 +222,7 @@ async function runAction(act) {
     color: var(--wa-color-danger-600);
     margin-bottom: 1rem;
 }
-.result-msg {
-    margin-bottom: 1rem;
-    text-align: right;
-    font-size: 0.95rem;
-}
+
 .table-card {
     width: 100%;
 }

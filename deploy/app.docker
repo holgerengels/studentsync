@@ -8,7 +8,7 @@ RUN npm run build
 
 # Stage 2: Serve Backend & Frontend
 FROM node:20
-WORKDIR /app/backend
+WORKDIR /app
 
 # Install Backend Deps
 COPY backend/package*.json ./
@@ -17,12 +17,11 @@ RUN npm install --production
 # Copy Backend Code
 COPY backend/ ./
 
-# Copy Built Frontend
-COPY --from=builder /app/frontend/dist /app/frontend/dist
+# Copy Built Frontend to public
+COPY --from=builder /app/frontend/dist ./public
 
-# Default config dir
-RUN mkdir -p /app/config
-COPY config/ /app/config/
+# Copy Config Placeholder (will be mounted)
+RUN mkdir -p config
 
 EXPOSE 3001
 CMD ["node", "src/server.js"]

@@ -4,7 +4,7 @@ services:
     ports:
       - "3001:3001"
     volumes:
-      - ./config:/app/config
+      - ./config:/config
     extra_hosts:
       - "host.docker.internal:host-gateway"
     depends_on:

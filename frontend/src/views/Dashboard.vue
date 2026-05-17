@@ -115,9 +115,9 @@ async function refreshDiff(diffName, forceRefresh = false) {
 function loadCategoryData() {
     if (!props.config) return;
     filteredDomains.value.forEach(d => {
-        axios.get(`/api/identities/${d.name}`)
+        axios.get(`/api/identities/${d.name}?limit=1`)
             .then(res => {
-                counts.value[d.name] = res.data?.length || 0;
+                counts.value[d.name] = res.data?.total || 0;
             })
             .catch(e => {
                 counts.value[d.name] = 'Error';
@@ -141,8 +141,8 @@ watch(() => props.category, () => {
 async function refreshDomain(name) {
     loading.value[name] = true;
     try {
-        const res = await axios.get(`/api/identities/${name}?refresh=true`);
-        counts.value[name] = res.data?.length || 0;
+        const res = await axios.get(`/api/identities/${name}?refresh=true&limit=1`);
+        counts.value[name] = res.data?.total || 0;
         
         if (props.config && props.config.diffs) {
             for (const df of props.config.diffs) {
@@ -235,8 +235,8 @@ async function runAction(act, contextName) {
             isRemnantsDialogOpen.value = true;
         } 
         // Generischer Html / Text output View 
-        else if (res.data?.report?.dialogHtml) {
-            reportDialogContent.value = res.data.report.dialogHtml;
+        else if (res.data?.html) {
+            reportDialogContent.value = res.data.html;
             isDialogOpen.value = true;
         }
         

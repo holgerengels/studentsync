@@ -72,11 +72,12 @@ async function bootstrap() {
     
     // Domain detail routes
     remoteConfig.domains?.forEach(domain => {
+        const category = categories.find(c => c.name === domain.category) || {};
         dynamicRoutes.push({
             path: `/domain/${domain.name}`,
             name: `domain-${domain.name}`,
             component: GenericDomainView,
-            props: { domain }
+            props: { domain, category }
         });
     });
 

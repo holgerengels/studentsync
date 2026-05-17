@@ -6,7 +6,7 @@
     
     <div style="margin-bottom: 1rem; display: flex; gap: 0.5rem; justify-content: space-between; align-items: center;">
         <div style="flex-grow: 1; max-width: 400px;">
-            <wa-input :value="searchQuery" @wa-input="searchQuery = $event.target.value" @input="searchQuery = $event.target.value" placeholder="Suchen... (Text oder @klasse)" clearable>
+            <wa-input :value="searchQuery" @wa-input="onSearchInput" @input="onSearchInput" :placeholder="searchPlaceholder" clearable>
                 <wa-icon slot="prefix" name="search" title="Suche (live)"></wa-icon>
             </wa-input>
         </div>
@@ -22,8 +22,11 @@
             </wa-button>
         </div>
     </div>
-    
-    <div v-if="resultMessage" class="result-msg" v-html="resultMessage"></div>
+
+    <!-- Action Report Dialog -->
+    <wa-dialog :label="dialogTitle" :open="isDialogOpen" @wa-after-hide="isDialogOpen = false" style="--width: 800px; --body-spacing: 0;">
+      <div v-if="dialogContent" v-html="dialogContent" style="padding: 1rem; font-size: 0.9em;"></div>
+    </wa-dialog>
     <div v-if="error" class="error">{{ error }}</div>
     
     <wa-card v-if="identities.length" class="table-card">
@@ -44,13 +47,23 @@
                 </tr>
             </thead>
             <tbody>
-                <tr v-for="ident in filteredAndSortedIdentities" :key="ident.userId || Math.random()">
+                <tr v-for="ident in identities" :key="ident.userId || Math.random()">
                     <td v-for="key in displayKeys" :key="key">{{ ident[key] !== undefined && ident[key] !== null ? ident[key] : '-' }}</td>
                 </tr>
             </tbody>
         </table>
-        <div v-if="identities.length > 50" style="padding: 1rem; text-align: center; color: gray;">
-            Showing 50 of {{ identities.length }} records...
+        <div v-if="total > 0" class="pagination-controls" style="padding: 1rem; display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--wa-color-neutral-200);">
+            <div style="color: gray; font-size: 0.9em;">
+                Zeige {{ (page - 1) * limit + 1 }} - {{ Math.min(page * limit, total) }} von {{ total }}
+            </div>
+            <div style="display: flex; gap: 0.5rem;">
+                <wa-button size="small" variant="neutral" :disabled="page <= 1" @click="page--; fetchData(false)">
+                    <wa-icon slot="prefix" name="chevron-left"></wa-icon> Zurück
+                </wa-button>
+                <wa-button size="small" variant="neutral" :disabled="page * limit >= total" @click="page++; fetchData(false)">
+                    Weiter <wa-icon slot="suffix" name="chevron-right"></wa-icon>
+                </wa-button>
+            </div>
         </div>
     </wa-card>
   </div>
@@ -60,19 +73,38 @@
 import { ref, computed, onMounted, watch } from 'vue';
 import axios from 'axios';
 import { getBrandColor } from '../utils/brandColors.js';
+import { useToast } from '../composables/useToast';
+
+const toast = useToast();
 
 const props = defineProps({
-    domain: Object
+    domain: Object,
+    category: Object
 });
 
 const identities = ref([]);
 const loading = ref(false);
 const actionLoading = ref('');
 const error = ref('');
-const resultMessage = ref('');
+const dialogTitle = ref('');
+const dialogContent = ref('');
+const isDialogOpen = ref(false);
 const searchQuery = ref('');
 const sortKey = ref('');
 const sortAsc = ref(true);
+const page = ref(1);
+const limit = ref(50);
+const total = ref(0);
+let searchTimeout = null;
+
+function onSearchInput(event) {
+    searchQuery.value = event.target.value;
+    clearTimeout(searchTimeout);
+    searchTimeout = setTimeout(() => {
+        page.value = 1;
+        fetchData(false);
+    }, 300);
+}
 
 onMounted(() => {
     fetchData(false);
@@ -80,6 +112,9 @@ onMounted(() => {
 
 watch(() => props.domain.name, () => {
     identities.value = [];
+    page.value = 1;
+    searchQuery.value = '';
+    sortKey.value = '';
     fetchData(false);
 });
 
@@ -92,9 +127,21 @@ async function fetchData(forceRefresh) {
     loading.value = true;
     error.value = '';
     try {
-        const url = `/api/identities/${props.domain.name}${forceRefresh ? '?refresh=true' : ''}`;
+        const params = new URLSearchParams({
+            page: page.value,
+            limit: limit.value
+        });
+        if (searchQuery.value.trim()) params.append('q', searchQuery.value.trim());
+        if (sortKey.value) {
+            params.append('sort', sortKey.value);
+            params.append('order', sortAsc.value ? 'asc' : 'desc');
+        }
+
+        const url = `/api/identities/${props.domain.name}${forceRefresh ? '?refresh=true&' : '?'}${params.toString()}`;
         const res = await axios.get(url);
-        identities.value = res.data;
+        
+        identities.value = res.data.data || res.data;
+        total.value = res.data.total || identities.value.length;
     } catch(e) {
         error.value = 'Failed to load identities from backend';
     } finally {
@@ -108,15 +155,23 @@ async function runAction(act) {
     
     actionLoading.value = act.name;
     error.value = '';
-    resultMessage.value = '';
     
     try {
         const res = await axios.post(actionKey.startsWith('/') ? actionKey : `/api/execute/${actionKey}`);
-        resultMessage.value = res.data.html || `<span style="color:var(--wa-color-success-600)">Aktion ${act.name} ausgeführt</span>`;
+
+        // Show detailed report in dialog if available
+        if (res.data?.html) {
+            dialogTitle.value = act.name || 'Aktionsbericht';
+            dialogContent.value = res.data.html;
+            isDialogOpen.value = true;
+        }
+
+        toast.success(`Aktion ${act.name} ausgeführt`);
         // Refresh domain data silently to reflect the new state
         await fetchData(true);
     } catch(e) {
-        error.value = `Aktion ${act.name} fehlgeschlagen`;
+        const explanation = e.response?.data?.error || e.message;
+        toast.danger(`Aktion ${act.name} fehlgeschlagen: ${explanation}`);
     } finally {
         actionLoading.value = '';
     }
@@ -140,46 +195,20 @@ function toggleSort(key) {
         sortKey.value = key;
         sortAsc.value = true;
     }
+    page.value = 1;
+    fetchData(false);
 }
 
-const filteredAndSortedIdentities = computed(() => {
-    let result = identities.value;
+const searchFields = computed(() => props.category?.search || ['userId', 'firstName', 'lastName']);
+const filterFields = computed(() => props.category?.filter || []);
 
-    // Filter
-    const q = searchQuery.value.trim().toLowerCase();
-    if (q) {
-        if (q.startsWith('@')) {
-            const classQuery = q.substring(1).trim();
-            result = result.filter(ident => {
-                const classVal = String(ident.class || ident.klasse || ident.klasseId || ident.clazz || '').toLowerCase();
-                return classVal.includes(classQuery);
-            });
-        } else {
-            result = result.filter(ident => {
-                const uid = String(ident.userId || ident.userid || '').toLowerCase();
-                const fn = String(ident.firstName || ident.firstname || ident.vorname || '').toLowerCase();
-                const ln = String(ident.lastName || ident.lastname || ident.nachname || '').toLowerCase();
-                return uid.includes(q) || fn.includes(q) || ln.includes(q);
-            });
-        }
+const searchPlaceholder = computed(() => {
+    if (filterFields.value.length) {
+        return `Suchen... (Text oder @${filterFields.value[0]})`;
     }
-
-    // Sort
-    if (sortKey.value) {
-        result = [...result].sort((a, b) => {
-            let valA = a[sortKey.value] ?? '';
-            let valB = b[sortKey.value] ?? '';
-            if (typeof valA === 'string') valA = valA.toLowerCase();
-            if (typeof valB === 'string') valB = valB.toLowerCase();
-            
-            if (valA < valB) return sortAsc.value ? -1 : 1;
-            if (valA > valB) return sortAsc.value ? 1 : -1;
-            return 0;
-        });
-    }
-
-    return result.slice(0, 50);
+    return 'Suchen...';
 });
+
 </script>
 
 <style scoped>
@@ -203,11 +232,7 @@ const filteredAndSortedIdentities = computed(() => {
     color: var(--wa-color-danger-600);
     margin-bottom: 1rem;
 }
-.result-msg {
-    margin-bottom: 1rem;
-    text-align: right;
-    font-size: 0.95rem;
-}
+
 .sortable-header:hover span:last-child {
     color: var(--wa-color-neutral-400) !important;
 }

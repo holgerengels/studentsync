@@ -4,7 +4,13 @@
       "name": "fachnetz",
       "titel": "Fachnetz",
       "category": "fachnetz",
-      "color": "#E91E63"
+      "color": "#E91E63",
+      "actions": [
+        {
+          "name": "Domain Maintenance",
+          "run": "fachnetz-domain-maintenance"
+        }
+      ]
     },
     {
       "name": "arbeitsheft",

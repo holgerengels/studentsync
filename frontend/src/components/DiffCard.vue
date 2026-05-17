@@ -119,7 +119,7 @@ defineEmits(['run-action', 'refresh', 'sync']);
 }
 .vd-grid {
     display: grid;
-    grid-template-columns: 50px auto 50px auto;
+    grid-template-columns: minmax(50px, auto) auto minmax(50px, auto) auto;
     gap: 0.3rem 0.35rem;
     align-items: center;
 }

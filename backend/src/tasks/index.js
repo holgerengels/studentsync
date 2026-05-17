@@ -13,7 +13,8 @@ const registry = {
     'web-untis-guardian-sync': new (require('../students/tasks/WebUntisGuardianSyncTask'))(),
     'web-untis-majority': new (require('../students/tasks/WebUntisMajorityTask'))(),
     'nextcloud-remnants-list': new (require('../students/tasks/NextcloudRemnantsListTask'))(),
-    'nextcloud-remnants-purge': new (require('../students/tasks/NextcloudRemnantsPurgeTask'))()
+    'nextcloud-remnants-purge': new (require('../students/tasks/NextcloudRemnantsPurgeTask'))(),
+    'fachnetz-domain-maintenance': new (require('../fachnetz/tasks/DomainMaintenanceTask'))()
 };
 
 // Dynamically register SyncTask and DiffTask instances from config

@@ -62,7 +62,12 @@ router.get('/config/ui', verifyToken, (req, res) => {
     const accessibleNames = new Set(accessibleCategories.map(c => c.name));
 
     res.json({
-        categories: accessibleCategories.map(c => ({ name: c.name, label: c.label })),
+        categories: accessibleCategories.map(c => ({ 
+            name: c.name, 
+            label: c.label,
+            search: c.search,
+            filter: c.filter
+        })),
         domains: (config.domains || []).filter(d => accessibleNames.has(d.category)),
         diffs: (config.diffs || []).filter(d => accessibleNames.has(d.category)),
         tasks: config.tasks || [],
@@ -80,8 +85,67 @@ router.get('/identities/:domainName', verifyToken, async (req, res) => {
         if (req.query.refresh === 'true') {
             domain.invalidate();
         }
-        const identities = await domain.getIdentities();
-        res.json(identities);
+        let identities = await domain.getIdentities();
+
+        // 1. Get Category Config for search/filter fields
+        const allCategories = config.categories || [];
+        const domainConfig = (config.domains || []).find(d => d.name === req.params.domainName) || {};
+        const categoryConfig = allCategories.find(c => c.name === domainConfig.category) || {};
+        const searchFields = categoryConfig.search || ['userId', 'firstName', 'lastName'];
+        const filterFields = categoryConfig.filter || [];
+
+        // 2. Filter
+        const q = (req.query.q || '').trim().toLowerCase();
+        if (q) {
+            if (q.startsWith('@') && filterFields.length) {
+                const filterQuery = q.substring(1).trim();
+                identities = identities.filter(ident =>
+                    filterFields.some(field => {
+                        const val = String(ident[field] || '').toLowerCase();
+                        return val.includes(filterQuery);
+                    })
+                );
+            } else {
+                identities = identities.filter(ident =>
+                    searchFields.some(field => {
+                        const val = String(ident[field] || '').toLowerCase();
+                        return val.includes(q);
+                    })
+                );
+            }
+        }
+
+        // 3. Sort
+        const sortKey = req.query.sort;
+        if (sortKey) {
+            const sortAsc = req.query.order !== 'desc';
+            identities = [...identities].sort((a, b) => {
+                let valA = a[sortKey] ?? '';
+                let valB = b[sortKey] ?? '';
+                if (typeof valA === 'string') valA = valA.toLowerCase();
+                if (typeof valB === 'string') valB = valB.toLowerCase();
+                if (valA < valB) return sortAsc ? -1 : 1;
+                if (valA > valB) return sortAsc ? 1 : -1;
+                return 0;
+            });
+        }
+
+        const total = identities.length;
+
+        // 4. Paginate
+        if (req.query.limit) {
+            const page = parseInt(req.query.page) || 1;
+            const limit = parseInt(req.query.limit) || 50;
+            const startIndex = (page - 1) * limit;
+            identities = identities.slice(startIndex, startIndex + limit);
+        }
+
+        res.json({
+            data: identities,
+            total,
+            page: parseInt(req.query.page) || 1,
+            limit: parseInt(req.query.limit) || identities.length
+        });
     } catch (e) {
         console.error(`[Route] GET /identities/${req.params.domainName} failed:`, e.message);
         res.status(500).json({ error: e.message });
