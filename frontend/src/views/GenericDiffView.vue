@@ -32,6 +32,17 @@
     <div v-if="error" class="error">{{ error }}</div>
     
     <wa-card v-if="report && report.diff" class="table-card">
+        <div style="display: flex; gap: 1.5rem; padding: 1rem; border-bottom: 1px solid var(--wa-color-neutral-200); background: var(--wa-color-neutral-50);">
+            <wa-checkbox :checked="showAdded" @change="showAdded = $event.target.checked">
+                <wa-icon name="plus-circle-fill" style="color: var(--wa-color-success-600); margin-right: 0.25rem;"></wa-icon> Hinzugefügt ({{ report.diff.added.length }})
+            </wa-checkbox>
+            <wa-checkbox :checked="showChanged" @change="showChanged = $event.target.checked">
+                <wa-icon name="pencil-fill" style="color: var(--wa-color-warning-600); margin-right: 0.25rem;"></wa-icon> Geändert ({{ report.diff.changed.length }})
+            </wa-checkbox>
+            <wa-checkbox :checked="showRemoved" @change="showRemoved = $event.target.checked">
+                <wa-icon name="dash-circle-fill" style="color: var(--wa-color-danger-600); margin-right: 0.25rem;"></wa-icon> Entfernt ({{ report.diff.removed.length }})
+            </wa-checkbox>
+        </div>
         <div class="table-container">
             <table class="diff-table">
                 <thead>
@@ -44,58 +55,56 @@
                     </tr>
                 </thead>
                 <tbody>
-                    <!-- Added -->
-                    <tr v-for="item in report.diff.added" :key="'add-'+item.userId" class="diff-row diff-added">
-                        <td class="diff-action" title="Hinzugefügt">
-                            <wa-icon name="plus-circle-fill" style="color: var(--wa-color-success-600)"></wa-icon>
+                    <tr v-for="(row, index) in paginatedDiffs" :key="index" :class="'diff-row diff-' + row.type">
+                        <td class="diff-action" :title="row.type">
+                            <wa-icon v-if="row.type === 'added'" name="plus-circle-fill" style="color: var(--wa-color-success-600)"></wa-icon>
+                            <wa-icon v-else-if="row.type === 'changed'" name="pencil-fill" style="color: var(--wa-color-warning-600)"></wa-icon>
+                            <wa-icon v-else-if="row.type === 'removed'" name="dash-circle-fill" style="color: var(--wa-color-danger-600)"></wa-icon>
                         </td>
-                        <td>{{ item.userId }}</td>
-                        <td>{{ item.firstName }}</td>
-                        <td>{{ item.lastName }}</td>
-                        <td v-for="prop in extraProps" :key="prop">{{ item[prop] }}</td>
-                    </tr>
-                    
-                    <!-- Changed -->
-                    <tr v-for="change in report.diff.changed" :key="'change-'+change.source.userId" class="diff-row diff-changed">
-                        <td class="diff-action" title="Geändert">
-                            <wa-icon name="pencil-fill" style="color: var(--wa-color-warning-600)"></wa-icon>
-                        </td>
-                        <td>{{ change.source.userId }}</td>
-                        
-                        <td :class="{'is-modified': change.source.firstName !== change.target.firstName}">
-                            <div v-if="change.source.firstName !== change.target.firstName" class="old-val">{{ change.target.firstName || '-' }}</div> → 
-                            <div class="new-val">{{ change.source.firstName || '-' }}</div>
-                        </td>
-                        
-                        <td :class="{'is-modified': change.source.lastName !== change.target.lastName}">
-                            <div v-if="change.source.lastName !== change.target.lastName" class="old-val">{{ change.target.lastName || '-' }}</div> → 
-                            <div class="new-val">{{ change.source.lastName || '-' }}</div>
-                        </td>
-                        
-                        <td v-for="prop in extraProps" :key="prop" :class="{'is-modified': change.source[prop] !== change.target[prop]}">
-                            <div v-if="change.source[prop] !== change.target[prop]" class="old-val">{{ change.target[prop] || '-' }}</div> → 
-                            <div class="new-val">{{ change.source[prop] || '-' }}</div>
-                        </td>
-                    </tr>
+                        <td>{{ row.type === 'changed' ? row.source.userId : row.item.userId }}</td>
 
-                    <!-- Removed -->
-                    <tr v-for="item in report.diff.removed" :key="'rm-'+item.userId" class="diff-row diff-removed">
-                        <td class="diff-action" title="Entfernt">
-                            <wa-icon name="dash-circle-fill" style="color: var(--wa-color-danger-600)"></wa-icon>
-                        </td>
-                        <td>{{ item.userId }}</td>
-                        <td>{{ item.firstName }}</td>
-                        <td>{{ item.lastName }}</td>
-                        <td v-for="prop in extraProps" :key="prop">{{ item[prop] }}</td>
+                        <template v-if="row.type === 'changed'">
+                            <td :class="{'is-modified': row.source.firstName !== row.target.firstName}">
+                                <div v-if="row.source.firstName !== row.target.firstName" class="old-val">{{ row.target.firstName || '-' }}</div> <span v-if="row.source.firstName !== row.target.firstName">→</span>
+                                <div class="new-val">{{ row.source.firstName || '-' }}</div>
+                            </td>
+                            <td :class="{'is-modified': row.source.lastName !== row.target.lastName}">
+                                <div v-if="row.source.lastName !== row.target.lastName" class="old-val">{{ row.target.lastName || '-' }}</div> <span v-if="row.source.lastName !== row.target.lastName">→</span>
+                                <div class="new-val">{{ row.source.lastName || '-' }}</div>
+                            </td>
+                            <td v-for="prop in extraProps" :key="prop" :class="{'is-modified': row.source[prop] !== row.target[prop]}">
+                                <div v-if="row.source[prop] !== row.target[prop]" class="old-val">{{ row.target[prop] || '-' }}</div> <span v-if="row.source[prop] !== row.target[prop]">→</span>
+                                <div class="new-val">{{ row.source[prop] || '-' }}</div>
+                            </td>
+                        </template>
+                        
+                        <template v-else>
+                            <td>{{ row.item.firstName }}</td>
+                            <td>{{ row.item.lastName }}</td>
+                            <td v-for="prop in extraProps" :key="prop">{{ row.item[prop] }}</td>
+                        </template>
                     </tr>
                     
-                    <tr v-if="!report.diff.added.length && !report.diff.changed.length && !report.diff.removed.length">
+                    <tr v-if="total === 0">
                         <td :colspan="4 + extraProps.length" style="text-align: center; padding: 2rem; color: var(--wa-color-neutral-500);">
                             Keine Änderungen gefunden.
                         </td>
                     </tr>
                 </tbody>
             </table>
+        </div>
+        <div v-if="total > 0" class="pagination-controls" style="padding: 1rem; display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--wa-color-neutral-200);">
+            <div style="color: gray; font-size: 0.9em;">
+                Zeige {{ (page - 1) * limit + 1 }} - {{ Math.min(page * limit, total) }} von {{ total }}
+            </div>
+            <div style="display: flex; gap: 0.5rem;">
+                <wa-button size="small" variant="neutral" :disabled="page <= 1" @click="page--">
+                    <wa-icon slot="prefix" name="chevron-left"></wa-icon> Zurück
+                </wa-button>
+                <wa-button size="small" variant="neutral" :disabled="page * limit >= total" @click="page++">
+                    Weiter <wa-icon slot="suffix" name="chevron-right"></wa-icon>
+                </wa-button>
+            </div>
         </div>
     </wa-card>
   </div>
@@ -125,6 +134,39 @@ const dialogTitle = ref('');
 const dialogContent = ref('');
 const isDialogOpen = ref(false);
 
+const page = ref(1);
+const limit = ref(50);
+
+const showAdded = ref(true);
+const showChanged = ref(true);
+const showRemoved = ref(true);
+
+watch([showAdded, showChanged, showRemoved], () => {
+    page.value = 1;
+});
+
+const allDiffs = computed(() => {
+    if (!report.value || !report.value.diff) return [];
+    const diffs = [];
+    if (showAdded.value) {
+        diffs.push(...report.value.diff.added.map(i => ({ type: 'added', item: i })));
+    }
+    if (showChanged.value) {
+        diffs.push(...report.value.diff.changed.map(c => ({ type: 'changed', source: c.source, target: c.target })));
+    }
+    if (showRemoved.value) {
+        diffs.push(...report.value.diff.removed.map(i => ({ type: 'removed', item: i })));
+    }
+    return diffs;
+});
+
+const paginatedDiffs = computed(() => {
+    const startIndex = (page.value - 1) * limit.value;
+    return allDiffs.value.slice(startIndex, startIndex + limit.value);
+});
+
+const total = computed(() => allDiffs.value.length);
+
 const extraProps = computed(() => {
     if (!report.value || !report.value.intersectedProperties) return [];
     return report.value.intersectedProperties.filter(p => !['userId', 'firstName', 'lastName'].includes(p));
@@ -152,6 +194,7 @@ watch(() => props.diff.name, () => {
 async function calculateDiff(refresh) {
     loading.value = true;
     error.value = '';
+    page.value = 1;
     try {
         const { source, target } = getDiffDomains(props.diff);
         const res = await axios.post(`/api/diff/${source}/${target}${refresh ? '?refresh=true' : ''}`);

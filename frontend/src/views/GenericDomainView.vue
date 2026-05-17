@@ -179,8 +179,8 @@ async function runAction(act) {
 
 const displayKeys = computed(() => {
     if (identities.value.length === 0) return [];
-    // Just gather keys from first item generically
-    return Object.keys(identities.value[0]).filter(k => k !== '_id' && k !== '__v');
+    // Just gather keys from first item generically, but hide technical or redundant fields
+    return Object.keys(identities.value[0]).filter(k => k !== '_id' && k !== '__v' && k !== 'domain');
 });
 
 function toggleSort(key) {

@@ -7,8 +7,8 @@
       "color": "#E91E63",
       "actions": [
         {
-          "name": "Domain Maintenance",
-          "run": "fachnetz-domain-maintenance"
+          "name": "Profile Maintenance",
+          "run": "fachnetz-profile-maintenance"
         }
       ]
     },

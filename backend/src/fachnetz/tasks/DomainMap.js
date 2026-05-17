@@ -23,6 +23,8 @@ class DomainMap {
             const content = fs.readFileSync(csvPath, 'utf8');
             const lines = content.split('\n').filter(l => l.trim());
 
+            const isAusser = csvPath.includes('ausser.csv');
+
             // Skip header
             for (let i = 1; i < lines.length; i++) {
                 const cols = this._parseCsvLine(lines[i]);
@@ -31,7 +33,7 @@ class DomainMap {
                 const name = cols[0];
                 const city = cols[1];
                 const rp = cols[cols.length - 1];
-                const school = { name, city, rp };
+                const school = { name, city, rp, isAusser };
 
                 // Collect unique schools
                 const key = `${name}|${city}`;
@@ -110,10 +112,24 @@ class DomainMap {
 
         const sn = this._expandAbbreviations((schulname || '').toLowerCase());
         const so = (schulort || '').toLowerCase();
+        const escapeRegExp = (string) => string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
         for (const school of this.schools) {
             const nameScore = sn ? jaroWinkler(sn, school.name.toLowerCase()) : 0;
-            const cityScore = so ? jaroWinkler(so, school.city.toLowerCase()) : 0;
+            
+            // Require a minimum baseline of name similarity to prevent completely different schools 
+            // in the same city from matching just because they share the city name and 'schule'.
+            if (nameScore < 0.75) continue;
+
+            let cityScore = so ? jaroWinkler(so, school.city.toLowerCase()) : 0;
+
+            // If the user typed the city name inside the school name, count it as a perfect city match
+            if (sn && school.city.length >= 3) {
+                const regex = new RegExp('\\b' + escapeRegExp(school.city.toLowerCase()) + '\\b');
+                if (regex.test(sn)) {
+                    cityScore = 1.0;
+                }
+            }
 
             // Weighted combination: name is more distinctive than city
             const combined = nameScore * 0.6 + cityScore * 0.4;
@@ -161,11 +177,11 @@ class DomainMap {
 
         // Roman numeral normalization
         const numerals = [
-            [/\b1\b/g, 'i'],
-            [/\b2\b/g, 'ii'],
-            [/\b3\b/g, 'iii'],
-            [/\b4\b/g, 'iv'],
-            [/\b5\b/g, 'v'],
+            [/\bi\b/g, '1'],
+            [/\bii\b/g, '2'],
+            [/\biii\b/g, '3'],
+            [/\biv\b/g, '4'],
+            [/\bv\b/g, '5'],
         ];
 
         let result = name;

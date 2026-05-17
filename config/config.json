@@ -17,8 +17,14 @@
     {
       "name": "students",
       "label": "Schüler*innen",
-      "search": ["userId", "firstName", "lastName"],
-      "filter": ["clazz"],
+      "search": [
+        "userId",
+        "firstName",
+        "lastName"
+      ],
+      "filter": [
+        "clazz"
+      ],
       "access": [
         {
           "group": "Abteilungsleitung"
@@ -31,7 +37,11 @@
     {
       "name": "teachers",
       "label": "Lehrer*innen",
-      "search": ["userId", "firstName", "lastName"],
+      "search": [
+        "userId",
+        "firstName",
+        "lastName"
+      ],
       "access": [
         {
           "group": "Netzwerkteam"
@@ -41,8 +51,15 @@
     {
       "name": "fachnetz",
       "label": "Fachnetz",
-      "search": ["userId", "firstName", "lastName"],
-      "filter": ["schulname", "schulort"],
+      "search": [
+        "userId",
+        "firstName",
+        "lastName"
+      ],
+      "filter": [
+        "schulname",
+        "schulort"
+      ],
       "access": [
         {
           "user": "holger_engels"

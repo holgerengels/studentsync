@@ -12,15 +12,16 @@ sync-settings.json
 sync-settings-prod.json
 serviceAccountKey.json
 trustStore
-conf/sync-config.json
+config/*.csv
 */node_modules
-dev-dist/
-jetty/
-nginx/
 out/
+dev-dist/
+workbox-*.js
 
 client/**/*.js
 client/**/*.map
+nginx/
+jetty/
 
 # Tests
 coverage/
