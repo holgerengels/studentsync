@@ -25,8 +25,8 @@ describe('Diff → Sync Workflow (Mock Domains)', () => {
         const initialDiff = await diffTask1.execute({ forceRefresh: true });
         // The ASV mock intentionally has one user with userId=null (for ID generation testing)
         // That user shows up as "added" since it has no key match. All others should be synced.
-        expect(initialDiff.diff.removed).toHaveLength(0);
-        expect(initialDiff.diff.changed).toHaveLength(0);
+        expect(initialDiff.details.removed).toHaveLength(0);
+        expect(initialDiff.details.changed).toHaveLength(0);
 
         // Step 3: Mutate target — change a name, add a ghost, remove one
         if (mocks.dummy.data.length > 1) {
@@ -40,17 +40,17 @@ describe('Diff → Sync Workflow (Mock Domains)', () => {
         const diffTask2 = new DiffTask('asv', 'dummy');
         const mutatedDiff = await diffTask2.execute({ forceRefresh: true });
 
-        expect(mutatedDiff.diff.added.length).toBeGreaterThanOrEqual(1);     // deleted user → re-add
-        expect(mutatedDiff.diff.changed.length).toBeGreaterThanOrEqual(1);   // wrong name → change
-        expect(mutatedDiff.diff.removed.length).toBeGreaterThanOrEqual(1);   // ghost → remove
+        expect(mutatedDiff.details.added.length).toBeGreaterThanOrEqual(1);     // deleted user → re-add
+        expect(mutatedDiff.details.changed.length).toBeGreaterThanOrEqual(1);   // wrong name → change
+        expect(mutatedDiff.details.removed.length).toBeGreaterThanOrEqual(1);   // ghost → remove
 
         // Step 5: Run sync to heal the target
         const syncTask = new SyncTask('asv', 'dummy');
         const report = await syncTask.execute({ forceRefresh: true });
 
-        expect(report.syncLog.added.length).toBeGreaterThanOrEqual(1);
-        expect(report.syncLog.changed.length).toBeGreaterThanOrEqual(1);
-        expect(report.syncLog.removed).toContain('ghost_fake');
+        expect(report.details.added.length).toBeGreaterThanOrEqual(1);
+        expect(report.details.changed.length).toBeGreaterThanOrEqual(1);
+        expect(report.details.removed.map(r => r.id)).toContain('ghost_fake');
 
         // Step 6: Verify target matches source again (full ASV set including null-userId user)
         mocks.dummy.invalidate();
@@ -73,7 +73,7 @@ describe('Diff → Sync Workflow (Mock Domains)', () => {
         const report = await syncTask.execute({ forceRefresh: true });
 
         // ASV mock data has users that untis mock doesn't
-        expect(report.syncLog.added.length).toBeGreaterThanOrEqual(1);
+        expect(report.details.added.length).toBeGreaterThanOrEqual(1);
 
         // After sync, untis should have at least as many as asv
         mocks.untis.invalidate();
@@ -94,8 +94,8 @@ describe('Diff → Sync Workflow (Mock Domains)', () => {
         const task2 = new SyncTask('asv', 'dummy');
         const report2 = await task2.execute({ forceRefresh: true });
 
-        expect(report2.syncLog.added).toBeUndefined();
-        expect(report2.syncLog.changed).toBeUndefined();
-        expect(report2.syncLog.removed).toBeUndefined();
+        expect(report2.details.added).toHaveLength(0);
+        expect(report2.details.changed).toHaveLength(0);
+        expect(report2.details.removed).toHaveLength(0);
     });
 });

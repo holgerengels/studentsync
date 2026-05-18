@@ -19,18 +19,17 @@ class NextcloudRemnantsPurgeTask extends Task {
             const { items: uidsToProcess } = limitInDevMode(uids);
 
             const result = await nextcloud.purgeRemnants(uidsToProcess);
-            return { success: true, purged: result.purged, details: result.details, devMode };
+            return {
+                success: true,
+                devMode,
+                details: {
+                    removed: uidsToProcess.map(uid => ({ id: uid, old: { uid } })),
+                    purgedCount: result.purged
+                }
+            };
         } catch (e) {
             return { success: false, error: e.message };
         }
-    }
-
-    format(report) {
-        if (!report) return '-';
-        if (!report.success) return `<div class="text-danger">Fehler beim Bereinigen der Remnants: ${report.error}</div>`;
-        let msg = `<strong>Nextcloud Remnants Bereinigung:</strong> Es wurden ${report.purged} Remnant(s) erfolgreich gelöscht.`;
-        msg += devModeSuffix(report.devMode);
-        return `<div>${msg}</div>`;
     }
 }
 

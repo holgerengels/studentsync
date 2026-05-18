@@ -12,7 +12,7 @@ class SyncTask extends DiffTask {
     async execute(parameters = {}) {
         // Run diff logic first
         const report = await super.execute(parameters);
-        const diff = report.diff;
+        const details = report.details;
 
         const targetDomain = getDomain(this.targetName);
         if (!(targetDomain instanceof ManagableDomain)) {
@@ -21,9 +21,9 @@ class SyncTask extends DiffTask {
 
         const devMode = isDevMode();
 
-        const additions = devMode ? diff.added.slice(0, 1) : diff.added;
-        const changes = devMode ? diff.changed.slice(0, 1) : diff.changed;
-        const removals = devMode ? diff.removed.slice(0, 1) : diff.removed;
+        const additions = devMode ? details.added.slice(0, 1) : details.added;
+        const changes = devMode ? details.changed.slice(0, 1) : details.changed;
+        const removals = devMode ? details.removed.slice(0, 1) : details.removed;
 
         const addedArr = [];
         const changedArr = [];
@@ -35,13 +35,13 @@ class SyncTask extends DiffTask {
         }
 
         try {
-            for (const identity of additions) {
+            for (const item of additions) {
                 try {
-                    await targetDomain.addIdentity(identity);
-                    addedArr.push(identity.userId);
+                    await targetDomain.addIdentity(item.new);
+                    addedArr.push(item);
                 } catch (err) {
                     if (err.name !== 'NotImplementedError') {
-                        errorsArr.push(`Add error for ${identity.userId}: ${err.message}`);
+                        errorsArr.push({ id: item.id, message: `Add error: ${err.message}` });
                     }
                 }
             }
@@ -49,23 +49,23 @@ class SyncTask extends DiffTask {
             for (const item of changes) {
                 try {
                     // Send the target identity layered with the source properties that need updating
-                    const updatedIdentity = { ...item.target, ...item.source };
+                    const updatedIdentity = { ...item.old, ...item.new };
                     await targetDomain.changeIdentity(updatedIdentity);
-                    changedArr.push(item.source.userId || item.target.userId);
+                    changedArr.push(item);
                 } catch (err) {
                     if (err.name !== 'NotImplementedError') {
-                        errorsArr.push(`Change error for ${item.source.userId}: ${err.message}`);
+                        errorsArr.push({ id: item.id, message: `Change error: ${err.message}` });
                     }
                 }
             }
 
-            for (const identity of removals) {
+            for (const item of removals) {
                 try {
-                     await targetDomain.removeIdentity(identity);
-                     removedArr.push(identity.userId);
+                     await targetDomain.removeIdentity(item.old);
+                     removedArr.push(item);
                 } catch (err) {
                     if (err.name !== 'NotImplementedError') {
-                        errorsArr.push(`Remove error for ${identity.userId}: ${err.message}`);
+                        errorsArr.push({ id: item.id, message: `Remove error: ${err.message}` });
                     }
                 }
             }
@@ -74,31 +74,13 @@ class SyncTask extends DiffTask {
                 targetDomain.unlock();
             }
         }
-        const syncLog = {};
-        if (addedArr.length > 0) syncLog.added = addedArr;
-        if (changedArr.length > 0) syncLog.changed = changedArr;
-        if (removedArr.length > 0) syncLog.removed = removedArr;
-        if (errorsArr.length > 0) syncLog.errors = errorsArr;
+        report.details.added = addedArr;
+        report.details.changed = changedArr;
+        report.details.removed = removedArr;
+        report.details.errors = errorsArr;
         
-        report.syncLog = syncLog;
         report.devMode = devMode;
         return report;
-    }
-
-    format(report) {
-         if (!report || !report.syncLog) return super.format(report);
-         
-         const { syncLog, devMode } = report;
-         const addCount = syncLog.added ? syncLog.added.length : 0;
-         const changeCount = syncLog.changed ? syncLog.changed.length : 0;
-         const rmCount = syncLog.removed ? syncLog.removed.length : 0;
-         
-         let msg = `Sync completed. <span style="color: var(--wa-color-success-600)">Added: ${addCount}</span>, <span style="color: var(--wa-color-warning-600)">Changed: ${changeCount}</span>, <span style="color: var(--wa-color-danger-600)">Removed: ${rmCount}</span>.`;
-         msg += devModeSuffix(devMode);
-         if (syncLog.errors && syncLog.errors.length > 0) {
-              msg += ` <br/><span style="color:#EF4444;">Errors: ${syncLog.errors.length}</span>`;
-         }
-         return `<div>${msg}</div>`;
     }
 }
 module.exports = SyncTask;

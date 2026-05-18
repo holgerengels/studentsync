@@ -32,7 +32,7 @@
     {
       "name": "fachnetz-arbeitsheft-sync",
       "titel": "Sync",
-      "class": "SyncTask",
+      "class": "FachnetzArbeitsheftSyncTask",
       "source": "fachnetz",
       "target": "Arbeitsheft"
     }

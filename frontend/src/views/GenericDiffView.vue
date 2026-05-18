@@ -31,16 +31,16 @@
     </wa-dialog>
     <div v-if="error" class="error">{{ error }}</div>
     
-    <wa-card v-if="report && report.diff" class="table-card">
+    <wa-card v-if="report && report.details" class="table-card">
         <div style="display: flex; gap: 1.5rem; padding: 1rem; border-bottom: 1px solid var(--wa-color-neutral-200); background: var(--wa-color-neutral-50);">
             <wa-checkbox :checked="showAdded" @change="showAdded = $event.target.checked">
-                <wa-icon name="plus-circle-fill" style="color: var(--wa-color-success-600); margin-right: 0.25rem;"></wa-icon> Hinzugefügt ({{ report.diff.added.length }})
+                <wa-icon name="plus-circle-fill" style="color: var(--wa-color-success-600); margin-right: 0.25rem;"></wa-icon> Hinzugefügt ({{ report.details.added ? report.details.added.length : 0 }})
             </wa-checkbox>
             <wa-checkbox :checked="showChanged" @change="showChanged = $event.target.checked">
-                <wa-icon name="pencil-fill" style="color: var(--wa-color-warning-600); margin-right: 0.25rem;"></wa-icon> Geändert ({{ report.diff.changed.length }})
+                <wa-icon name="pencil-fill" style="color: var(--wa-color-warning-600); margin-right: 0.25rem;"></wa-icon> Geändert ({{ report.details.changed ? report.details.changed.length : 0 }})
             </wa-checkbox>
             <wa-checkbox :checked="showRemoved" @change="showRemoved = $event.target.checked">
-                <wa-icon name="dash-circle-fill" style="color: var(--wa-color-danger-600); margin-right: 0.25rem;"></wa-icon> Entfernt ({{ report.diff.removed.length }})
+                <wa-icon name="dash-circle-fill" style="color: var(--wa-color-danger-600); margin-right: 0.25rem;"></wa-icon> Entfernt ({{ report.details.removed ? report.details.removed.length : 0 }})
             </wa-checkbox>
         </div>
         <div class="table-container">
@@ -61,27 +61,33 @@
                             <wa-icon v-else-if="row.type === 'changed'" name="pencil-fill" style="color: var(--wa-color-warning-600)"></wa-icon>
                             <wa-icon v-else-if="row.type === 'removed'" name="dash-circle-fill" style="color: var(--wa-color-danger-600)"></wa-icon>
                         </td>
-                        <td>{{ row.type === 'changed' ? row.source.userId : row.item.userId }}</td>
+                        <td>{{ row.type === 'changed' ? row.id : row.id }}</td>
 
                         <template v-if="row.type === 'changed'">
-                            <td :class="{'is-modified': row.source.firstName !== row.target.firstName}">
-                                <div v-if="row.source.firstName !== row.target.firstName" class="old-val">{{ row.target.firstName || '-' }}</div> <span v-if="row.source.firstName !== row.target.firstName">→</span>
-                                <div class="new-val">{{ row.source.firstName || '-' }}</div>
+                            <td :class="{'is-modified': row.new.firstName !== row.old.firstName}">
+                                <div v-if="row.new.firstName !== row.old.firstName" class="old-val">{{ row.old.firstName || '-' }}</div> <span v-if="row.new.firstName !== row.old.firstName">→</span>
+                                <div class="new-val">{{ row.new.firstName || '-' }}</div>
                             </td>
-                            <td :class="{'is-modified': row.source.lastName !== row.target.lastName}">
-                                <div v-if="row.source.lastName !== row.target.lastName" class="old-val">{{ row.target.lastName || '-' }}</div> <span v-if="row.source.lastName !== row.target.lastName">→</span>
-                                <div class="new-val">{{ row.source.lastName || '-' }}</div>
+                            <td :class="{'is-modified': row.new.lastName !== row.old.lastName}">
+                                <div v-if="row.new.lastName !== row.old.lastName" class="old-val">{{ row.old.lastName || '-' }}</div> <span v-if="row.new.lastName !== row.old.lastName">→</span>
+                                <div class="new-val">{{ row.new.lastName || '-' }}</div>
                             </td>
-                            <td v-for="prop in extraProps" :key="prop" :class="{'is-modified': row.source[prop] !== row.target[prop]}">
-                                <div v-if="row.source[prop] !== row.target[prop]" class="old-val">{{ row.target[prop] || '-' }}</div> <span v-if="row.source[prop] !== row.target[prop]">→</span>
-                                <div class="new-val">{{ row.source[prop] || '-' }}</div>
+                            <td v-for="prop in extraProps" :key="prop" :class="{'is-modified': row.new[prop] !== row.old[prop]}">
+                                <div v-if="row.new[prop] !== row.old[prop]" class="old-val">{{ row.old[prop] || '-' }}</div> <span v-if="row.new[prop] !== row.old[prop]">→</span>
+                                <div class="new-val">{{ row.new[prop] || '-' }}</div>
                             </td>
                         </template>
                         
-                        <template v-else>
-                            <td>{{ row.item.firstName }}</td>
-                            <td>{{ row.item.lastName }}</td>
-                            <td v-for="prop in extraProps" :key="prop">{{ row.item[prop] }}</td>
+                        <template v-else-if="row.type === 'added'">
+                            <td>{{ row.new.firstName }}</td>
+                            <td>{{ row.new.lastName }}</td>
+                            <td v-for="prop in extraProps" :key="prop">{{ row.new[prop] }}</td>
+                        </template>
+                        
+                        <template v-else-if="row.type === 'removed'">
+                            <td>{{ row.old.firstName }}</td>
+                            <td>{{ row.old.lastName }}</td>
+                            <td v-for="prop in extraProps" :key="prop">{{ row.old[prop] }}</td>
                         </template>
                     </tr>
                     
@@ -146,16 +152,16 @@ watch([showAdded, showChanged, showRemoved], () => {
 });
 
 const allDiffs = computed(() => {
-    if (!report.value || !report.value.diff) return [];
+    if (!report.value || !report.value.details) return [];
     const diffs = [];
-    if (showAdded.value) {
-        diffs.push(...report.value.diff.added.map(i => ({ type: 'added', item: i })));
+    if (showAdded.value && report.value.details.added) {
+        diffs.push(...report.value.details.added.map(i => ({ type: 'added', new: i.new, id: i.id })));
     }
-    if (showChanged.value) {
-        diffs.push(...report.value.diff.changed.map(c => ({ type: 'changed', source: c.source, target: c.target })));
+    if (showChanged.value && report.value.details.changed) {
+        diffs.push(...report.value.details.changed.map(c => ({ type: 'changed', new: c.new, old: c.old, id: c.id })));
     }
-    if (showRemoved.value) {
-        diffs.push(...report.value.diff.removed.map(i => ({ type: 'removed', item: i })));
+    if (showRemoved.value && report.value.details.removed) {
+        diffs.push(...report.value.details.removed.map(i => ({ type: 'removed', old: i.old, id: i.id })));
     }
     return diffs;
 });
@@ -213,13 +219,9 @@ async function runSync() {
         const { source, target } = getDiffDomains(props.diff);
         const res = await axios.post(`/api/sync/${source}/${target}`);
 
-        if (res.data?.html) {
-            dialogTitle.value = 'Synchronisierung';
-            dialogContent.value = res.data.html;
-            isDialogOpen.value = true;
-        }
-
-        toast.success('Synchronisierung erfolgreich');
+        const msgHtml = res.data?.html || 'Synchronisierung erfolgreich';
+        toast.show(msgHtml, 'success');
+        
         await calculateDiff(true);
     } catch(e) {
         const explanation = e.response?.data?.error || e.message;
@@ -243,13 +245,9 @@ async function runAction(act) {
     try {
         const res = await axios.post(actionKey.startsWith('/') ? actionKey : `/api/execute/${actionKey}`);
 
-        if (res.data?.html) {
-            dialogTitle.value = act.name || 'Aktionsbericht';
-            dialogContent.value = res.data.html;
-            isDialogOpen.value = true;
-        }
-
-        toast.success(`Aktion ${act.name} ausgeführt`);
+        const msgHtml = res.data?.html || `Aktion ${act.name} ausgeführt`;
+        toast.show(msgHtml, 'success');
+        
         await calculateDiff(true);
     } catch(e) {
         const explanation = e.response?.data?.error || e.message;

@@ -1,6 +1,10 @@
+const Task = require('../../tasks/Task');
 const DiffTask = require('../../tasks/DiffTask');
 
-class UntisGenerateImportTask {
+class UntisGenerateImportTask extends Task {
+    constructor() {
+        super('untis-generate-import');
+    }
     async execute() {
         const diffTask = new DiffTask('asv', 'untis');
         // Get the list of identities missing in Untis
@@ -8,8 +12,9 @@ class UntisGenerateImportTask {
 
         let csvLines = [];
 
-        if (report.diff && report.diff.added) {
-            for (const addedIdent of report.diff.added) {
+        if (report.details && report.details.added) {
+            for (const item of report.details.added) {
+                const addedIdent = item.new;
                 const row = new Array(15).fill('');
                 row[0] = `"${addedIdent.userId || ''}"`;
                 row[1] = `"${addedIdent.lastName || ''}"`;
@@ -34,15 +39,20 @@ class UntisGenerateImportTask {
         }
 
         return {
+            success: true,
             filename: 'untis-import-added.csv',
-            csvData: csvLines.join('\n') || ' Keine neuen Schueler gefunden\n'
+            csvData: csvLines.join('\n') || ' Keine neuen Schueler gefunden\n',
+            details: {
+                generatedCsvLines: csvLines.length
+            }
         };
     }
 
-    summarize(report) {
-        if (!report || !report.csvData) return '-';
-        const lines = report.csvData.split('\n').filter(l => l.trim().length > 0 && Array.from(l)[0] === '"');
-        return `<div style="text-align: right;"><span style="color:var(--wa-color-success-600)">CSV Download mit ${lines.length} Datensätzen generiert</span></div>`;
+    format(report) {
+        if (!report) return '-';
+        if (report.success === false) return `<div style="color:var(--wa-color-danger-600)">Fehler: ${report.error}</div>`;
+        const count = report.details && report.details.generatedCsvLines ? report.details.generatedCsvLines : 0;
+        return `<div style="color:var(--wa-color-success-600)">CSV Download mit ${count} Datensätzen generiert</div>`;
     }
 }
 

@@ -1,5 +1,6 @@
 const fs = require('fs');
 const path = require('path');
+const { parseCsvLine } = require('../../utils/csvParser');
 
 /**
  * Parses CSV files that map email domains to schools.
@@ -27,7 +28,7 @@ class DomainMap {
 
             // Skip header
             for (let i = 1; i < lines.length; i++) {
-                const cols = this._parseCsvLine(lines[i]);
+                const cols = parseCsvLine(lines[i], ',');
                 if (cols.length < 4) continue;
 
                 const name = cols[0];
@@ -61,24 +62,7 @@ class DomainMap {
         this.schools = [...schoolSet.values()];
     }
 
-    /** Parse a CSV line respecting quoted fields (e.g. "Ministerium für Ernährung, ...") */
-    _parseCsvLine(line) {
-        const cols = [];
-        let current = '';
-        let inQuotes = false;
-        for (const ch of line) {
-            if (ch === '"') {
-                inQuotes = !inQuotes;
-            } else if (ch === ',' && !inQuotes) {
-                cols.push(current.trim());
-                current = '';
-            } else {
-                current += ch;
-            }
-        }
-        cols.push(current.trim());
-        return cols;
-    }
+
 
     get(domain) {
         return this.map.get(domain) || null;

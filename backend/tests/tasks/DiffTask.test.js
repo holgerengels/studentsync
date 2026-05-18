@@ -22,7 +22,7 @@ describe('DiffTask', () => {
         const task = new DiffTask('asv', 'untis');
         const report = await task.execute({ forceRefresh: true });
 
-        expect(report.diff.added.length).toBeGreaterThanOrEqual(0);
+        expect(report.details.added.length).toBeGreaterThanOrEqual(0);
         expect(report.intersectedProperties).toContain('firstName');
         expect(report.intersectedProperties).toContain('lastName');
         expect(report.params.source).toBe('asv');
@@ -34,8 +34,8 @@ describe('DiffTask', () => {
         const task = new DiffTask('asv', 'schulkonsole');
         const report = await task.execute({});
 
-        const changedUserIds = report.diff.changed.map(c => c.source.userId || c.target.userId);
-        expect(report.diff.changed.length).toBeGreaterThanOrEqual(1);
+        const changedUserIds = report.details.changed.map(c => c.id);
+        expect(report.details.changed.length).toBeGreaterThanOrEqual(1);
         expect(report.intersectedProperties).toContain('clazz');
     });
 
@@ -44,7 +44,7 @@ describe('DiffTask', () => {
         const task = new DiffTask('asv', 'nextcloud');
         const report = await task.execute({});
 
-        const removedUserIds = report.diff.removed.map(r => r.userId);
+        const removedUserIds = report.details.removed.map(r => r.id);
         expect(removedUserIds).toContain('ghost_us');
     });
 
@@ -75,38 +75,39 @@ describe('DiffTask', () => {
         const task = new DiffTask('asv', 'asv');
         const report = await task.execute({ forceRefresh: true });
 
-        expect(report.diff.added).toHaveLength(0);
-        expect(report.diff.removed).toHaveLength(0);
-        expect(report.diff.changed).toHaveLength(0);
-        expect(report.unchangedCount).toBeGreaterThan(0);
+        expect(report.details.added).toHaveLength(0);
+        expect(report.details.removed).toHaveLength(0);
+        expect(report.details.changed).toHaveLength(0);
+        expect(report.details.unchanged).toBeGreaterThan(0);
     });
 
     describe('format()', () => {
         it('produces HTML with diff counts', () => {
             const task = new DiffTask('asv', 'untis');
             const report = {
-                diff: { added: [{}], removed: [{}, {}, {}], changed: [{}, {}] },
+                success: true,
+                details: { added: [{}], removed: [{}, {}, {}], changed: [{}, {}] },
                 params: { source: 'asv', target: 'untis' }
             };
             const html = task.format(report);
-            expect(html).toContain('asv &rarr; untis');
-            expect(html).toContain('+1');
-            expect(html).toContain('~2');
-            expect(html).toContain('-3');
+            expect(html).toContain('Added: 1');
+            expect(html).toContain('Changed: 2');
+            expect(html).toContain('Removed: 3');
         });
 
-        it('returns dash for empty diff', () => {
+        it('returns nothing for empty diff', () => {
             const task = new DiffTask('asv', 'untis');
             const report = {
-                diff: { added: [], removed: [], changed: [] },
+                success: true,
+                details: { added: [], removed: [], changed: [] },
                 params: { source: 'asv', target: 'untis' }
             };
-            expect(task.format(report)).toBe('-');
+            expect(task.format(report)).toBe('<div><span style="color:var(--wa-color-neutral-500)">Keine Änderungen</span></div>');
         });
 
         it('handles error report', () => {
             const task = new DiffTask('asv', 'untis');
-            expect(task.format({ error: 'Timeout' })).toContain('Fehler: Timeout');
+            expect(task.format({ success: false, error: 'Timeout' })).toContain('Fehler: Timeout');
         });
 
         it('handles null report', () => {

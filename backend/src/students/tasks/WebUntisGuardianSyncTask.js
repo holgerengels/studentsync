@@ -70,51 +70,34 @@ class WebUntisGuardianSyncTask extends Task {
         for (const req of addsToProcess) {
             try {
                 await untis.changeGuardian(req.guardian, req.studentAccounts);
-                addedLog.push(req.guardian.email);
+                addedLog.push({ id: req.guardian.email, new: req.guardian, newStudents: req.studentAccounts });
             } catch (e) {
-                errorLog.push(`Add Error (${req.guardian.email}): ${e.message}`);
+                errorLog.push({ id: req.guardian.email, message: `Add Error: ${e.message}` });
             }
         }
 
         for (const req of updatesToProcess) {
             try {
                 await untis.changeGuardian(req.guardian, req.studentAccounts);
-                updatedLog.push(req.guardian.email);
+                // We should theoretically find the old guardian object in untisMap
+                const oldGuardian = untisMap[req.guardian.email];
+                updatedLog.push({ id: req.guardian.email, old: oldGuardian, new: req.guardian, newStudents: req.studentAccounts });
             } catch (e) {
-                errorLog.push(`Update Error (${req.guardian.email}): ${e.message}`);
+                errorLog.push({ id: req.guardian.email, message: `Update Error: ${e.message}` });
             }
         }
 
-        const syncLog = {};
-        if (addedLog.length > 0) syncLog.added = addedLog;
-        if (updatedLog.length > 0) syncLog.changed = updatedLog;
-        if (errorLog.length > 0) syncLog.errors = errorLog;
-
         return {
+             success: true,
              devMode,
-             totalAdditionsDiscovered: additions.length,
-             totalUpdatesDiscovered: updates.length,
-             syncLog: syncLog,
-             diff: { // Keep a stub here in case frontend task components assume 'diff' exists for expansion logs
-                 added: addsToProcess.map(a => ({ userId: a.guardian.email, model: a.guardian })),
-                 changed: updatesToProcess.map(u => ({ source: { userId: u.guardian.email }, target: { userId: u.guardian.email } })),
-                 removed: []
+             details: {
+                 totalAdditionsDiscovered: additions.length,
+                 totalUpdatesDiscovered: updates.length,
+                 added: addedLog,
+                 changed: updatedLog,
+                 errors: errorLog
              }
         };
-    }
-
-    format(report) {
-         if (!report) return '-';
-         const addCount = report.syncLog && report.syncLog.added ? report.syncLog.added.length : 0;
-         const changeCount = report.syncLog && report.syncLog.changed ? report.syncLog.changed.length : 0;
-         const errorCount = report.syncLog && report.syncLog.errors ? report.syncLog.errors.length : 0;
-
-         let msg = `Guardian Sync. <span style="color: var(--wa-color-success-600)">Added: ${addCount}/${report.totalAdditionsDiscovered}</span>, <span style="color: var(--wa-color-warning-600)">Updated: ${changeCount}/${report.totalUpdatesDiscovered}</span>.`;
-         msg += devModeSuffix(report.devMode);
-         if (errorCount > 0) {
-              msg += ` <br/><span style="color:#EF4444;">Errors: ${errorCount}</span>`;
-         }
-         return `<div>${msg}</div>`;
     }
 }
 

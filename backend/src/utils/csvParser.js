@@ -19,22 +19,23 @@ function stripQuotes(value) {
 }
 
 /**
- * Parse a single TSV line, correctly handling quoted fields.
+ * Parse a single CSV/TSV line, correctly handling quoted fields.
  * 
- * Fields wrapped in double-quotes may contain tabs, newlines, and escaped
+ * Fields wrapped in double-quotes may contain the delimiter, newlines, and escaped
  * double-quotes (""). This parser handles all these cases.
  * 
- * @param {string} line - A single line of TSV data
+ * @param {string} line - A single line of data
+ * @param {string} [delimiter='\t'] - The field separator character
  * @returns {string[]} Array of unquoted field values
  */
-function parseTsvLine(line) {
+function parseCsvLine(line, delimiter = '\t') {
     const fields = [];
     let i = 0;
     const len = line.length;
 
     while (i <= len) {
         if (i === len) {
-            // trailing empty field after last tab
+            // trailing empty field after last delimiter
             fields.push('');
             break;
         }
@@ -60,11 +61,11 @@ function parseTsvLine(line) {
                 }
             }
             fields.push(value);
-            // Skip the tab delimiter (or end of line)
-            if (i < len && line[i] === '\t') i++;
+            // Skip the delimiter (or end of line)
+            if (i < len && line[i] === delimiter) i++;
         } else {
-            // Unquoted field — read until next tab
-            const tabIdx = line.indexOf('\t', i);
+            // Unquoted field — read until next delimiter
+            const tabIdx = line.indexOf(delimiter, i);
             if (tabIdx === -1) {
                 fields.push(line.substring(i));
                 break;
@@ -79,23 +80,24 @@ function parseTsvLine(line) {
 }
 
 /**
- * Parse a complete TSV string into an array of row arrays.
+ * Parse a complete CSV/TSV string into an array of row arrays.
  * 
- * @param {string} tsv - Full TSV content
+ * @param {string} content - Full content
+ * @param {string} [delimiter='\t'] - The field separator character
  * @returns {{ headers: string[], rows: string[][] }}
  */
-function parseTsv(tsv) {
-    const lines = tsv.split('\n');
-    const headers = lines.length > 0 ? parseTsvLine(lines[0].trim()) : [];
+function parseCsv(content, delimiter = '\t') {
+    const lines = content.split('\n');
+    const headers = lines.length > 0 ? parseCsvLine(lines[0].trim(), delimiter) : [];
     const rows = [];
 
     for (let i = 1; i < lines.length; i++) {
         const line = lines[i].trim();
         if (!line) continue;
-        rows.push(parseTsvLine(line));
+        rows.push(parseCsvLine(line, delimiter));
     }
 
     return { headers, rows };
 }
 
-module.exports = { stripQuotes, parseTsvLine, parseTsv };
+module.exports = { stripQuotes, parseCsvLine, parseCsv };

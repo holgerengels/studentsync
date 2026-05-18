@@ -1,7 +1,12 @@
+const Task = require('../../tasks/Task');
 const { getDomain } = require('../../domains/registry');
 const { isDevMode, limitInDevMode, devModeSuffix } = require('../../utils/devMode');
 
-class IdGenerationTask {
+class IdGenerationTask extends Task {
+    constructor() {
+        super('asv-generate-ids');
+    }
+
     async execute() {
         const devMode = isDevMode();
         const asv = getDomain('asv');
@@ -29,24 +34,23 @@ class IdGenerationTask {
         }
 
         return {
-             syncLog: {
-                 generatedIds: generated.map(u => u.account),
-                 errors
-             },
-             generated,
-             totalMissing: missing.length,
-             devMode
+             success: true,
+             devMode,
+             details: {
+                 added: generated.map(u => ({ id: u.account, new: u })),
+                 errors: errors.map((msg, i) => ({ id: `error-${i}`, message: msg })),
+                 totalMissing: missing.length
+             }
         };
     }
 
-    summarize(report) {
-        if (!report) return '-';
-        if (report.error) return `<span style="color: #EF4444;">Fehler: ${report.error}</span>`;
-
+    format(report) {
+        if (!report || !report.details) return '-';
         const suffix = devModeSuffix(report.devMode);
 
-        if (report.generated && report.generated.length > 0) {
-            return `<span style="color: #10B981; font-weight: bold;">+${report.generated.length}/${report.totalMissing} IDs generiert${suffix}</span>`;
+        const generatedCount = report.details.added ? report.details.added.length : 0;
+        if (generatedCount > 0) {
+            return `<span style="color: var(--wa-color-success-600); font-weight: bold;">+${generatedCount}/${report.details.totalMissing} IDs generiert${suffix}</span>`;
         }
         return `<span style="color:var(--wa-color-neutral-500)">Keine neuen IDs notwendig</span>`;
     }

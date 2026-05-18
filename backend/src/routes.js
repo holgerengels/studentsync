@@ -177,15 +177,17 @@ router.post('/execute/:taskName', verifyToken, async (req, res) => {
 router.post('/diff/:source/:target', verifyToken, async (req, res) => {
     try {
         const { source, target } = req.params;
-        const task = new DiffTask(source, target);
+        const registry = require('./tasks/index');
+        const taskName = `${source}-${target}-diff`;
+        const task = registry[taskName] || new DiffTask(source, target);
         const report = await task.execute({ forceRefresh: req.query.refresh === 'true' });
         
         // Read-only diff calculation — no logging needed
         res.json({ status: 'success', summary: { 
-            added: report.diff.added.length, 
-            removed: report.diff.removed.length, 
-            changed: report.diff.changed.length,
-            unchanged: report.unchangedCount
+            added: report.details?.added?.length || 0, 
+            removed: report.details?.removed?.length || 0, 
+            changed: report.details?.changed?.length || 0,
+            unchanged: report.details?.unchanged || 0
         }, report });
     } catch(e) {
         console.error(`[Route] POST /diff/${req.params.source}/${req.params.target} failed:`, e.message);
@@ -197,17 +199,19 @@ router.post('/diff/:source/:target', verifyToken, async (req, res) => {
 router.post('/sync/:source/:target', verifyToken, async (req, res) => {
     try {
         const { source, target } = req.params;
-        const task = new SyncTask(source, target);
+        const registry = require('./tasks/index');
+        const taskName = `${source}-${target}-sync`;
+        const task = registry[taskName] || new SyncTask(source, target);
         const logger = require('./utils/logger');
 
         const logId = await logger.startTask(task.name, 'MANUAL');
         const report = await task.execute({ forceRefresh: req.query.refresh === 'true' });
         const htmlSnippet = task.format(report);
 
-        const status = report.syncLog?.errors?.length ? 'ERROR' : 'SUCCESS';
-        await logger.endTask(logId, status, htmlSnippet, report.syncLog || report);
+        const status = report.details?.errors?.length ? 'ERROR' : 'SUCCESS';
+        await logger.endTask(logId, status, htmlSnippet, report.details || report);
 
-        res.json({ status: 'success', syncLog: report.syncLog, devMode: report.devMode, html: htmlSnippet });
+        res.json({ status: 'success', details: report.details, devMode: report.devMode, html: htmlSnippet });
     } catch(e) {
         console.error(`[Route] POST /sync/${req.params.source}/${req.params.target} failed:`, e.message);
         res.status(500).json({ error: e.message });
@@ -219,8 +223,19 @@ router.get('/logs', verifyToken, async (req, res) => {
     try {
         const Log = require('./models/Log');
         const limit = parseInt(req.query.limit) || 50;
-        const logs = await Log.find().sort({ startTime: -1 }).limit(limit);
-        res.json(logs);
+        const page = parseInt(req.query.page) || 1;
+        const skip = (page - 1) * limit;
+
+        const total = await Log.countDocuments();
+        const logs = await Log.find().sort({ startTime: -1 }).skip(skip).limit(limit);
+        
+        res.json({
+            data: logs,
+            total,
+            page,
+            limit,
+            pages: Math.ceil(total / limit)
+        });
     } catch (e) {
         console.error('[Route] GET /logs failed:', e.message);
         res.status(500).json({ error: e.message });

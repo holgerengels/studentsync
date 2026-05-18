@@ -27,7 +27,12 @@ class Arbeitsheft extends ManagableDomain {
         if (this.restPath.startsWith('/')) this.restPath = this.restPath.substring(1);
         if (!this.restPath.endsWith('/')) this.restPath += '/';
 
-        this.encodedAuth = Buffer.from(this.user + ':' + this.password).toString('base64');
+        this.axiosConfig = {
+            auth: {
+                username: this.user,
+                password: this.password
+            }
+        };
     }
 
     async readIdentities() {
@@ -45,9 +50,9 @@ class Arbeitsheft extends ManagableDomain {
         const queryUrl = this.url + 'bin/get/XWiki/UserDirectoryLivetableResults?' + params.toString();
 
         const res = await axios.get(queryUrl, {
+            ...this.axiosConfig,
             headers: {
-                'Accept': 'application/json',
-                'Authorization': 'Basic ' + this.encodedAuth
+                'Accept': 'application/json'
             },
             timeout: 30000
         });
@@ -76,9 +81,9 @@ class Arbeitsheft extends ManagableDomain {
 
         try {
             const res = await axios.get(detailUrl, {
+                ...this.axiosConfig,
                 headers: {
-                    'Accept': 'application/json',
-                    'Authorization': 'Basic ' + this.encodedAuth
+                    'Accept': 'application/json'
                 },
                 timeout: 15000
             });
@@ -126,7 +131,9 @@ class Arbeitsheft extends ManagableDomain {
         const escapeXml = (s) => (s || '')
             .replace(/&/g, '&amp;')
             .replace(/</g, '&lt;')
-            .replace(/>/g, '&gt;');
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#39;');
 
         const xmlPayload = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <object xmlns="http://www.xwiki.org">
@@ -139,10 +146,10 @@ class Arbeitsheft extends ManagableDomain {
 </object>`;
 
         const res = await axios.put(putUrl, xmlPayload, {
+            ...this.axiosConfig,
             headers: {
                 'Accept': 'application/xml',
-                'Content-Type': 'application/xml',
-                'Authorization': 'Basic ' + this.encodedAuth
+                'Content-Type': 'application/xml'
             },
             timeout: 15000,
             validateStatus: false

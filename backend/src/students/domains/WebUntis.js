@@ -5,7 +5,7 @@ const otpauth = require('otpauth');
 const Identity = require('../../domains/Identity');
 const config = require('../../config');
 const ManagableDomain = require('../../domains/ManagableDomain');
-const { parseTsvLine } = require('../../utils/csvParser');
+const { parseCsvLine } = require('../../utils/csvParser');
 
 class WebUntisDomain extends ManagableDomain {
     get supportedProperties() { return ['userId', 'firstName', 'lastName', 'clazz', 'birthday']; }
@@ -150,7 +150,7 @@ class WebUntisDomain extends ManagableDomain {
         // Parse headers
         let majorityColIdx = -1;
         if (lines.length > 0) {
-            const headers = parseTsvLine(lines[0].trim());
+            const headers = parseCsvLine(lines[0].trim());
             majorityColIdx = headers.indexOf('majority');
             if (majorityColIdx === -1) {
                 console.warn('[WebUntis Info] "majority" column missing in WebUntis CSV export headers. Automatic majority resolving disabled.');
@@ -160,7 +160,7 @@ class WebUntisDomain extends ManagableDomain {
         for (let i = 1; i < lines.length; i++) {
             const line = lines[i].trim();
             if (!line) continue;
-            const cols = parseTsvLine(line);
+            const cols = parseCsvLine(line);
             if (cols.length >= 6) {
                 const externKey = cols[0];
                 const lastName = cols[1];
@@ -388,7 +388,7 @@ class WebUntisDomain extends ManagableDomain {
             for (let i = 1; i < lines.length; i++) {
                 const line = lines[i].trim();
                 if (!line) continue;
-                const cols = parseTsvLine(line);
+                const cols = parseCsvLine(line);
                 if (cols.length >= 14) {
                     const id = cols[0]; // Guardian ID
                     const lastName = cols[1];

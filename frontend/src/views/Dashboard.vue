@@ -180,7 +180,8 @@ async function runSync(df) {
             res = await axios.post(`/api/sync/${srcDomain}/${tgtDomain}?refresh=true`);
         }
         
-        toast.success(`Sync finished`);
+        const msgHtml = res.data?.html || `Sync finished`;
+        toast.show(msgHtml, 'success');
         
         // Auto-invalidate and refresh the target domain count
         refreshDomain(tgtDomain);
@@ -231,17 +232,17 @@ async function runAction(act, contextName) {
 
         // Dedizierte Remnants View Logik
         if (reqTaskName === 'nextcloud-remnants-list' && res.data?.report?.remnants) {
+            reportDialogTitle.value = act.name || 'Aktionsbericht';
             reportDialogRemnants.value = res.data.report.remnants;
             isRemnantsDialogOpen.value = true;
         } 
-        // Generischer Html / Text output View 
-        else if (res.data?.html) {
-            reportDialogContent.value = res.data.html;
-            isDialogOpen.value = true;
-        }
+        
+        const msgHtml = res.data?.html || `Aktion ausgeführt`;
         
         if (contextName) {
-            toast.success(`Aktion ausgeführt`);
+            if (reqTaskName !== 'nextcloud-remnants-list') {
+                 toast.show(msgHtml, 'success');
+            }
             
             // Auto reload contextual layout
             if (contextName.includes('-')) {
@@ -261,7 +262,9 @@ async function runAction(act, contextName) {
                 }
             }
         } else {
-            toast.show(`Executed ${act.name} successfully`, 'success');
+            if (reqTaskName !== 'nextcloud-remnants-list') {
+                 toast.show(msgHtml, 'success');
+            }
         }
     } catch(e) {
         const explanation = e.response?.data?.error || e.message;

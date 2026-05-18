@@ -7,7 +7,7 @@
         class="toast-item"
         :style="`border-left: 4px solid var(--wa-color-${toast.variant}-500); background-color: #ffffff; color: var(--wa-color-neutral-800);`">
         <wa-icon :name="toast.variant === 'success' ? 'check2-circle' : (toast.variant === 'danger' ? 'x-circle' : 'exclamation-triangle')" :style="`color: var(--wa-color-${toast.variant}-500); font-size: 1.25rem;`"></wa-icon>
-        <div style="flex-grow: 1;">{{ toast.message }}</div>
+        <div style="flex-grow: 1;" v-html="toast.message"></div>
         <div class="toast-close" @click="remove(toast.id)">
           <wa-icon name="x-lg"></wa-icon>
         </div>

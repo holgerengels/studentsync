@@ -20,7 +20,13 @@ class NextcloudRemnantsListTask extends Task {
                 }
             }
             
-            return { success: true, count: remnants.length, remnants };
+            return { 
+                success: true, 
+                details: {
+                    remnantsFound: remnants.length,
+                    remnants: remnants.map(r => ({ id: r.uid, data: r }))
+                }
+            };
         } catch (e) {
             return { success: false, error: e.message };
         }
@@ -28,8 +34,9 @@ class NextcloudRemnantsListTask extends Task {
 
     format(report) {
         if (!report) return '-';
-        if (!report.success) return `<div style="color:var(--wa-color-danger-600)">Fehler beim Abrufen der Remnants: ${report.error}</div>`;
-        return `<div><strong>Nextcloud Remnants:</strong> Es wurden ${report.count} Remnant(s) gefunden.</div>`;
+        if (report.success === false) return `<div style="color:var(--wa-color-danger-600)">Fehler: ${report.error}</div>`;
+        const count = report.details && report.details.remnantsFound ? report.details.remnantsFound : 0;
+        return `<div><strong>Nextcloud Remnants:</strong> Es wurden ${count} Remnant(s) gefunden.</div>`;
     }
 }
 

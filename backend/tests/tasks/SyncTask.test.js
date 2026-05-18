@@ -25,7 +25,7 @@ describe('SyncTask', () => {
         const task = new SyncTask('asv', 'dummy');
         const report = await task.execute({ forceRefresh: true });
 
-        expect(report.syncLog.added).toHaveLength(sourceCount);
+        expect(report.details.added).toHaveLength(sourceCount);
         expect(report.devMode).toBe(false);
 
         // Verify target now has same count
@@ -44,8 +44,8 @@ describe('SyncTask', () => {
         const task = new SyncTask('asv', 'dummy');
         const report = await task.execute({ forceRefresh: true });
 
-        expect(report.syncLog.changed).toHaveLength(1);
-        expect(report.syncLog.removed).toBeUndefined();
+        expect(report.details.changed).toHaveLength(1);
+        expect(report.details.removed).toBeUndefined();
 
         // Verify the name was corrected
         mocks.dummy.invalidate();
@@ -63,8 +63,8 @@ describe('SyncTask', () => {
         const task = new SyncTask('asv', 'dummy');
         const report = await task.execute({ forceRefresh: true });
 
-        expect(report.syncLog.removed).toHaveLength(1);
-        expect(report.syncLog.removed).toContain('ghost_extra');
+        expect(report.details.removed).toHaveLength(1);
+        expect(report.details.removed.map(r => r.id)).toContain('ghost_extra');
 
         mocks.dummy.invalidate();
         const targetData = await mocks.dummy.getIdentities();
@@ -83,9 +83,9 @@ describe('SyncTask', () => {
         const task = new SyncTask('asv', 'dummy');
         const report = await task.execute({ forceRefresh: true });
 
-        expect(report.syncLog.added.length).toBeGreaterThanOrEqual(1);
-        expect(report.syncLog.changed.length).toBeGreaterThanOrEqual(1);
-        expect(report.syncLog.removed).toContain('to_remove');
+        expect(report.details.added.length).toBeGreaterThanOrEqual(1);
+        expect(report.details.changed.length).toBeGreaterThanOrEqual(1);
+        expect(report.details.removed.map(r => r.id)).toContain('to_remove');
     });
 
     it('should fail if target domain is not managable', async () => {
@@ -103,20 +103,21 @@ describe('SyncTask', () => {
     it('format() produces correct HTML output', () => {
         const task = new SyncTask('asv', 'dummy');
         const report = {
-            syncLog: { added: ['u1', 'u2'], changed: ['u3'], removed: [] },
+            success: true,
+            details: { added: ['u1', 'u2'], changed: ['u3'] },
             devMode: false
         };
         const html = task.format(report);
         expect(html).toContain('Added: 2');
         expect(html).toContain('Changed: 1');
-        expect(html).toContain('Removed: 0');
         expect(html).not.toContain('DEV MODE');
     });
 
     it('format() shows devMode indicator', () => {
         const task = new SyncTask('asv', 'dummy');
         const report = {
-            syncLog: { added: ['u1'] },
+            success: true,
+            details: { added: ['u1'] },
             devMode: true
         };
         const html = task.format(report);

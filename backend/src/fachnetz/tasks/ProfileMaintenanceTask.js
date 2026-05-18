@@ -4,6 +4,7 @@ const Task = require('../../tasks/Task');
 const { getDomain } = require('../../domains/registry');
 const config = require('../../config');
 const DomainMap = require('./DomainMap');
+const { isDevMode, limitInDevMode, devModeSuffix } = require('../../utils/devMode');
 
 const configDir = path.join(__dirname, '../../../../config');
 
@@ -122,8 +123,8 @@ class ProfileMaintenanceTask extends Task {
         }
 
         // Apply patches via Moodle webservice
-        const devMode = config.settings?.devMode !== false;
-        const limit = devMode ? 1 : patches.length;
+        const devMode = isDevMode();
+        const { items: toProcess } = limitInDevMode(patches);
         const applied = [];
         const errors = [];
 
@@ -144,7 +145,7 @@ class ProfileMaintenanceTask extends Task {
 
         let successCount = 0;
         let i = 0;
-        while (successCount < limit && i < patches.length) {
+        while (successCount < toProcess.length && i < patches.length) {
             const { identity, patch, oldValues, matchSource } = patches[i];
             try {
                 await this._fixProfile(serviceUrl, serviceToken, serviceFunction, identity, patch, oldValues);
@@ -166,29 +167,68 @@ class ProfileMaintenanceTask extends Task {
             fachnetz.invalidate();
         }
 
+        // Calculate aggregate statistics for the report summary
+        const patchCounts = {};
+        for (const p of patches) {
+            for (const k of Object.keys(p.patch)) {
+                patchCounts[k] = (patchCounts[k] || 0) + 1;
+            }
+        }
+
         return {
             success: true,
             devMode,
-            total: identities.length,
-            normalized: normalized.length,
-            patches: patches.length,
-            fuzzyMatches: fuzzyMatches.length,
-            noschools: noschools.length,
-            applied,
-            errors,
-            skipped: devMode ? patches.length - i : 0,
-            skippedDetails: devMode ? patches.slice(i, i + 10).map(p => ({
-                userId: p.identity.userId,
-                patch: p.patch,
-                oldValues: p.oldValues
-            })) : [],
-            fuzzyMatchDetails: fuzzyMatches.slice(0, 10),
-            noschoolDetails: noschools.slice(0, 10).map(n => ({
-                userId: n.identity.userId,
-                email: n.identity.email,
-                reason: n.reason
-            }))
+            details: {
+                total: identities.length,
+                normalized: normalized.length,
+                patches: patches.length,
+                fuzzyMatches: fuzzyMatches.length,
+                noschools: noschools.length,
+                changed: applied.map(a => ({ id: a.id, userId: a.userId, old: a.oldValues, new: a.patch, matchSource: a.matchSource })),
+                errors: errors.map(e => ({ id: e.id, userId: e.userId, message: e.error })),
+                skipped: patches.length - successCount,
+                skippedDetails: devMode ? patches.slice(i, i + 10).map(p => ({
+                    id: p.identity.id,
+                    userId: p.identity.userId,
+                    old: p.oldValues,
+                    new: p.patch
+                })) : [],
+                fuzzyMatchDetails: fuzzyMatches.slice(0, 10),
+                noschoolDetails: noschools.slice(0, 10).map(n => ({
+                    userId: n.identity.userId,
+                    email: n.identity.email,
+                    reason: n.reason
+                }))
+            }
         };
+    }
+
+    format(report) {
+        if (!report || !report.details) return '-';
+
+        let html = '';
+        const suffix = devModeSuffix(report.devMode);
+        
+        const details = report.details;
+        const changedCount = details.changed ? details.changed.length : 0;
+        const noschoolsCount = details.noschools || 0;
+        const fuzzyCount = details.fuzzyMatches || 0;
+
+        if (changedCount > 0) {
+            html += `<div style="color: var(--wa-color-success-600); font-weight: bold;">${changedCount} Profile aktualisiert${suffix}</div>`;
+        } else {
+            html += `<div style="color:var(--wa-color-neutral-500)">Keine Profile aktualisiert${suffix}</div>`;
+        }
+
+        if (noschoolsCount > 0) {
+            html += `<div style="color:var(--wa-color-warning-600); font-size: 0.9em; margin-top: 0.25rem;">${noschoolsCount} Profile ohne zuordenbare Schule</div>`;
+        }
+
+        if (fuzzyCount > 0) {
+            html += `<div style="color:var(--wa-color-primary-600); font-size: 0.9em;">${fuzzyCount} Profile über Fuzzy-Match zugeordnet</div>`;
+        }
+
+        return html;
     }
 
     /**
@@ -222,57 +262,6 @@ class ProfileMaintenanceTask extends Task {
             console.error(`[ProfileMaintenance] error ${identity.id}: ${identity.userId} ${msg}`);
             throw new Error(msg);
         }
-    }
-
-    format(report) {
-        if (!report) return '-';
-        if (!report.success) return `<div style="color:var(--wa-color-danger-600)">Fehler: ${report.error}</div>`;
-
-        let html = `<div><strong>Profile Maintenance</strong>`;
-        html += ` — ${report.total} Profile, ${report.normalized} normalisiert, ${report.patches} Patches`;
-        if (report.fuzzyMatches) html += ` (${report.fuzzyMatches} fuzzy)`;
-        html += `, ${report.noschools} ohne Schule</div>`;
-
-        if (report.devMode) {
-            html += `<div style="color:var(--wa-color-warning-600)">DevMode: nur ${report.applied.length} von ${report.patches} Patches angewendet</div>`;
-        }
-
-        if (report.applied.length > 0) {
-            html += '<ul>' + report.applied.map(a => {
-                const changes = Object.keys(a.patch).map(k => `${k}: "${a.oldValues[k]}" &rarr; "${a.patch[k]}"`).join(', ');
-                return `<li>✅ ${a.userId}: ${changes}${a.matchSource === 'fuzzy' ? ' 🔍' : ''}</li>`;
-            }).join('') + '</ul>';
-        }
-
-        if (report.errors.length > 0) {
-            html += '<ul>' + report.errors.map(e =>
-                `<li style="color:var(--wa-color-danger-600)">❌ ${e.userId}: ${e.error}</li>`
-            ).join('') + '</ul>';
-        }
-
-        if (report.devMode && report.skippedDetails && report.skippedDetails.length > 0) {
-            html += `<h4 style="margin-top:1rem; margin-bottom:0.5rem; font-size:0.9em; color:var(--wa-color-neutral-600);">Übersprungene Patches (DevMode, max 10)</h4>`;
-            html += '<ul style="color:var(--wa-color-neutral-600); font-size:0.9em;">' + report.skippedDetails.map(s => {
-                const changes = Object.keys(s.patch).map(k => `${k}: "${s.oldValues[k]}" &rarr; "${s.patch[k]}"`).join(', ');
-                return `<li>⏭️ ${s.userId}: ${changes}</li>`;
-            }).join('') + '</ul>';
-        }
-
-        if (report.fuzzyMatchDetails && report.fuzzyMatchDetails.length > 0) {
-            html += `<h4 style="margin-top:1rem; margin-bottom:0.5rem; font-size:0.9em; color:var(--wa-color-neutral-600);">Fuzzy Matches (max 10)</h4>`;
-            html += '<ul style="color:var(--wa-color-neutral-600); font-size:0.9em;">' + report.fuzzyMatchDetails.map(f => 
-                `<li>🔍 ${f.userId} (${f.email}): Eingabe "${f.profileSchule}, ${f.profileOrt}" &rarr; "${f.matchedSchule}, ${f.matchedOrt}" (Score: ${f.score})</li>`
-            ).join('') + '</ul>';
-        }
-
-        if (report.noschoolDetails && report.noschoolDetails.length > 0) {
-            html += `<h4 style="margin-top:1rem; margin-bottom:0.5rem; font-size:0.9em; color:var(--wa-color-neutral-600);">Ohne Schulzuordnung (max 10)</h4>`;
-            html += '<ul style="color:var(--wa-color-neutral-600); font-size:0.9em;">' + report.noschoolDetails.map(n => 
-                `<li>❓ ${n.userId} (${n.email}) — Grund: ${n.reason}</li>`
-            ).join('') + '</ul>';
-        }
-
-        return html;
     }
 }
 

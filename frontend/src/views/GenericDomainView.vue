@@ -48,7 +48,7 @@
             </thead>
             <tbody>
                 <tr v-for="ident in identities" :key="ident.userId || Math.random()">
-                    <td v-for="key in displayKeys" :key="key">{{ ident[key] !== undefined && ident[key] !== null ? ident[key] : '-' }}</td>
+                    <td v-for="key in displayKeys" :key="key">{{ ident[key] !== undefined && ident[key] !== null && ident[key] !== '' ? ident[key] : '-' }}</td>
                 </tr>
             </tbody>
         </table>
@@ -119,7 +119,6 @@ watch(() => props.domain.name, () => {
 });
 
 async function refreshData() {
-    resultMessage.value = '';
     await fetchData(true);
 }
 
@@ -158,15 +157,10 @@ async function runAction(act) {
     
     try {
         const res = await axios.post(actionKey.startsWith('/') ? actionKey : `/api/execute/${actionKey}`);
-
-        // Show detailed report in dialog if available
-        if (res.data?.html) {
-            dialogTitle.value = act.name || 'Aktionsbericht';
-            dialogContent.value = res.data.html;
-            isDialogOpen.value = true;
-        }
-
-        toast.success(`Aktion ${act.name} ausgeführt`);
+        
+        const msgHtml = res.data?.html || `Aktion ${act.name} ausgeführt`;
+        toast.show(msgHtml, 'success');
+        
         // Refresh domain data silently to reflect the new state
         await fetchData(true);
     } catch(e) {

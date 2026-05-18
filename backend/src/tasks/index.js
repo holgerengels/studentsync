@@ -14,7 +14,9 @@ const registry = {
     'web-untis-majority': new (require('../students/tasks/WebUntisMajorityTask'))(),
     'nextcloud-remnants-list': new (require('../students/tasks/NextcloudRemnantsListTask'))(),
     'nextcloud-remnants-purge': new (require('../students/tasks/NextcloudRemnantsPurgeTask'))(),
-    'fachnetz-profile-maintenance': new (require('../fachnetz/tasks/ProfileMaintenanceTask'))()
+    'fachnetz-profile-maintenance': new (require('../fachnetz/tasks/ProfileMaintenanceTask'))(),
+    'fachnetz-arbeitsheft-diff': new (require('../fachnetz/tasks/FachnetzArbeitsheftDiffTask'))(),
+    'fachnetz-arbeitsheft-sync': new (require('../fachnetz/tasks/FachnetzArbeitsheftSyncTask'))()
 };
 
 // Dynamically register SyncTask and DiffTask instances from config

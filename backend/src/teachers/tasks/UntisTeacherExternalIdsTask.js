@@ -1,9 +1,10 @@
+const Task = require('../../tasks/Task');
 const { getDomain } = require('../../domains/registry');
 const { isDevMode, limitInDevMode, devModeSuffix } = require('../../utils/devMode');
 
-class UntisTeacherExternalIdsTask {
+class UntisTeacherExternalIdsTask extends Task {
     constructor() {
-        this.name = 'untis-teacher-external-ids';
+        super('untis-teacher-external-ids');
     }
 
     async execute() {
@@ -22,41 +23,42 @@ class UntisTeacherExternalIdsTask {
         for (const { name, foreignKey } of toProcess) {
             try {
                 await untisTeacher.writeTeacherExternalId(name, foreignKey);
-                updatedIds.push(name);
+                updatedIds.push({ id: name, old: { externalId: null }, new: { externalId: foreignKey } });
             } catch (e) {
-                errors.push(`${name}: ${e.message}`);
+                errors.push({ id: name, message: e.message });
             }
         }
 
         return {
-            changedCount: updatedIds.length,
-            totalPending: pending.length,
-            missingCount: missingDomain.length,
-            syncLog: {
+            success: true,
+            devMode,
+            details: {
                 changed: updatedIds,
                 errors,
-                missingDomain
-            },
-            devMode
+                missingDomain,
+                totalPending: pending.length
+            }
         };
     }
 
-    summarize(report) {
-         if (report.syncLog && report.syncLog.errors && report.syncLog.errors.length) {
-             return `<span style="color:var(--wa-color-danger-500)">Fehler: ${report.syncLog.errors[0]}</span>`;
-         }
+    format(report) {
+         if (!report || !report.details) return '-';
 
          let html = '';
          const suffix = devModeSuffix(report.devMode);
+         
+         const changedCount = report.details.changed ? report.details.changed.length : 0;
+         const totalPending = report.details.totalPending || 0;
+         const missingCount = report.details.missingDomain ? report.details.missingDomain.length : 0;
 
-         if (report.changedCount > 0) {
-             html += `<div style="color: #10B981; font-weight: bold;">${report.changedCount}/${report.totalPending} Lehrer-IDs aktualisiert${suffix}</div>`;
+         if (changedCount > 0) {
+             html += `<div style="color: var(--wa-color-success-600); font-weight: bold;">${changedCount}/${totalPending} Lehrer-IDs aktualisiert${suffix}</div>`;
          } else {
              html += `<div style="color:var(--wa-color-neutral-500)">Keine Lehrer-IDs zu aktualisieren</div>`;
          }
 
-         if (report.missingCount > 0) {
-             html += `<div style="color:var(--wa-color-warning-600); font-size: 0.9em; margin-top: 0.25rem;">${report.missingCount} Lehrer ohne gültige System-Email</div>`;
+         if (missingCount > 0) {
+             html += `<div style="color:var(--wa-color-warning-600); font-size: 0.9em; margin-top: 0.25rem;">${missingCount} Lehrer ohne gültige System-Email</div>`;
          }
 
          return html;

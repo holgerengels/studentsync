@@ -9,6 +9,14 @@ class DiffTask extends Task {
         this.targetName = targetName;
     }
 
+    async getSourceIdentities(domain) {
+        return domain.getIdentities();
+    }
+
+    async getTargetIdentities(domain) {
+        return domain.getIdentities();
+    }
+
     async execute(parameters = {}) {
         const sourceDomain = getDomain(this.sourceName);
         const targetDomain = getDomain(this.targetName);
@@ -22,8 +30,8 @@ class DiffTask extends Task {
             targetDomain.invalidate();
         }
 
-        const sourceRecords = await sourceDomain.getIdentities();
-        const targetRecords = await targetDomain.getIdentities();
+        const sourceRecords = await this.getSourceIdentities(sourceDomain);
+        const targetRecords = await this.getTargetIdentities(targetDomain);
 
         const sourceDict = {};
         sourceRecords.forEach(r => sourceDict[r.userId] = r);
@@ -66,31 +74,17 @@ class DiffTask extends Task {
             }
         }
 
-        return { diff, unchangedCount, intersectedProperties, params: { source: this.sourceName, target: this.targetName } };
-    }
-
-    format(report) {
-         if (!report) return '-';
-        if (report.error) {
-            return `<span style="color: #EF4444;">Fehler: ${report.error}</span>`;
-        }
-        
-        const details = report.diff;
-        if (!details) return '-';
-
-        let summaryParts = [];
-        if (report.params && report.params.source && report.params.target) {
-             summaryParts.push(`<strong>${report.params.source} &rarr; ${report.params.target}</strong>`);
-        }
-        
-        if (details.added.length || details.removed.length || details.changed.length) {
-            summaryParts.push(`<span style="color: #10B981; font-weight: bold;">+${details.added.length}</span>`);
-            summaryParts.push(`<span style="color: #F59E0B; font-weight: bold;">~${details.changed.length}</span>`);
-            summaryParts.push(`<span style="color: #EF4444; font-weight: bold;">-${details.removed.length}</span>`);
-            return summaryParts.join(' ');
-        }
-        
-        return '-';
+        return { 
+            success: true,
+            details: {
+                added: diff.added.map(a => ({ id: a.userId || a.id, new: a })),
+                changed: diff.changed.map(c => ({ id: c.source.userId || c.source.id, old: c.target, new: c.source })),
+                removed: diff.removed.map(r => ({ id: r.userId || r.id, old: r })),
+                unchanged: unchangedCount
+            },
+            intersectedProperties,
+            params: { source: this.sourceName, target: this.targetName } 
+        };
     }
 }
 

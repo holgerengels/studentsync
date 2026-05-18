@@ -55,6 +55,16 @@
           </tbody>
         </table>
       </wa-card>
+      
+      <div v-if="totalPages > 1" style="display: flex; justify-content: center; align-items: center; gap: 1rem; margin-top: 1.5rem;">
+        <wa-button variant="neutral" size="small" :disabled="currentPage <= 1 || loading" @click="changePage(currentPage - 1)">
+          <wa-icon name="chevron-left" slot="prefix"></wa-icon> Zurück
+        </wa-button>
+        <span style="font-size: 0.9em; color: var(--wa-color-neutral-600);">Seite {{ currentPage }} von {{ totalPages }} ({{ totalLogs }} Einträge)</span>
+        <wa-button variant="neutral" size="small" :disabled="currentPage >= totalPages || loading" @click="changePage(currentPage + 1)">
+          Weiter <wa-icon name="chevron-right" slot="suffix"></wa-icon>
+        </wa-button>
+      </div>
     </div>
 
     <wa-drawer :open="isDrawerOpen" @wa-after-hide="isDrawerOpen = false" label="Log Details & Diffs" style="--size: 80vw;">
@@ -85,18 +95,32 @@ import axios from 'axios';
 const logs = ref([]);
 const loading = ref(false);
 
+const currentPage = ref(1);
+const totalPages = ref(1);
+const totalLogs = ref(0);
+const limit = 50;
+
 const isDrawerOpen = ref(false);
 const selectedLog = ref(null);
 
-const fetchLogs = async () => {
+const fetchLogs = async (page = 1) => {
   loading.value = true;
   try {
-    const res = await axios.get('http://localhost:3001/api/logs?limit=50');
-    logs.value = res.data;
+    const res = await axios.get(`http://localhost:3001/api/logs?page=${page}&limit=${limit}`);
+    logs.value = res.data.data;
+    currentPage.value = res.data.page;
+    totalPages.value = res.data.pages;
+    totalLogs.value = res.data.total;
   } catch(e) {
     console.error('Fehler beim Laden der Logs:', e);
   } finally {
     loading.value = false;
+  }
+};
+
+const changePage = (newPage) => {
+  if (newPage >= 1 && newPage <= totalPages.value) {
+    fetchLogs(newPage);
   }
 };
 

@@ -43,41 +43,24 @@ class WebUntisMajorityTask extends Task {
         for (const student of updatesToProcess) {
             try {
                 // Send targeted update that asserts majority = true.
+                const oldMajority = student.majority;
                 student.majority = true;
                 await untis.changeIdentity(student);
-                updatedLog.push(student.userId);
+                updatedLog.push({ id: student.userId, old: { majority: oldMajority }, new: { majority: true } });
             } catch (e) {
-                errorLog.push(`Update Error (${student.userId}): ${e.message}`);
+                errorLog.push({ id: student.userId, message: `Update Error: ${e.message}` });
             }
         }
 
-        const syncLog = {};
-        if (updatedLog.length > 0) syncLog.changed = updatedLog;
-        if (errorLog.length > 0) syncLog.errors = errorLog;
-
         return {
+             success: true,
              devMode,
-             totalUpdatesDiscovered: pendingUpdates.length,
-             syncLog: syncLog,
-             diff: {
-                 added: [],
-                 changed: updatesToProcess.map(u => ({ source: u, target: u })),
-                 removed: []
+             details: {
+                 totalUpdatesDiscovered: pendingUpdates.length,
+                 changed: updatedLog,
+                 errors: errorLog
              }
         };
-    }
-
-    format(report) {
-         if (!report) return '-';
-         const changeCount = report.syncLog && report.syncLog.changed ? report.syncLog.changed.length : 0;
-         const errorCount = report.syncLog && report.syncLog.errors ? report.syncLog.errors.length : 0;
-
-         let msg = `Majority Sync. <span style="color: var(--wa-color-warning-600)">Updated: ${changeCount}/${report.totalUpdatesDiscovered}</span> students turning 18.`;
-         msg += devModeSuffix(report.devMode);
-         if (errorCount > 0) {
-              msg += ` <br/><span style="color:#EF4444;">Errors: ${errorCount}</span>`;
-         }
-         return `<div>${msg}</div>`;
     }
 }
 
