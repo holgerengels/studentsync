@@ -107,22 +107,11 @@ if command -v pv &>/dev/null; then
 else
   echo "→ Dumpe Remote-Datenbank und importiere lokal …"
   echo "  (Tipp: 'sudo apt install pv' für eine bessere Fortschrittsanzeige)"
-  # Fallback: pg_dump --verbose zeigt Tabellennamen während des Dumps
   PGPASSWORD="$REMOTE_PASSWORD" pg_dump -h "$REMOTE_HOST" -p "$REMOTE_PORT" -U "$REMOTE_USER" \
-    --no-owner --no-privileges --verbose \
-    "$REMOTE_DB" 2>&1 \
-    | while IFS= read -r line; do
-        if [[ "$line" == pg_dump:* ]]; then
-          # Fortschritts-Infos von pg_dump auf stderr anzeigen
-          printf "\r\033[K  %s" "$line"
-        else
-          # SQL-Daten an psql weiterleiten
-          echo "$line"
-        fi
-      done \
-    | PGPASSWORD="$LOCAL_PASSWORD" psql -h "$LOCAL_HOST" -p "$LOCAL_PORT" -U "$LOCAL_USER" -d "$LOCAL_DB" \
+    --no-owner --no-privileges \
+    "$REMOTE_DB" \
+    | PGPASSWORD="$LOCAL_PASSWORD" psql -v ON_ERROR_STOP=1 -h "$LOCAL_HOST" -p "$LOCAL_PORT" -U "$LOCAL_USER" -d "$LOCAL_DB" \
       --quiet
-  echo "" # Neue Zeile nach \r-Ausgaben
 fi
 
 END_TIME=$(date +%s)

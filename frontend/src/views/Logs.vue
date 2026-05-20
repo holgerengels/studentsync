@@ -106,7 +106,7 @@ const selectedLog = ref(null);
 const fetchLogs = async (page = 1) => {
   loading.value = true;
   try {
-    const res = await axios.get(`http://localhost:3001/api/logs?page=${page}&limit=${limit}`);
+    const res = await axios.get(`/api/logs?page=${page}&limit=${limit}`);
     logs.value = res.data.data;
     currentPage.value = res.data.page;
     totalPages.value = res.data.pages;

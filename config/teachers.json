@@ -24,6 +24,12 @@
       "titel": "Schulkonsole",
       "category": "teachers",
       "color": "#00965E"
+    },
+    {
+      "name": "mailcow-teacher",
+      "titel": "MailCow",
+      "category": "teachers",
+      "color": "#FFC107"
     }
   ],
   "diffs": [
@@ -44,6 +50,15 @@
       "target": "Schulkonsole",
       "sourceDomain": "asv-teacher",
       "targetDomain": "schulkonsole-teacher"
+    },
+    {
+      "name": "asv-teacher--mailcow-teacher",
+      "titel": "ASV → MailCow",
+      "category": "teachers",
+      "source": "ASV",
+      "target": "MailCow",
+      "sourceDomain": "asv-teacher",
+      "targetDomain": "mailcow-teacher"
     }
   ],
   "tasks": []

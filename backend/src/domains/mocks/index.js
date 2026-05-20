@@ -5,20 +5,20 @@ const { encode, next } = require('../../utils/userIds');
 // ASV needs custom methods
 const asvMock = new MockDomain('asv', asvData, ['userId', 'firstName', 'lastName', 'birthday', 'clazz']);
 
-asvMock.generateIds = async function() {
+asvMock.generateIds = async function () {
     const generated = [];
     for (let user of this.data) {
         if (!user.userId && !user.account) {
             const len = 18;
             let like = encode(user.lastName);
             if (like.length > len - 6) like = like.substring(0, len - 6);
-            
+
             const similar = this.data.filter(u => u.userId && u.userId.startsWith(like)).map(u => u.userId);
-            
+
             const userid = next(len, similar, user.firstName, user.lastName);
             user.userId = userid;
             user.account = userid;
-            
+
             generated.push({ id: user.id, account: userid, firstName: user.firstName, lastName: user.lastName });
         }
     }
@@ -26,11 +26,11 @@ asvMock.generateIds = async function() {
     return generated;
 };
 
-asvMock.readExitDates = async function(usernames) {
+asvMock.readExitDates = async function (usernames) {
     return {};
 };
 
-asvMock.readGuardians = async function() {
+asvMock.readGuardians = async function () {
     return [];
 };
 

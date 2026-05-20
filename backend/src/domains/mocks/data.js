@@ -5,11 +5,11 @@ const baseUsers = [];
 for (let i = 0; i < 25; i++) {
     const fName = firstNames[i];
     const lName = lastNames[i];
-    let account = `${lName.toLowerCase().substring(0,5)}_${fName.toLowerCase().substring(0,2)}`;
+    let account = `${lName.toLowerCase().substring(0, 5)}_${fName.toLowerCase().substring(0, 2)}`;
     // handle umlauts
     account = account.replace(/ä/g, 'ae').replace(/ö/g, 'oe').replace(/ü/g, 'ue').replace(/ß/g, 'ss');
     const clazz = i < 10 ? '10A' : (i < 20 ? '10B' : '11C');
-    
+
     baseUsers.push({
         id: `asv_internal_${i}`, // simulate internal DB ID
         userId: account,
@@ -33,16 +33,16 @@ const asvData = baseUsers.map((u, i) => {
 const untisData = baseUsers.filter((_, i) => i !== 1 && i !== 0).map(u => ({ ...u }));
 
 // Nextcloud misses user 2, but has an old remnant
-const nextcloudData = baseUsers.filter((_, i) => i !== 2 && i !== 0).map(u => ({ 
-    ...u, 
-    email: `${u.account}@schule.local` 
+const nextcloudData = baseUsers.filter((_, i) => i !== 2 && i !== 0).map(u => ({
+    ...u,
+    email: `${u.account}@schule.local`
 }));
-nextcloudData.push({ 
-    userId: 'ghost_us', 
-    account: 'ghost_us', 
-    firstName: 'Ghost', 
-    lastName: 'User', 
-    email: 'ghost@schule.local' 
+nextcloudData.push({
+    userId: 'ghost_us',
+    account: 'ghost_us',
+    firstName: 'Ghost',
+    lastName: 'User',
+    email: 'ghost@schule.local'
 });
 
 // Schulkonsole has a wrong class for user 3

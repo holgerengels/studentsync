@@ -42,7 +42,7 @@ const login = async (username, password, isPwa = true) => {
     username = username.toLowerCase();
 
     // 1. DevMode Check
-    if (settings.devMode !== false && (!settings.server || !settings.server.ldap)) {
+    if (settings.devMode !== false) {
         const user = MOCK_USERS.find(u => u.username === username && u.password === password);
         if (user) {
             console.log(`[Auth] Mock login successful for ${username}`);
@@ -51,7 +51,10 @@ const login = async (username, password, isPwa = true) => {
             if (isPwa) result.refreshToken = generateRefreshToken(user.username, user.groups);
             return result;
         }
-        return null;
+        
+        if (!settings.server || !settings.server.ldap) {
+            return null;
+        }
     }
 
     // 2. LDAP Auth
