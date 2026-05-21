@@ -4,7 +4,7 @@ const Domain = require('../../domains/Domain');
 const config = require('../../config');
 
 class ASVTeacher extends Domain {
-    get supportedProperties() { return ['userId', 'firstName', 'lastName', 'email']; }
+    get supportedProperties() { return ['userId', 'firstName', 'lastName', 'email', 'login']; }
     get cacheTTL() { return 3600000; } // 1 hour
 
     constructor() {
@@ -68,11 +68,16 @@ class ASVTeacher extends Domain {
                 if (seen.has(r.namenskuerzel)) continue;
                 seen.add(r.namenskuerzel);
 
+                let login = null;
+                if (email.includes('@')) {
+                    login = email.split('@')[0];
+                }
+
                 identities.push(new Identity(
                     r.namenskuerzel,
                     r.vornamen,
                     r.familienname,
-                    { email }
+                    { email, login }
                 ));
             }
             return identities;

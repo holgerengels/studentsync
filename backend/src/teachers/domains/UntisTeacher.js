@@ -4,7 +4,7 @@ const Domain = require('../../domains/Domain');
 const config = require('../../config');
 
 class UntisTeacher extends Domain {
-    get supportedProperties() { return ['userId', 'firstName', 'lastName']; }
+    get supportedProperties() { return ['userId', 'firstName', 'lastName', 'email', 'login']; }
     get cacheTTL() { return 3600000; } // 1 hour
 
     constructor() {
@@ -72,6 +72,7 @@ class UntisTeacher extends Domain {
                     {
                         id: r.TEACHER_ID,
                         email: r.Email,
+                        login: r.Email ? r.Email.split('@')[0] : null,
                         foreignKey: r.ForeignKey,
                         birthday
                     }

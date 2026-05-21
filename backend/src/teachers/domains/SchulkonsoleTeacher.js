@@ -5,7 +5,7 @@ const config = require('../../config');
 const Domain = require('../../domains/Domain');
 
 class SchulkonsoleTeacher extends Domain {
-    get supportedProperties() { return ['userId', 'firstName', 'lastName']; }
+    get supportedProperties() { return ['userId', 'firstName', 'lastName', 'email', 'login']; }
     get cacheTTL() { return 3600000; } // 1 hour
 
     constructor() {
@@ -48,10 +48,10 @@ class SchulkonsoleTeacher extends Domain {
 
             return res.data.map(r =>
                 new Identity(
-                    r.userName,
+                    r.initials || r.userName,
                     r.givenName,
                     r.surname,
-                    { id: r.id }
+                    { id: r.id, login: r.userName, email: r.email }
                 )
             );
         } catch (e) {

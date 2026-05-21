@@ -8,12 +8,14 @@ for (let i = 0; i < 25; i++) {
     let account = `${lName.toLowerCase().substring(0, 5)}_${fName.toLowerCase().substring(0, 2)}`;
     // handle umlauts
     account = account.replace(/ä/g, 'ae').replace(/ö/g, 'oe').replace(/ü/g, 'ue').replace(/ß/g, 'ss');
+    let kuerzel = `${lName.substring(0, 2)}${fName.substring(0, 1)}`.toLowerCase();
     const clazz = i < 10 ? '10A' : (i < 20 ? '10B' : '11C');
 
     baseUsers.push({
         id: `asv_internal_${i}`, // simulate internal DB ID
         userId: account,
         account: account,
+        kuerzel: kuerzel,
         firstName: fName,
         lastName: lName,
         clazz: clazz,

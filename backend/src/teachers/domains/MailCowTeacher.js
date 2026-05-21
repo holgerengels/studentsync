@@ -4,7 +4,7 @@ const Domain = require('../../domains/Domain');
 const config = require('../../config');
 
 class MailCowTeacher extends Domain {
-    get supportedProperties() { return ['userId', 'firstName', 'lastName', 'email']; }
+    get supportedProperties() { return ['userId', 'firstName', 'lastName', 'email', 'login']; }
     get cacheTTL() { return 3600000; } // 1 hour
 
     constructor() {
@@ -65,7 +65,7 @@ class MailCowTeacher extends Domain {
                             localPart,
                             firstName,
                             lastName,
-                            { email: username }
+                            { email: username, login: localPart }
                         ));
                     }
                 }
