@@ -10,8 +10,8 @@ const { isDevMode, limitInDevMode, devModeSuffix } = require('../../utils/devMod
  * Reads teacher initials (Kürzel) from the Schulkonsole domain and stores them
  * as custom_attributes on the corresponding Mailcow mailbox.
  *
- * Identity matching is performed via login (userName / local_part):
- *   Schulkonsole identity.login  ↔  Mailcow mailbox local_part
+ * Identity matching is performed via email address:
+ *   Schulkonsole identity.email  ↔  Mailcow mailbox username (= email)
  *
  * Mailcow API:
  *   GET  /api/v1/get/mailbox/all   → read all mailboxes (incl. custom_attributes)
@@ -31,18 +31,18 @@ class MailcowTeacherInitialsTask extends Task {
         // ── Step 1: Read teacher identities from Schulkonsole ───────────────
         const identities = await schulkonsoleTeacher.getIdentities();
 
-        // Build a map: lowercase login → Kürzel (userId)
+        // Build a map: lowercase email → Kürzel (userId)
         // Skip teachers where userId === login (no real initials, just userName fallback)
-        const loginToInitials = new Map();
+        const emailToInitials = new Map();
         const noInitials = [];
-        const noLogin = [];
+        const noEmail = [];
         for (const identity of identities) {
-            if (!identity.login) {
-                noLogin.push(identity.userId);
+            if (!identity.email) {
+                noEmail.push(identity.userId);
             } else if (identity.userId === identity.login) {
-                noInitials.push(identity.login);
+                noInitials.push(identity.email);
             } else {
-                loginToInitials.set(identity.login.toLowerCase(), identity.userId);
+                emailToInitials.set(identity.email.toLowerCase(), identity.userId);
             }
         }
 
@@ -79,9 +79,8 @@ class MailcowTeacherInitialsTask extends Task {
         const alreadyCurrent = [];
 
         for (const mb of mailboxes) {
-            const mbLogin = (mb.local_part || '').toLowerCase();
             const mbEmail = (mb.username || '').toLowerCase();
-            const initials = loginToInitials.get(mbLogin);
+            const initials = emailToInitials.get(mbEmail);
 
             if (!initials) {
                 // No matching teacher found in Schulkonsole for this mailbox
@@ -104,15 +103,15 @@ class MailcowTeacherInitialsTask extends Task {
         }
 
         // Count teachers without matching Mailcow mailbox
-        const matchedLogins = new Set();
+        const matchedEmails = new Set();
         for (const mb of mailboxes) {
-            const mbLogin = (mb.local_part || '').toLowerCase();
-            if (loginToInitials.has(mbLogin)) matchedLogins.add(mbLogin);
+            const mbEmail = (mb.username || '').toLowerCase();
+            if (emailToInitials.has(mbEmail)) matchedEmails.add(mbEmail);
         }
         const unmatchedTeachers = [];
-        for (const [login, initials] of loginToInitials) {
-            if (!matchedLogins.has(login)) {
-                unmatchedTeachers.push({ login, kuerzel: initials });
+        for (const [email, initials] of emailToInitials) {
+            if (!matchedEmails.has(email)) {
+                unmatchedTeachers.push({ email, kuerzel: initials });
             }
         }
 
@@ -162,7 +161,7 @@ class MailcowTeacherInitialsTask extends Task {
                 unmatchedTeachers: unmatchedTeachers.length,
                 unmatchedDetails: unmatchedTeachers.slice(0, 10),
                 noInitials: noInitials.length,
-                noLogin: noLogin.length
+                noEmail: noEmail.length
             }
         };
     }

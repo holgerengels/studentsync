@@ -16,10 +16,10 @@ router.post('/login', async (req, res) => {
     try {
         const { username, password } = req.body;
         if (!username || !password) return res.status(400).json({ error: 'Missing credentials' });
-        
+
         const result = await login(username, password, true);
         if (!result) return res.status(401).json({ error: 'Invalid credentials' });
-        
+
         res.json(result);
     } catch (e) {
         console.error('[Auth Route] Login Error:', e.message);
@@ -33,7 +33,7 @@ router.post('/refresh', (req, res) => {
 
     const result = refreshAccessToken(refreshToken);
     if (!result) return res.status(401).json({ error: 'Refresh token invalid or expired' });
-    
+
     res.json(result);
 });
 
@@ -62,8 +62,8 @@ router.get('/config/ui', verifyToken, (req, res) => {
     const accessibleNames = new Set(accessibleCategories.map(c => c.name));
 
     res.json({
-        categories: accessibleCategories.map(c => ({ 
-            name: c.name, 
+        categories: accessibleCategories.map(c => ({
+            name: c.name,
             label: c.label,
             search: c.search,
             filter: c.filter
@@ -152,6 +152,60 @@ router.get('/identities/:domainName', verifyToken, async (req, res) => {
     }
 });
 
+// Investigate: search for an identity ID across all domains in a category
+router.get('/investigate/:category/:id', verifyToken, async (req, res) => {
+    try {
+        const { category, id } = req.params;
+
+        // Find all domains belonging to this category
+        const categoryDomains = (config.domains || []).filter(d => d.category === category);
+        if (categoryDomains.length === 0) {
+            return res.status(404).json({ error: `No domains found for category '${category}'` });
+        }
+
+        const results = [];
+
+        for (const domainConfig of categoryDomains) {
+            const domain = getDomain(domainConfig.name);
+            if (!domain) {
+                results.push({
+                    domain: domainConfig.name,
+                    titel: domainConfig.titel,
+                    color: domainConfig.color,
+                    found: false,
+                    error: 'Domain not registered'
+                });
+                continue;
+            }
+
+            try {
+                const identities = await domain.getIdentities();
+                const match = identities.find(i => i.userId === id);
+                results.push({
+                    domain: domainConfig.name,
+                    titel: domainConfig.titel,
+                    color: domainConfig.color,
+                    found: !!match,
+                    identity: match || null
+                });
+            } catch (e) {
+                results.push({
+                    domain: domainConfig.name,
+                    titel: domainConfig.titel,
+                    color: domainConfig.color,
+                    found: false,
+                    error: e.message
+                });
+            }
+        }
+
+        res.json({ category, id, results });
+    } catch (e) {
+        console.error(`[Route] GET /investigate/${req.params.category}/${req.params.id} failed:`, e.message);
+        res.status(500).json({ error: e.message });
+    }
+});
+
 // Generic Task Execution Endpoint — delegates to centralized taskRunner for consistent logging
 router.post('/execute/:taskName', verifyToken, async (req, res) => {
     try {
@@ -181,15 +235,17 @@ router.post('/diff/:source/:target', verifyToken, async (req, res) => {
         const taskName = `${source}-${target}-diff`;
         const task = registry[taskName] || new DiffTask(source, target);
         const report = await task.execute({ forceRefresh: req.query.refresh === 'true' });
-        
+
         // Read-only diff calculation — no logging needed
-        res.json({ status: 'success', summary: { 
-            added: report.details?.added?.length || 0, 
-            removed: report.details?.removed?.length || 0, 
-            changed: report.details?.changed?.length || 0,
-            unchanged: report.details?.unchanged || 0
-        }, report });
-    } catch(e) {
+        res.json({
+            status: 'success', summary: {
+                added: report.details?.added?.length || 0,
+                removed: report.details?.removed?.length || 0,
+                changed: report.details?.changed?.length || 0,
+                unchanged: report.details?.unchanged || 0
+            }, report
+        });
+    } catch (e) {
         console.error(`[Route] POST /diff/${req.params.source}/${req.params.target} failed:`, e.message);
         res.status(500).json({ error: e.message });
     }
@@ -212,7 +268,7 @@ router.post('/sync/:source/:target', verifyToken, async (req, res) => {
         await logger.endTask(logId, status, htmlSnippet, report.details || report);
 
         res.json({ status: 'success', details: report.details, devMode: report.devMode, html: htmlSnippet });
-    } catch(e) {
+    } catch (e) {
         console.error(`[Route] POST /sync/${req.params.source}/${req.params.target} failed:`, e.message);
         res.status(500).json({ error: e.message });
     }
@@ -228,7 +284,7 @@ router.get('/logs', verifyToken, async (req, res) => {
 
         const total = await Log.countDocuments();
         const logs = await Log.find().sort({ startTime: -1 }).skip(skip).limit(limit);
-        
+
         res.json({
             data: logs,
             total,

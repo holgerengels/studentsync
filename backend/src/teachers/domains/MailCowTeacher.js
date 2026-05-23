@@ -50,6 +50,11 @@ class MailCowTeacher extends Domain {
                     const localPart = item.local_part || '';
                     const username = item.username || '';
                     const fullName = (item.name || '').trim();
+                    const customAttrs = item.custom_attributes || {};
+                    const kuerzel = customAttrs.kuerzel || '';
+
+                    // Use kuerzel as userId for ASV matching; skip mailboxes without one
+                    if (!kuerzel) continue;
 
                     let firstName = fullName;
                     let lastName = fullName;
@@ -60,18 +65,16 @@ class MailCowTeacher extends Domain {
                         lastName = fullName.substring(lastSpaceIndex + 1).trim();
                     }
 
-                    if (localPart) {
-                        identities.push(new Identity(
-                            localPart,
-                            firstName,
-                            lastName,
-                            { email: username, login: localPart }
-                        ));
-                    }
+                    identities.push(new Identity(
+                        kuerzel,
+                        firstName,
+                        lastName,
+                        { email: username, login: localPart }
+                    ));
                 }
             }
 
-            // Sort by userId (local_part)
+            // Sort by userId (kuerzel)
             identities.sort((a, b) => a.userId.localeCompare(b.userId));
 
             return identities;

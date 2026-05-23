@@ -10,40 +10,38 @@ module.exports = {
         console.log('[Hook] maintainTicket triggered for ASV-Untis sync');
 
         const axios = require('axios');
-        let diff = null;
-        if (details && details.diff) {
-            diff = details.diff;
-        }
+        // DiffTask returns { success, details: { added, changed, removed, unchanged } }
+        const diff = (details && details.details) ? details.details : null;
 
         let needsManualAction = false;
         let description = '<p><strong>Folgende Änderungen aus ASV müssen in Untis übernommen werden:</strong></p><ul>';
 
         if (diff && diff.added && diff.added.length > 0) {
             needsManualAction = true;
-            const addedNames = diff.added.map(i => i.userId || i.name || 'Unbekannt').join(', ');
+            const addedNames = diff.added.map(i => i.id || 'Unbekannt').join(', ');
             description += `<li><strong>Hinzufügen:</strong> ${addedNames}</li>`;
         }
 
         if (diff && diff.removed && diff.removed.length > 0) {
             needsManualAction = true;
-            const removedNames = diff.removed.map(i => i.userId || i.name || 'Unbekannt').join(', ');
+            const removedNames = diff.removed.map(i => i.id || 'Unbekannt').join(', ');
             description += `<li><strong>Löschen:</strong> ${removedNames}</li>`;
         }
 
         if (diff && diff.changed && diff.changed.length > 0) {
             const classChanges = diff.changed.filter(c => {
-                const tClass = c.target && c.target.classes ? c.target.classes : (c.target && c.target.group);
-                const sClass = c.source && c.source.classes ? c.source.classes : (c.source && c.source.group);
-                return JSON.stringify(tClass) !== JSON.stringify(sClass);
+                const newClasses = c.new && c.new.classes ? c.new.classes : (c.new && c.new.group);
+                const oldClasses = c.old && c.old.classes ? c.old.classes : (c.old && c.old.group);
+                return JSON.stringify(newClasses) !== JSON.stringify(oldClasses);
             });
 
             if (classChanges.length > 0) {
                 needsManualAction = true;
                 const changeTexts = classChanges.map(c => {
-                    const uId = c.source.userId || c.source.name || 'Unbekannt';
-                    const targetC = JSON.stringify(c.target.classes || c.target.group || []);
-                    const sourceC = JSON.stringify(c.source.classes || c.source.group || []);
-                    return `${uId} (von ${targetC} zu ${sourceC})`;
+                    const uId = c.id || 'Unbekannt';
+                    const newC = JSON.stringify(c.new.classes || c.new.group || []);
+                    const oldC = JSON.stringify(c.old.classes || c.old.group || []);
+                    return `${uId} (von ${oldC} zu ${newC})`;
                 }).join(', ');
 
                 description += `<li><strong>Klassenwechsel:</strong> ${changeTexts}</li>`;

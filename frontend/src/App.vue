@@ -55,8 +55,42 @@
               <path fill-rule="evenodd" d="M2.5 12a.5.5 0 0 1 .5-.5h10a.5.5 0 0 1 0 1H3a.5.5 0 0 1-.5-.5zm0-4a.5.5 0 0 1 .5-.5h10a.5.5 0 0 1 0 1H3a.5.5 0 0 1-.5-.5zm0-4a.5.5 0 0 1 .5-.5h10a.5.5 0 0 1 0 1H3a.5.5 0 0 1-.5-.5z"/>
             </svg>
         </button>
-        <h2 style="margin: 0; margin-left: 0.5rem; display: inline-block; vertical-align: middle; font-size: 1.1rem; text-transform: uppercase; color: var(--wa-color-neutral-600); letter-spacing: 1px;">Synx</h2>
+        <h2 class="top-bar-title">{{ currentCategoryLabel || 'Synx' }}</h2>
+        <div class="top-bar-spacer"></div>
+        <div v-if="currentCategoryName" class="investigate-bar">
+          <wa-input size="small" placeholder="ID nachschlagen …" :value="investigateId" @wa-input="investigateId = $event.target.value" @input="investigateId = $event.target.value" @keydown.enter="runInvestigate" clearable>
+            <wa-icon slot="prefix" name="search"></wa-icon>
+          </wa-input>
+          <wa-button size="small" variant="neutral" @click="runInvestigate" :loading="investigateLoading">
+            <wa-icon slot="prefix" name="binoculars"></wa-icon>
+            Investigate
+          </wa-button>
+        </div>
       </header>
+
+      <!-- Investigate Results Dialog -->
+      <wa-dialog label="Investigate" :open="investigateDialogOpen" @wa-after-hide="investigateDialogOpen = false" style="--width: 700px;">
+        <div v-if="investigateResults" style="padding: 0.5rem;">
+          <p style="margin-top: 0; color: var(--wa-color-neutral-500); font-size: 0.9em;">
+            Ergebnis für <strong>{{ investigateResults.id }}</strong> in <em>{{ investigateResults.category }}</em>
+          </p>
+          <div v-for="r in investigateResults.results" :key="r.domain" class="investigate-result" :class="{ 'investigate-found': r.found, 'investigate-missing': !r.found }">
+            <div class="investigate-domain" :style="{ borderLeftColor: r.color || 'var(--wa-color-neutral-300)' }">
+              <span class="investigate-domain-name">{{ r.titel || r.domain }}</span>
+              <wa-badge v-if="r.found" variant="success">gefunden</wa-badge>
+              <wa-badge v-else-if="r.error" variant="danger">Fehler</wa-badge>
+              <wa-badge v-else variant="neutral">nicht gefunden</wa-badge>
+            </div>
+            <div v-if="r.found && r.identity" class="investigate-identity">
+              <div v-for="(val, key) in r.identity" :key="key" class="investigate-field">
+                <span class="investigate-key">{{ key }}</span>
+                <span class="investigate-val">{{ val !== null && val !== '' ? val : '-' }}</span>
+              </div>
+            </div>
+            <div v-if="r.error" class="investigate-error">{{ r.error }}</div>
+          </div>
+        </div>
+      </wa-dialog>
       <router-view></router-view>
     </main>
 
@@ -65,14 +99,65 @@
 
 <script setup>
 import { inject, ref, onMounted, onUnmounted, computed } from 'vue';
-import { useRouter } from 'vue-router';
+import { useRouter, useRoute } from 'vue-router';
+import axios from 'axios';
 import { useAuthStore } from './stores/auth';
 import Login from './views/Login.vue';
 import ToastContainer from './components/ToastContainer.vue';
 
 const config = inject('synxConfig');
 const router = useRouter();
+const route = useRoute();
 const auth = useAuthStore();
+
+// Derive current category from route path
+const currentCategoryName = computed(() => {
+    const path = route.path;
+    // Direct category route: /students, /teachers
+    const cats = config?.categories || [];
+    const directMatch = cats.find(c => path === `/${c.name}`);
+    if (directMatch) return directMatch.name;
+    // Domain route: /domain/asv-student → find domain config → category
+    const domainMatch = path.match(/^\/domain\/(.+)/);
+    if (domainMatch) {
+        const d = (config?.domains || []).find(d => d.name === domainMatch[1]);
+        if (d) return d.category;
+    }
+    // Diff route: /diff/asv-untis-students → find diff config → category
+    const diffMatch = path.match(/^\/diff\/(.+)/);
+    if (diffMatch) {
+        const df = (config?.diffs || []).find(d => d.name === diffMatch[1]);
+        if (df) return df.category;
+    }
+    return null;
+});
+
+const currentCategoryLabel = computed(() => {
+    if (!currentCategoryName.value) return null;
+    const cat = (config?.categories || []).find(c => c.name === currentCategoryName.value);
+    return cat?.label || currentCategoryName.value;
+});
+
+// Investigate
+const investigateId = ref('');
+const investigateLoading = ref(false);
+const investigateDialogOpen = ref(false);
+const investigateResults = ref(null);
+
+async function runInvestigate() {
+    const id = investigateId.value.trim();
+    if (!id || !currentCategoryName.value) return;
+    investigateLoading.value = true;
+    try {
+        const res = await axios.get(`/api/investigate/${currentCategoryName.value}/${encodeURIComponent(id)}`);
+        investigateResults.value = res.data;
+        investigateDialogOpen.value = true;
+    } catch (e) {
+        console.error('Investigate failed:', e);
+    } finally {
+        investigateLoading.value = false;
+    }
+}
 
 function domainsByCategory(cat) {
     return (config?.domains || []).filter(d => d.category === cat);
@@ -296,6 +381,78 @@ nav a.router-link-active {
     padding-bottom: 0.75rem;
     margin-bottom: 0.75rem;
     border-bottom: 1px solid var(--wa-color-neutral-200);
+}
+.top-bar-title {
+    margin: 0;
+    margin-left: 0.5rem;
+    display: inline-block;
+    vertical-align: middle;
+    font-size: 1.1rem;
+    text-transform: uppercase;
+    color: var(--wa-color-neutral-600);
+    letter-spacing: 1px;
+    white-space: nowrap;
+}
+.top-bar-spacer {
+    flex: 1;
+}
+.investigate-bar {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+}
+.investigate-bar wa-input {
+    width: 180px;
+}
+
+/* Investigate Results Dialog */
+.investigate-result {
+    margin-bottom: 0.75rem;
+}
+.investigate-domain {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 0.75rem;
+    border-left: 4px solid var(--wa-color-neutral-300);
+    background: var(--wa-color-neutral-50);
+    border-radius: 0 6px 6px 0;
+}
+.investigate-domain-name {
+    font-weight: 600;
+    font-size: 0.95rem;
+}
+.investigate-found .investigate-domain {
+    background: rgba(16, 185, 129, 0.06);
+}
+.investigate-missing .investigate-domain {
+    background: var(--wa-color-neutral-50);
+}
+.investigate-identity {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.25rem 1rem;
+    padding: 0.4rem 0.75rem 0.4rem 1.5rem;
+    font-size: 0.85rem;
+}
+.investigate-field {
+    display: flex;
+    gap: 0.3rem;
+}
+.investigate-key {
+    color: var(--wa-color-neutral-500);
+    font-weight: 500;
+}
+.investigate-key::after {
+    content: ':';
+}
+.investigate-val {
+    color: var(--wa-color-neutral-800);
+}
+.investigate-error {
+    padding: 0.25rem 0.75rem 0.25rem 1.5rem;
+    font-size: 0.85rem;
+    color: var(--wa-color-danger-600);
 }
 
 /* Sidebar Collapsed State (Desktop) */
