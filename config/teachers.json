@@ -23,6 +23,13 @@
       "name": "schulkonsole-teacher",
       "titel": "Schulkonsole",
       "category": "teachers",
+      "actions": [
+        {
+          "name": "mailcowKuerzel",
+          "run": "mailcow-teacher-initials",
+          "icon": "envelope-at"
+        }
+      ],
       "color": "#00965E"
     },
     {

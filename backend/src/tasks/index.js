@@ -9,6 +9,7 @@ const registry = {
     'dummy-random-modifications': new (require('../students/tasks/DummyRandomModificationsTask'))(),
     'untis-generate-import': new (require('../students/tasks/UntisGenerateImportTask'))(),
     'untis-teacher-external-ids': require('../teachers/tasks/UntisTeacherExternalIdsTask'),
+    'mailcow-teacher-initials': require('../teachers/tasks/MailcowTeacherInitialsTask'),
     'web-untis-set-exit-dates': new (require('../students/tasks/WebUntisSetExitDatesTask'))(),
     'web-untis-guardian-sync': new (require('../students/tasks/WebUntisGuardianSyncTask'))(),
     'web-untis-majority': new (require('../students/tasks/WebUntisMajorityTask'))(),
