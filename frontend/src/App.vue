@@ -58,12 +58,9 @@
         <h2 class="top-bar-title">{{ currentCategoryLabel || 'Synx' }}</h2>
         <div class="top-bar-spacer"></div>
         <div v-if="currentCategoryName" class="investigate-bar">
-          <wa-input size="small" placeholder="ID nachschlagen …" :value="investigateId" @wa-input="investigateId = $event.target.value" @input="investigateId = $event.target.value" @keydown.enter="runInvestigate" clearable>
-            <wa-icon slot="prefix" name="search"></wa-icon>
-          </wa-input>
-          <wa-button size="small" variant="neutral" @click="runInvestigate" :loading="investigateLoading">
-            <wa-icon slot="prefix" name="binoculars"></wa-icon>
-            Investigate
+          <wa-input size="small" placeholder="ID nachschlagen …" :value="investigateId" @wa-input="investigateId = $event.target.value" @input="investigateId = $event.target.value" @keydown.enter="runInvestigate" clearable></wa-input>
+          <wa-button size="small" variant="neutral" @click="runInvestigate" :disabled="!investigateId || investigateLoading">
+            <wa-icon name="binoculars"></wa-icon>
           </wa-button>
         </div>
       </header>

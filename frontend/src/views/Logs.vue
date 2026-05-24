@@ -1,7 +1,7 @@
 <template>
   <div class="logs">
     <div style="display: flex; justify-content: space-between; align-items: center;">
-      <h2>Sync Logs</h2>
+      <h2>Logs</h2>
       <wa-button variant="neutral" @click="fetchLogs" :disabled="loading" size="small">
         <wa-icon name="arrow-clockwise" slot="prefix"></wa-icon> Aktualisieren
       </wa-button>

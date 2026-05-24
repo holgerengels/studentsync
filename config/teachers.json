@@ -12,7 +12,7 @@
       "category": "teachers",
       "actions": [
         {
-          "name": "externIDs",
+          "name": "Externe IDs",
           "run": "untis-teacher-external-ids",
           "icon": "person-badge"
         }
@@ -25,7 +25,7 @@
       "category": "teachers",
       "actions": [
         {
-          "name": "mailcowKuerzel",
+          "name": "MailCow Kürzel",
           "run": "mailcow-teacher-initials",
           "icon": "envelope-at"
         }
