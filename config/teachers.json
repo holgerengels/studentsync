@@ -44,8 +44,8 @@
       "name": "asv-teacher--untis-teacher",
       "titel": "ASV → Untis",
       "category": "teachers",
-      "source": "ASV",
-      "target": "Untis",
+      "source": "ASV-Teacher",
+      "target": "Untis-Teacher",
       "sourceDomain": "asv-teacher",
       "targetDomain": "untis-teacher"
     },
@@ -53,8 +53,8 @@
       "name": "asv-teacher--schulkonsole-teacher",
       "titel": "ASV → Schulkonsole",
       "category": "teachers",
-      "source": "ASV",
-      "target": "Schulkonsole",
+      "source": "ASV-Teacher",
+      "target": "Schulkonsole-Teacher",
       "sourceDomain": "asv-teacher",
       "targetDomain": "schulkonsole-teacher"
     },
@@ -62,11 +62,72 @@
       "name": "asv-teacher--mailcow-teacher",
       "titel": "ASV → MailCow",
       "category": "teachers",
-      "source": "ASV",
-      "target": "MailCow",
+      "source": "ASV-Teacher",
+      "target": "MailCow-Teacher",
       "sourceDomain": "asv-teacher",
       "targetDomain": "mailcow-teacher"
     }
   ],
-  "tasks": []
+  "tasks": [
+    {
+      "name": "asv-teacher-untis-teacher-diff",
+      "titel": "Diff",
+      "description": "Vergleicht die Lehrer:innendaten zwischen ASV und Untis.",
+      "class": "DiffTask",
+      "source": "ASV-Teacher",
+      "target": "Untis-Teacher"
+    },
+    {
+      "name": "asv-teacher-untis-teacher-sync",
+      "titel": "Sync",
+      "description": "Kein Sync vorhanden",
+      "class": "SyncTask",
+      "source": "ASV-Teacher",
+      "target": "Untis-Teacher"
+    },
+    {
+      "name": "asv-teacher-schulkonsole-teacher-diff",
+      "titel": "Diff",
+      "description": "Vergleicht die Lehrerdaten zwischen ASV und Schulkonsole.",
+      "class": "DiffTask",
+      "source": "ASV-Teacher",
+      "target": "Schulkonsole-Teacher"
+    },
+    {
+      "name": "asv-teacher-schulkonsole-teacher-sync",
+      "titel": "Sync",
+      "description": "Direkter Sync nicht möglich (Ziel-Domain ist schreibgeschützt). Nutzen Sie stattdessen die Aktion 'MailCow Kürzel'.",
+      "class": "SyncTask",
+      "source": "ASV-Teacher",
+      "target": "Schulkonsole-Teacher"
+    },
+    {
+      "name": "asv-teacher-mailcow-teacher-diff",
+      "titel": "Diff",
+      "description": "Vergleicht die Lehrerdaten zwischen ASV und MailCow.",
+      "class": "DiffTask",
+      "source": "ASV-Teacher",
+      "target": "MailCow-Teacher"
+    },
+    {
+      "name": "asv-teacher-mailcow-teacher-sync",
+      "titel": "Sync",
+      "description": "Direkter Sync nicht möglich (Ziel-Domain ist schreibgeschützt).",
+      "class": "SyncTask",
+      "source": "ASV-Teacher",
+      "target": "MailCow-Teacher"
+    },
+    {
+      "name": "untis-teacher-external-ids",
+      "titel": "Externe IDs",
+      "description": "Schreibt fehlende externe IDs (Foreign Keys) der Lehrer in Untis basierend auf den E-Mail-Adressen.",
+      "class": "UntisTeacherExternalIdsTask"
+    },
+    {
+      "name": "mailcow-teacher-initials",
+      "titel": "MailCow Kürzel",
+      "description": "Trägt die Lehrer-Kürzel (aus Schulkonsole) als Custom Attributes in die MailCow-Postfächer ein.",
+      "class": "MailcowTeacherInitialsTask"
+    }
+  ]
 }

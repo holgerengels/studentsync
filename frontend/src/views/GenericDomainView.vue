@@ -12,9 +12,14 @@
         </div>
         <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
             <template v-if="domain.actions && domain.actions.length">
-                <wa-button v-for="act in domain.actions" :key="act.name" variant="neutral" size="small" @click="runAction(act)" :loading="actionLoading === act.name">
-                    {{ act.name }}
-                </wa-button>
+                <template v-for="(act, index) in domain.actions" :key="act.name">
+                    <wa-button :id="`domain-action-btn-detail-${index}`" variant="neutral" size="small" @click="runAction(act)" :loading="actionLoading === act.name">
+                        {{ act.name }}
+                    </wa-button>
+                    <wa-tooltip :for="`domain-action-btn-detail-${index}`" v-if="getActionDescription(act)">
+                        {{ getActionDescription(act) }}
+                    </wa-tooltip>
+                </template>
             </template>
             <wa-button @click="refreshData" :loading="loading" variant="neutral" size="small">
                 <wa-icon slot="prefix" name="arrow-clockwise"></wa-icon>
@@ -70,7 +75,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, watch } from 'vue';
+import { ref, computed, onMounted, watch, inject } from 'vue';
 import axios from 'axios';
 import { getBrandColor } from '../utils/brandColors.js';
 import { useToast } from '../composables/useToast';
@@ -81,6 +86,16 @@ const props = defineProps({
     domain: Object,
     category: Object
 });
+
+const config = inject('synxConfig', { tasks: [] });
+
+function getActionDescription(act) {
+    const actionKey = act.endpoint || act.run || act.task;
+    if (!actionKey) return '';
+    const taskName = actionKey.startsWith('/') ? actionKey.split('/').pop() : actionKey;
+    const task = (config?.tasks || []).find(t => t.name === taskName);
+    return task?.description || '';
+}
 
 const identities = ref([]);
 const loading = ref(false);

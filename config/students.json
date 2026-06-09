@@ -92,6 +92,7 @@
     {
       "name": "asv-schulkonsole-diff",
       "titel": "Diff",
+      "description": "Vergleicht die Schülerdaten zwischen ASV und Schulkonsole.",
       "class": "DiffTask",
       "source": "ASV",
       "target": "Schulkonsole"
@@ -99,20 +100,39 @@
     {
       "name": "asv-schulkonsole-sync",
       "titel": "Sync",
+      "description": "Synchronisiert die Schülerdaten von ASV in die Schulkonsole (PaedML).",
       "class": "SyncTask",
       "source": "ASV",
       "target": "Schulkonsole"
     },
     {
+      "name": "asv-untis-diff",
+      "titel": "Diff",
+      "description": "Vergleicht die Schülerdaten zwischen ASV und Untis.",
+      "class": "DiffTask",
+      "source": "ASV",
+      "target": "Untis"
+    },
+    {
       "name": "asv-untis-sync",
       "titel": "Sync",
+      "description": "Synchronisiert Name, Geburtsdatum und Geschlecht der Schüler:innen von ASV nach Untis.",
       "class": "SyncTask",
       "source": "ASV",
       "target": "Untis"
     },
     {
+      "name": "asv-webuntis-diff",
+      "titel": "Diff",
+      "description": "Vergleicht die Schülerdaten zwischen ASV und WebUntis.",
+      "class": "DiffTask",
+      "source": "ASV",
+      "target": "WebUntis"
+    },
+    {
       "name": "asv-webuntis-sync",
       "titel": "Sync",
+      "description": "Synchronisiert Name, Geburtsdatum und Geschlecht der Schüler:innen von ASV nach WebUntis.",
       "class": "SyncTask",
       "source": "ASV",
       "target": "WebUntis"
@@ -120,8 +140,45 @@
     {
       "name": "asv-generate-ids",
       "titel": "IDs generieren",
+      "description": "Erzeugt in ASV Benutzerkennungen für neue Schüler:innen.",
       "class": "ASVGenerateIDsTask",
       "schedule": "0 2 * * *"
+    },
+    {
+      "name": "untis-generate-import",
+      "titel": "Untis Import generieren",
+      "description": "Generiert eine CSV-Importdatei für Untis auf Basis der ASV-Daten.",
+      "class": "UntisGenerateImportTask"
+    },
+    {
+      "name": "web-untis-set-exit-dates",
+      "titel": "WebUntis Austrittsdatum setzen",
+      "description": "Trägt die Austrittsdaten für Schüler:innen in WebUntis ein.",
+      "class": "WebUntisSetExitDatesTask"
+    },
+    {
+      "name": "web-untis-guardian-sync",
+      "titel": "WebUntis Erziehungsberechtigte syncen",
+      "description": "Synchronisiert die Erziehungsberechtigten und Kontakte nach WebUntis.",
+      "class": "WebUntisGuardianSyncTask"
+    },
+    {
+      "name": "web-untis-majority",
+      "titel": "WebUntis Volljährigkeit syncen",
+      "description": "Aktualisiert den Status zur Volljährigkeit der Schüler:innen in WebUntis.",
+      "class": "WebUntisMajorityTask"
+    },
+    {
+      "name": "nextcloud-remnants-list",
+      "titel": "NextCloud Karteileichen auflisten",
+      "description": "Listet verwaiste NextCloud-Ordner und Karteileichen auf.",
+      "class": "NextcloudRemnantsListTask"
+    },
+    {
+      "name": "nextcloud-remnants-purge",
+      "titel": "NextCloud Karteileichen löschen",
+      "description": "Löscht verwaiste NextCloud-Ordner und bereinigt die Daten.",
+      "class": "NextcloudRemnantsPurgeTask"
     }
   ]
 }

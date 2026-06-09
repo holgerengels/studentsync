@@ -4,6 +4,7 @@ const { getDomain, getAllDomains } = require('./domains/registry');
 const DiffTask = require('./tasks/DiffTask');
 const SyncTask = require('./tasks/SyncTask');
 const config = require('./config');
+const ManagableDomain = require('./domains/ManagableDomain');
 const { login, refreshAccessToken, verifyToken } = require('./auth');
 
 router.get('/health', (req, res) => res.json({ status: 'ok' }));
@@ -68,7 +69,13 @@ router.get('/config/ui', verifyToken, (req, res) => {
             search: c.search,
             filter: c.filter
         })),
-        domains: (config.domains || []).filter(d => accessibleNames.has(d.category)),
+        domains: (config.domains || []).filter(d => accessibleNames.has(d.category)).map(d => {
+            const domainInstance = getDomain(d.name);
+            return {
+                ...d,
+                managable: domainInstance instanceof ManagableDomain
+            };
+        }),
         diffs: (config.diffs || []).filter(d => accessibleNames.has(d.category)),
         tasks: config.tasks || [],
         devMode: isDevMode()

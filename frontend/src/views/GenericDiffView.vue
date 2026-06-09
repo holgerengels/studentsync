@@ -10,14 +10,24 @@
         <div style="flex-grow: 1;"></div>
         <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
             <template v-if="diff.actions && diff.actions.length">
-                <wa-button v-for="act in diff.actions" :key="act.name" variant="neutral" size="small" @click="runAction(act)" :loading="actionLoading === act.name">
-                    {{ act.name }}
-                </wa-button>
+                <template v-for="(act, index) in diff.actions" :key="act.name">
+                    <wa-button :id="`action-btn-detail-${index}`" variant="neutral" size="small" @click="runAction(act)" :loading="actionLoading === act.name">
+                        {{ act.name }}
+                    </wa-button>
+                    <wa-tooltip :for="`action-btn-detail-${index}`" v-if="getActionDescription(act)">
+                        {{ getActionDescription(act) }}
+                    </wa-tooltip>
+                </template>
             </template>
-            <wa-button @click="runSync" :loading="actionLoading === 'sync'" variant="primary" size="small">
-                <wa-icon slot="prefix" name="arrow-right-circle"></wa-icon>
-                Synchronisieren
-            </wa-button>
+            <template v-if="isTargetManagable()">
+                <wa-button id="sync-btn-detail" @click="runSync" :loading="actionLoading === 'sync'" variant="primary" size="small">
+                    <wa-icon slot="prefix" name="arrow-right-circle"></wa-icon>
+                    Synchronisieren
+                </wa-button>
+                <wa-tooltip for="sync-btn-detail" v-if="getSyncDescription()">
+                    {{ getSyncDescription() }}
+                </wa-tooltip>
+            </template>
             <wa-button @click="calculateDiff(true)" :loading="loading" variant="neutral" size="small">
                 <wa-icon slot="prefix" name="arrow-clockwise"></wa-icon>
                 Neu berechnen
@@ -255,6 +265,25 @@ async function runAction(act) {
     } finally {
         actionLoading.value = '';
     }
+}
+
+function getActionDescription(act) {
+    const actionKey = act.download || act.endpoint || act.run || act.task;
+    if (!actionKey) return '';
+    const taskName = actionKey.startsWith('/') ? actionKey.split('/').pop() : actionKey;
+    const task = (config?.tasks || []).find(t => t.name === taskName);
+    return task?.description || '';
+}
+
+function getSyncDescription() {
+    const task = (config?.tasks || []).find(x => x.class === 'SyncTask' && x.source === props.diff.source && x.target === props.diff.target);
+    return task?.description || '';
+}
+
+function isTargetManagable() {
+    const { target } = getDiffDomains(props.diff);
+    const domain = (config?.domains || []).find(d => d.name === target);
+    return domain ? domain.managable === true : false;
 }
 </script>
 

@@ -15,9 +15,14 @@
     
     <div slot="footer" style="display: flex; justify-content: flex-end; gap: 0.25rem; align-items: center; flex-wrap: wrap;">
       <template v-if="domain.actions && domain.actions.length">
-        <wa-button v-for="act in domain.actions" :key="act.name" variant="neutral" size="small" @click="$emit('run-action', act, domain.name)" style="margin-right: auto;">
-          {{ act.name }}
-        </wa-button>
+        <template v-for="(act, index) in domain.actions" :key="act.name">
+          <wa-button :id="`domain-action-btn-${domain.name}-${index}`" variant="neutral" size="small" @click="$emit('run-action', act, domain.name)" style="margin-right: auto;">
+            {{ act.name }}
+          </wa-button>
+          <wa-tooltip :for="`domain-action-btn-${domain.name}-${index}`" v-if="getActionDescription(act)">
+            {{ getActionDescription(act) }}
+          </wa-tooltip>
+        </template>
       </template>
       <div style="flex-grow: 1" v-if="!domain.actions || !domain.actions.length"></div>
       
@@ -33,14 +38,25 @@
 </template>
 
 <script setup>
+import { inject } from 'vue';
 import { getBrandColor } from '../utils/brandColors.js';
 
-defineProps({
+const props = defineProps({
   domain: { type: Object, required: true },
   count: { type: [Number, String], default: '-' },
   loading: { type: Boolean, default: false }
 });
 defineEmits(['run-action', 'refresh']);
+
+const config = inject('synxConfig', { tasks: [] });
+
+function getActionDescription(act) {
+  const actionKey = act.download || act.endpoint || act.run || act.task;
+  if (!actionKey) return '';
+  const taskName = actionKey.startsWith('/') ? actionKey.split('/').pop() : actionKey;
+  const task = (config?.tasks || []).find(t => t.name === taskName);
+  return task?.description || '';
+}
 </script>
 
 <style scoped>

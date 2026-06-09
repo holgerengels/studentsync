@@ -45,7 +45,7 @@ describe('SyncTask', () => {
         const report = await task.execute({ forceRefresh: true });
 
         expect(report.details.changed).toHaveLength(1);
-        expect(report.details.removed).toBeUndefined();
+        expect(report.details.removed).toHaveLength(0);
 
         // Verify the name was corrected
         mocks.dummy.invalidate();
@@ -110,7 +110,7 @@ describe('SyncTask', () => {
         const html = task.format(report);
         expect(html).toContain('Added: 2');
         expect(html).toContain('Changed: 1');
-        expect(html).not.toContain('DEV MODE');
+        expect(html).not.toContain('DevMode');
     });
 
     it('format() shows devMode indicator', () => {
@@ -121,6 +121,6 @@ describe('SyncTask', () => {
             devMode: true
         };
         const html = task.format(report);
-        expect(html).toContain('DEV MODE');
+        expect(html).toContain('DevMode');
     });
 });

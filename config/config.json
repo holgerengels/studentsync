@@ -1,6 +1,6 @@
 {
   "settings": {
-    "devMode": false
+    "devMode": true
   },
   "asv": {
     "schuljahr": "2025/26"

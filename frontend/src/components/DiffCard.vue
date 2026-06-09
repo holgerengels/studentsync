@@ -54,15 +54,25 @@
     <div slot="footer" style="display: flex; justify-content: flex-end; gap: 0.25rem; align-items: center; flex-wrap: wrap;">
         <!-- Custom tasks attached to diffs -->
         <template v-if="diff.actions">
-            <wa-button v-for="act in diff.actions" :key="act.name" variant="neutral" size="small" @click="$emit('run-action', act, diff.name)" style="margin-right: auto;">
-                {{ act.name }}
-            </wa-button>
+            <template v-for="(act, index) in diff.actions" :key="act.name">
+                <wa-button :id="`action-btn-${diff.name}-${index}`" variant="neutral" size="small" @click="$emit('run-action', act, diff.name)" style="margin-right: auto;">
+                    {{ act.name }}
+                </wa-button>
+                <wa-tooltip :for="`action-btn-${diff.name}-${index}`" v-if="getActionDescription(act)">
+                    {{ getActionDescription(act) }}
+                </wa-tooltip>
+            </template>
         </template>
         <div style="flex-grow: 1" v-if="!diff.actions || !diff.actions.length"></div>
         
-        <wa-button title="Synchronisieren" variant="text" size="small" @click="$emit('sync', diff)" :disabled="loading">
-            <wa-icon name="arrow-right-circle" style="font-size: 1rem; stroke: currentColor; stroke-width: 0.5px;"></wa-icon>
-        </wa-button>
+        <template v-if="isTargetManagable()">
+            <wa-button :id="`sync-btn-${diff.name}`" title="Synchronisieren" variant="text" size="small" @click="$emit('sync', diff)" :disabled="loading">
+                <wa-icon name="arrow-right-circle" style="font-size: 1rem; stroke: currentColor; stroke-width: 0.5px;"></wa-icon>
+            </wa-button>
+            <wa-tooltip :for="`sync-btn-${diff.name}`" v-if="getSyncDescription()">
+                {{ getSyncDescription() }}
+            </wa-tooltip>
+        </template>
         
         <wa-button title="Details ansehen" variant="text" size="small" @click="$router.push('/diff/'+diff.name)">
             <wa-icon name="list" style="font-size: 1rem; stroke: currentColor; stroke-width: 0.5px;"></wa-icon>
@@ -78,15 +88,35 @@
 <script setup>
 import { inject } from 'vue';
 import { getBrandColor } from '../utils/brandColors.js';
+import { getDiffDomains } from '../utils/diffDomains.js';
 
 const config = inject('synxConfig', { domains: [] });
 
-defineProps({
+const props = defineProps({
   diff: { type: Object, required: true },
   stats: { type: [Object, String], default: () => ({}) },
   loading: { type: Boolean, default: false }
 });
 defineEmits(['run-action', 'refresh', 'sync']);
+
+function getActionDescription(act) {
+  const actionKey = act.download || act.endpoint || act.run || act.task;
+  if (!actionKey) return '';
+  const taskName = actionKey.startsWith('/') ? actionKey.split('/').pop() : actionKey;
+  const task = (config?.tasks || []).find(t => t.name === taskName);
+  return task?.description || '';
+}
+
+function getSyncDescription() {
+  const task = (config?.tasks || []).find(x => x.class === 'SyncTask' && x.source === props.diff.source && x.target === props.diff.target);
+  return task?.description || '';
+}
+
+function isTargetManagable() {
+  const { target } = getDiffDomains(props.diff);
+  const domain = (config?.domains || []).find(d => d.name === target);
+  return domain ? domain.managable === true : false;
+}
 </script>
 
 <style scoped>

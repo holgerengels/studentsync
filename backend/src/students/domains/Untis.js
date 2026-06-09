@@ -2,12 +2,12 @@ const mysql = require('mysql2/promise');
 const fs = require('fs');
 const path = require('path');
 const Identity = require('../../domains/Identity');
-const Domain = require('../../domains/Domain');
+const ManagableDomain = require('../../domains/ManagableDomain');
 
 const config = require('../../config');
 
-class Untis extends Domain {
-    get supportedProperties() { return ['userId', 'firstName', 'lastName', 'birthday', 'clazz']; }
+class Untis extends ManagableDomain {
+    get supportedProperties() { return ['userId', 'firstName', 'lastName', 'birthday', 'gender', 'clazz']; }
     get cacheTTL() { return 3600000; } // 1 hour
 
     constructor() {
@@ -67,6 +67,11 @@ class Untis extends Domain {
                         birthday = d.toISOString().split('T')[0];
                     }
                 }
+                let gender = null;
+                if (r.Flags) {
+                    if (r.Flags.includes('M')) gender = 'M';
+                    else if (r.Flags.includes('W')) gender = 'W';
+                }
                 return new Identity(
                     r.Name, // userId mapped to Name in Untis
                     r.FirstName,
@@ -74,6 +79,7 @@ class Untis extends Domain {
                     {
                         id: r.STUDENT_ID,
                         birthday: birthday,
+                        gender: gender,
                         clazz: classes[r.CLASS_ID]
                     }
                 );
@@ -81,6 +87,38 @@ class Untis extends Domain {
         } catch(e) {
             console.error('Untis query failed', e);
             throw new Error('Untis query failed: ' + e.message);
+        } finally {
+            if (connection) await connection.end();
+        }
+    }
+
+    async changeIdentity(identity) {
+        let connection;
+        try {
+            connection = await mysql.createConnection(this.dbConfig);
+        } catch (e) {
+            throw new Error('Untis DB Connection failed: ' + e.message);
+        }
+
+        try {
+            let birthDateStr = null;
+            if (identity.birthday) {
+                birthDateStr = identity.birthday.replace(/-/g, '');
+            }
+
+            let flags = null;
+            if (identity.gender === 'M') flags = 'M';
+            else if (identity.gender === 'W') flags = 'W';
+
+            await connection.execute(
+                "UPDATE Student s SET s.FirstName = ?, s.Longname = ?, s.Flags = ?, s.BirthDate = ? WHERE s.SCHOOL_ID = ? AND s.VERSION_ID = ? AND s.Name = ?",
+                [identity.firstName, identity.lastName, flags, birthDateStr, this.schulid, this.version, identity.userId]
+            );
+
+            this.invalidate();
+        } catch (e) {
+            console.error('Untis update query failed', e);
+            throw new Error('Untis update query failed: ' + e.message);
         } finally {
             if (connection) await connection.end();
         }
