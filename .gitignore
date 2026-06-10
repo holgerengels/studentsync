@@ -5,6 +5,8 @@ dist/
 target/
 .idea/
 settings.json
+config.json
+config/config.json
 default.json
 sync-config.json
 sync-config-prod.json
