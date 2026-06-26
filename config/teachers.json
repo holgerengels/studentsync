@@ -121,13 +121,15 @@
       "name": "untis-teacher-external-ids",
       "titel": "Externe IDs",
       "description": "Schreibt fehlende externe IDs (Foreign Keys) der Lehrer in Untis basierend auf den E-Mail-Adressen.",
-      "class": "UntisTeacherExternalIdsTask"
+      "class": "UntisTeacherExternalIdsTask",
+      "schedule": "10 5 * * *"
     },
     {
       "name": "mailcow-teacher-initials",
       "titel": "MailCow Kürzel",
       "description": "Trägt die Lehrer-Kürzel (aus Schulkonsole) als Custom Attributes in die MailCow-Postfächer ein.",
-      "class": "MailcowTeacherInitialsTask"
+      "class": "MailcowTeacherInitialsTask",
+      "schedule": "15 5 * * *"
     }
   ]
 }

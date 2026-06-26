@@ -103,7 +103,8 @@
       "description": "Synchronisiert die Schülerdaten von ASV in die Schulkonsole (PaedML).",
       "class": "SyncTask",
       "source": "ASV",
-      "target": "Schulkonsole"
+      "target": "Schulkonsole",
+      "schedule": "5 7-18 * * *"
     },
     {
       "name": "asv-untis-diff",
@@ -119,7 +120,8 @@
       "description": "Synchronisiert Name, Geburtsdatum und Geschlecht der Schüler:innen von ASV nach Untis.",
       "class": "SyncTask",
       "source": "ASV",
-      "target": "Untis"
+      "target": "Untis",
+      "schedule": "6 7-18 * * *"
     },
     {
       "name": "asv-webuntis-diff",
@@ -135,14 +137,15 @@
       "description": "Synchronisiert Name, Geburtsdatum und Geschlecht der Schüler:innen von ASV nach WebUntis.",
       "class": "SyncTask",
       "source": "ASV",
-      "target": "WebUntis"
+      "target": "WebUntis",
+      "schedule": "7 7-18 * * *"
     },
     {
       "name": "asv-generate-ids",
       "titel": "IDs generieren",
       "description": "Erzeugt in ASV Benutzerkennungen für neue Schüler:innen.",
       "class": "ASVGenerateIDsTask",
-      "schedule": "0 2 * * *"
+      "schedule": "0,15,30,45 7-17 * * *"
     },
     {
       "name": "untis-generate-import",
@@ -160,13 +163,15 @@
       "name": "web-untis-guardian-sync",
       "titel": "WebUntis Erziehungsberechtigte syncen",
       "description": "Synchronisiert die Erziehungsberechtigten und Kontakte nach WebUntis.",
-      "class": "WebUntisGuardianSyncTask"
+      "class": "WebUntisGuardianSyncTask",
+      "schedule": "0 5 * * *"
     },
     {
       "name": "web-untis-majority",
       "titel": "WebUntis Volljährigkeit syncen",
       "description": "Aktualisiert den Status zur Volljährigkeit der Schüler:innen in WebUntis.",
-      "class": "WebUntisMajorityTask"
+      "class": "WebUntisMajorityTask",
+      "schedule": "5 5 * * *"
     },
     {
       "name": "nextcloud-remnants-list",

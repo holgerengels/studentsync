@@ -30,11 +30,18 @@
   ],
   "tasks": [
     {
+      "name": "fachnetz-profile-maintenance",
+      "titel": "Profile Maintenance",
+      "class": "ProfileMaintenanceTask",
+      "schedule": "20 5 * * *"
+    },
+    {
       "name": "fachnetz-arbeitsheft-sync",
       "titel": "Sync",
       "class": "FachnetzArbeitsheftSyncTask",
       "source": "fachnetz",
-      "target": "Arbeitsheft"
+      "target": "Arbeitsheft",
+      "schedule": "25 5 * * *"
     }
   ]
 }
