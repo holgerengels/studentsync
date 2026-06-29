@@ -14,17 +14,17 @@ class Schulkonsole extends ManagableDomain {
         this.apiURL = c.apiURL || process.env.SCHULKONSOLE_API;
         if (!this.apiURL) throw new Error('Schulkonsole apiURL missing');
         if (!this.apiURL.endsWith('/')) this.apiURL += '/';
-        
+
         this.tokenURL = c.tokenURL || process.env.SCHULKONSOLE_TOKEN_URL;
         if (!this.tokenURL) throw new Error('Schulkonsole tokenURL missing');
-        
+
         this.user = c.user || process.env.SCHULKONSOLE_USER;
         this.password = c.password || process.env.SCHULKONSOLE_PASSWORD;
 
         if (!this.user || !this.password) {
             throw new Error('Schulkonsole configuration incomplete. Missing user or password.');
         }
-        
+
         this.axiosInstance = axios.create({
             httpsAgent: new https.Agent({ rejectUnauthorized: false })
         });
@@ -37,7 +37,7 @@ class Schulkonsole extends ManagableDomain {
         if (this.authHeader && Date.now() - this.authTime < 3600000) return;
         const tokenRes = await this.axiosInstance.post(this.tokenURL, {
             grant_type: 'password', username: this.user, password: this.password
-        }, { headers: { 'Content-Type': 'application/x-www-form-urlencoded' }});
+        }, { headers: { 'Content-Type': 'application/x-www-form-urlencoded' } });
         this.authHeader = `${tokenRes.data.token_type} ${tokenRes.data.access_token}`;
         this.authTime = Date.now();
 
@@ -86,15 +86,15 @@ class Schulkonsole extends ManagableDomain {
         let classId = this.classes[className.toLowerCase()];
         if (classId) return classId; // already exists
 
-        const payload = { 
+        const payload = {
             name: className,
             schoolTypeId: 1,
-            schoolYear: "2025"
+            schoolYear: config.schulkonsole?.schuljahr
         };
         const res = await this.axiosInstance.post(`${this.apiURL}school/schoolClasses`, payload, {
             headers: { 'Authorization': this.authHeader }
         });
-        
+
         classId = res.data.id;
         this.classes[className.toLowerCase()] = classId;
         return classId;
@@ -107,9 +107,9 @@ class Schulkonsole extends ManagableDomain {
 
         await this.axiosInstance.delete(`${this.apiURL}school/schoolClasses`, {
             headers: { 'Authorization': this.authHeader },
-            data: [ classId ]
+            data: [classId]
         });
-        
+
         delete this.classes[className.toLowerCase()];
     }
 
@@ -117,7 +117,7 @@ class Schulkonsole extends ManagableDomain {
         await this.authenticate();
         const classId = this.classes[(identity.clazz || '').toLowerCase()];
         if (!classId) throw new Error(`Class ${identity.clazz} not found in Schulkonsole. Call addClass first.`);
-        
+
         const payload = {
             schoolType: "1", comments: "", externalIdentifier: "", mySite: "",
             userName: identity.userId, givenName: identity.firstName, surname: identity.lastName,
@@ -127,7 +127,7 @@ class Schulkonsole extends ManagableDomain {
             passwordPolicy: "1",
             email: `${identity.userId}@musterschule.schule.paedml`
         };
-        
+
         const res = await this.axiosInstance.post(`${this.apiURL}students`, payload, {
             headers: { 'Authorization': this.authHeader }
         });
@@ -143,7 +143,7 @@ class Schulkonsole extends ManagableDomain {
         if (!existingId) throw new Error(`Student ${identity.userId} not found. Must run getIdentities() first.`);
 
         const classId = this.classes[(identity.clazz || '').toLowerCase()];
-        
+
         const payload = {
             schoolType: "1", comments: "", externalIdentifier: "", mySite: "",
             userName: identity.userId, givenName: identity.firstName, surname: identity.lastName,
@@ -151,7 +151,7 @@ class Schulkonsole extends ManagableDomain {
             isInternetLocked: false, isDeactivated: false,
             homeDirectory: `\\\\SP01\\MLData\\Benutzer\\SUS\\${identity.userId}`
         };
-        
+
         await this.axiosInstance.put(`${this.apiURL}students/${existingId}`, payload, {
             headers: { 'Authorization': this.authHeader }
         });
@@ -164,9 +164,9 @@ class Schulkonsole extends ManagableDomain {
 
         await this.axiosInstance.delete(`${this.apiURL}students`, {
             headers: { 'Authorization': this.authHeader },
-            data: [ existingId ]
+            data: [existingId]
         });
-        
+
         delete this.studentIds[identity.userId.toLowerCase()];
     }
 }

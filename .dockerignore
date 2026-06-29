@@ -1,0 +1,14 @@
+.git
+.gitignore
+.idea
+node_modules
+**/node_modules
+config/settings.json
+config/config.json
+config/*.csv
+frontend/dist
+frontend/dev-dist
+deploy/config
+.env
+.env.*
+
