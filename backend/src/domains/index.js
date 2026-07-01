@@ -30,6 +30,7 @@ if (useMocks) {
         'untis-teacher': tryCreate('untis-teacher', () => require('../teachers/domains/UntisTeacher')),
         'schulkonsole-teacher': tryCreate('schulkonsole-teacher', () => require('../teachers/domains/SchulkonsoleTeacher')),
         'mailcow-teacher': tryCreate('mailcow-teacher', () => require('../teachers/domains/MailCowTeacher')),
+        'verwaltungsnetz-teacher': tryCreate('verwaltungsnetz-teacher', () => require('../teachers/domains/VerwaltungsnetzTeacher')),
         // Fachnetz
         fachnetz: tryCreate('fachnetz', () => require('../fachnetz/domains/Fachnetz')),
         arbeitsheft: tryCreate('arbeitsheft', () => require('../fachnetz/domains/Arbeitsheft')),

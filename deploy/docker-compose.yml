@@ -1,8 +1,9 @@
 services:
   app:
     image: ghcr.io/holgerengels/synx:latest
-    ports:
-      - "3001:3001"
+    container_name: synx_app
+    expose:
+      - "3001"
     volumes:
       - ./config:/config
     extra_hosts:
@@ -11,11 +12,29 @@ services:
       - mongo
     restart: always
 
+  caddy:
+    image: caddy:latest
+    container_name: synx_caddy
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./config/Caddyfile:/etc/caddy/Caddyfile
+      - ./config:/config
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      - app
+    restart: always
+
   mongo:
     image: mongo:latest
+    container_name: synx_mongo
     volumes:
       - mongo-data:/data/db
     restart: always
 
 volumes:
   mongo-data:
+  caddy_data:
+  caddy_config:

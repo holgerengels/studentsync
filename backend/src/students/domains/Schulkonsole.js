@@ -29,20 +29,63 @@ class Schulkonsole extends ManagableDomain {
             httpsAgent: new https.Agent({ rejectUnauthorized: false })
         });
 
+        this.axiosInstance.interceptors.response.use(
+            response => response,
+            async error => {
+                const originalRequest = error.config;
+                const hasAuthHeader = originalRequest && originalRequest.headers &&
+                    (originalRequest.headers['Authorization'] || originalRequest.headers['authorization']);
+                if (
+                    error.response &&
+                    error.response.status === 401 &&
+                    originalRequest &&
+                    !originalRequest._retry &&
+                    hasAuthHeader &&
+                    !this.isAuthenticating
+                ) {
+                    originalRequest._retry = true;
+                    this.authHeader = null;
+                    this.authTime = 0;
+                    try {
+                        await this.authenticate();
+                        if (originalRequest.headers['Authorization']) {
+                            originalRequest.headers['Authorization'] = this.authHeader;
+                        }
+                        if (originalRequest.headers['authorization']) {
+                            originalRequest.headers['authorization'] = this.authHeader;
+                        }
+                        if (!originalRequest.headers['Authorization'] && !originalRequest.headers['authorization']) {
+                            originalRequest.headers['Authorization'] = this.authHeader;
+                        }
+                        return this.axiosInstance(originalRequest);
+                    } catch (authError) {
+                        return Promise.reject(authError);
+                    }
+                }
+                return Promise.reject(error);
+            }
+        );
+
         this.classes = {}; // maps lowercase name to ID
         this.studentIds = {}; // maps lowercase account to ID
+        this.isAuthenticating = false;
     }
 
     async authenticate() {
         if (this.authHeader && Date.now() - this.authTime < 3600000) return;
-        const tokenRes = await this.axiosInstance.post(this.tokenURL, {
-            grant_type: 'password', username: this.user, password: this.password
-        }, { headers: { 'Content-Type': 'application/x-www-form-urlencoded' } });
-        this.authHeader = `${tokenRes.data.token_type} ${tokenRes.data.access_token}`;
-        this.authTime = Date.now();
+        this.isAuthenticating = true;
+        try {
+            const tokenRes = await this.axiosInstance.post(this.tokenURL, {
+                grant_type: 'password', username: this.user, password: this.password
+            }, { headers: { 'Content-Type': 'application/x-www-form-urlencoded' } });
+            this.authHeader = `${tokenRes.data.token_type} ${tokenRes.data.access_token}`;
+            this.authTime = Date.now();
 
-        // Ensure classes are loaded alongside auth
-        await this.loadClasses();
+            // Ensure classes are loaded alongside auth
+            await this.loadClasses();
+        } finally {
+            this.isAuthenticating = false;
+        }
     }
 
     async loadClasses() {

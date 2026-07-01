@@ -19,8 +19,25 @@ class NextcloudService extends Domain {
         
         let hasAuth = false;
 
+        let keyContent = null;
         if (this.config.key) {
-            connectOptions.privateKey = fs.existsSync(this.config.key) ? fs.readFileSync(this.config.key, 'utf8') : this.config.key;
+            let keyPath = this.config.key;
+            if (keyPath.startsWith('/config/') && !fs.existsSync('/config')) {
+                const path = require('path');
+                keyPath = path.join(__dirname, '../../../../config', keyPath.substring(8));
+            }
+
+            if (fs.existsSync(keyPath)) {
+                keyContent = fs.readFileSync(keyPath, 'utf8');
+            } else if (this.config.key.includes('PRIVATE KEY')) {
+                keyContent = this.config.key;
+            } else {
+                console.warn(`[Nextcloud SSH] Key path configured but file not found: ${keyPath}`);
+            }
+        }
+
+        if (keyContent) {
+            connectOptions.privateKey = keyContent;
             if (this.config.passphrase) {
                 connectOptions.passphrase = this.config.passphrase;
             }
@@ -65,7 +82,7 @@ class NextcloudService extends Domain {
     }
 
     async readIdentities() {
-        if (!this.config.host || !this.config.user || (!this.config.key && !this.config.passphrase)) {
+        if (!this.config.host || !this.config.user || (!this.config.key && !this.config.passphrase && !this.config.password)) {
             throw new Error('Nextcloud configuration is incomplete.');
         }
 
@@ -175,8 +192,8 @@ class NextcloudService extends Domain {
     }
 
     async getRemnants() {
-        if (!this.config.host || !this.config.user || (!this.config.key && !this.config.passphrase)) {
-            throw new Error('Nextcloud configuration is incomplete. Missing host, user, or key/passphrase.');
+        if (!this.config.host || !this.config.user || (!this.config.key && !this.config.passphrase && !this.config.password)) {
+            throw new Error('Nextcloud configuration is incomplete. Missing host, user, or key/passphrase/password.');
         }
 
         const ssh = new NodeSSH();

@@ -10,6 +10,7 @@ const registry = {
     'untis-generate-import': new (require('../students/tasks/UntisGenerateImportTask'))(),
     'untis-teacher-external-ids': require('../teachers/tasks/UntisTeacherExternalIdsTask'),
     'mailcow-teacher-initials': require('../teachers/tasks/MailcowTeacherInitialsTask'),
+    'verwaltungsnetz-teacher-logins': require('../teachers/tasks/VerwaltungsnetzTeacherLoginsTask'),
     'web-untis-set-exit-dates': new (require('../students/tasks/WebUntisSetExitDatesTask'))(),
     'web-untis-guardian-sync': new (require('../students/tasks/WebUntisGuardianSyncTask'))(),
     'web-untis-majority': new (require('../students/tasks/WebUntisMajorityTask'))(),
