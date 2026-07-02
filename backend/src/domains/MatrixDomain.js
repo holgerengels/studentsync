@@ -20,12 +20,24 @@ class MatrixDomain extends ManagableDomain {
     constructor(domainName, category) {
         super(domainName);
         this.category = category;
-        const matrixConfig = config.matrix || {};
-        
-        this.homeserverUrl = matrixConfig.homeserverUrl || process.env.MATRIX_HOMESERVER_URL || 'https://matrix.valckenburgschule.de';
-        this.sharedSecret = matrixConfig.sharedSecret || process.env.MATRIX_SHARED_SECRET;
-        this.adminUsername = matrixConfig.adminUsername || process.env.MATRIX_ADMIN_USERNAME || 'synx.admin';
-        this.adminPassword = matrixConfig.adminPassword || process.env.MATRIX_ADMIN_PASSWORD || 'Start123!';
+        const matrixConfig = config.matrix;
+        if (!matrixConfig) {
+            throw new Error('Matrix configuration missing: config.matrix is required');
+        }
+
+        this.homeserverUrl = matrixConfig.homeserverUrl;
+        this.sharedSecret = matrixConfig.sharedSecret;
+        this.adminUsername = matrixConfig.adminUsername;
+        this.adminPassword = matrixConfig.adminPassword;
+
+        const missing = [];
+        if (!this.homeserverUrl) missing.push('homeserverUrl');
+        if (!this.sharedSecret) missing.push('sharedSecret');
+        if (!this.adminUsername) missing.push('adminUsername');
+        if (!this.adminPassword) missing.push('adminPassword');
+        if (missing.length > 0) {
+            throw new Error(`Matrix configuration incomplete: missing ${missing.join(', ')}`);
+        }
         
         if (this.homeserverUrl && this.homeserverUrl.endsWith('/')) {
             this.homeserverUrl = this.homeserverUrl.slice(0, -1);
