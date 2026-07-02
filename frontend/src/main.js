@@ -4,6 +4,7 @@ import axios from 'axios';
 import App from './App.vue';
 import { createRouter, createWebHistory } from 'vue-router';
 import './axios';
+import { useAuthStore } from './stores/auth';
 
 // Initialize Web Awesome locally
 import '@awesome.me/webawesome/dist/styles/themes/default.css';
@@ -106,6 +107,15 @@ async function bootstrap() {
         routes,
     });
 
+    router.beforeEach((to, from, next) => {
+        const auth = useAuthStore();
+        if (to.path === '/login' && auth.isAuthenticated) {
+            next('/');
+        } else {
+            next();
+        }
+    });
+
     // Relying on global Axios interceptors for 401 routing via Login Overlay
 
     app.use(router);
@@ -113,7 +123,6 @@ async function bootstrap() {
 
     // Show login overlay if not authenticated
     if (!storedToken) {
-        const { useAuthStore } = await import('./stores/auth');
         const auth = useAuthStore();
         auth.triggerLogin();
     }

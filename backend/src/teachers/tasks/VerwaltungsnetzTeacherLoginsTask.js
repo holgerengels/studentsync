@@ -179,11 +179,15 @@ class VerwaltungsnetzTeacherLoginsTask extends Task {
                     const entries = [];
 
                     searchRes.on('searchEntry', (entry) => {
+                        // Keep objectName as DN object — avoids string roundtrip
+                        // that can break modify() for DNs with umlauts
+                        const dn = entry.objectName || null;
+
                         let obj;
                         if (entry.object) {
                             obj = entry.object;
                         } else {
-                            obj = { dn: entry.objectName ? entry.objectName.toString() : '' };
+                            obj = {};
                             if (entry.attributes) {
                                 entry.attributes.forEach(attr => {
                                     obj[attr.type] = attr.values && attr.values.length === 1
@@ -195,11 +199,9 @@ class VerwaltungsnetzTeacherLoginsTask extends Task {
 
                         const initials = (Array.isArray(obj.initials) ? obj.initials[0] : obj.initials || '').trim();
                         const employeeID = (Array.isArray(obj.employeeID) ? obj.employeeID[0] : obj.employeeID || '').trim();
-                        const dn = obj.dn || '';
 
-                        if (initials) {
-                            entries.push({ dn, initials, employeeID: employeeID || null });
-                        }
+                        // Simplified: directly add entry
+                        entries.push({ dn, initials, employeeID: employeeID || null });
                     });
 
                     searchRes.on('end', () => {
@@ -217,8 +219,27 @@ class VerwaltungsnetzTeacherLoginsTask extends Task {
     }
 
     /**
+     * Decodes hex-escaped UTF-8 byte sequences in LDAP DN strings.
+     * ldapjs serializes umlauts as \c3\bc (ü), \c3\b6 (ö), etc.
+     * AD expects raw UTF-8 characters in DNs, so we decode them back.
+     */
+    _unescapeDN(dnStr) {
+        return dnStr.replace(/(\\[0-9a-fA-F]{2})+/g, (match) => {
+            const bytes = [];
+            for (let i = 0; i < match.length; i += 3) {
+                bytes.push(parseInt(match.substr(i + 1, 2), 16));
+            }
+            return Buffer.from(bytes).toString('utf8');
+        });
+    }
+
+    /**
      * Writes a single attribute value to an LDAP entry.
      * Uses 'replace' modification (creates or updates the attribute).
+     *
+     * NOTE: We build the ModifyRequest manually instead of using client.modify()
+     * because client.modify() runs the DN through parseDN(), which hex-escapes
+     * UTF-8 characters like umlauts (ü → \c3\bc). AD then cannot find the entry.
      */
     _writeLdapAttribute(ldapConfig, dn, attributeName, value) {
         return new Promise((resolve, reject) => {
@@ -242,10 +263,17 @@ class VerwaltungsnetzTeacherLoginsTask extends Task {
                     }
                 });
 
-                client.modify(dn, change, (err) => {
+                // Use unescaped UTF-8 DN string and set it directly on the
+                // ModifyRequest to bypass ldapjs's parseDN() escaping
+                const dnStr = this._unescapeDN(dn.toString());
+                const req = new ldap.ModifyRequest();
+                req.object = dnStr;
+                req.changes = [change];
+
+                client._send(req, [ldap.LDAPResult], null, (err) => {
                     client.unbind();
                     if (err) {
-                        return reject(new Error(`LDAP Modify Error for ${dn}: ${err.message}`));
+                        return reject(new Error(`LDAP Modify Error for ${dnStr}: ${err.message}`));
                     }
                     resolve();
                 });

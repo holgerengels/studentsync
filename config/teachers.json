@@ -50,6 +50,19 @@
         }
       ],
       "color": "#7B1FA2"
+    },
+    {
+      "name": "matrix-teacher",
+      "titel": "Matrix",
+      "category": "teachers",
+      "actions": [
+        {
+          "name": "Klassenräume erstellen",
+          "run": "matrix-create-classrooms",
+          "icon": "chat-square-text"
+        }
+      ],
+      "color": "#00B060"
     }
   ],
   "diffs": [
@@ -88,6 +101,15 @@
       "target": "Verwaltungsnetz-Teacher",
       "sourceDomain": "asv-teacher",
       "targetDomain": "verwaltungsnetz-teacher"
+    },
+    {
+      "name": "schulkonsole-teacher--matrix-teacher",
+      "titel": "Schulkonsole → Matrix",
+      "category": "teachers",
+      "source": "Schulkonsole-Teacher",
+      "target": "Matrix-Teacher",
+      "sourceDomain": "schulkonsole-teacher",
+      "targetDomain": "matrix-teacher"
     }
   ],
   "tasks": [
@@ -175,6 +197,28 @@
       "description": "Trägt die Schulkonsole-Logins als employeeID in die LDAP-Einträge des Verwaltungsnetzes ein.",
       "class": "VerwaltungsnetzTeacherLoginsTask",
       "schedule": "20 5 * * *"
+    },
+    {
+      "name": "schulkonsole-teacher-matrix-teacher-diff",
+      "titel": "Diff",
+      "description": "Vergleicht die Lehrerdaten zwischen Schulkonsole und Matrix.",
+      "class": "DiffTask",
+      "source": "Schulkonsole-Teacher",
+      "target": "Matrix-Teacher"
+    },
+    {
+      "name": "schulkonsole-teacher-matrix-teacher-sync",
+      "titel": "Sync",
+      "description": "Synchronisiert die Lehrerdaten von der Schulkonsole in Matrix.",
+      "class": "SyncTask",
+      "source": "Schulkonsole-Teacher",
+      "target": "Matrix-Teacher"
+    },
+    {
+      "name": "matrix-create-classrooms",
+      "titel": "Matrix Klassenräume erstellen",
+      "description": "Erstellt pro Klasse einen Raum in Matrix, fügt die Schüler*innen und den Klassenlehrer hinzu (oder löscht Räume veralteter Klassen).",
+      "class": "MatrixCreateClassRoomsTask"
     }
   ]
 }

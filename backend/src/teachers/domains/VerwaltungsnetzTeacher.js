@@ -4,7 +4,7 @@ const Domain = require('../../domains/Domain');
 const config = require('../../config');
 
 class VerwaltungsnetzTeacher extends Domain {
-    get supportedProperties() { return ['userId', 'firstName', 'lastName', 'email', 'login']; }
+    get supportedProperties() { return ['userId', 'lastName', 'email']; }
     get cacheTTL() { return 3600000; } // 1 hour
 
     constructor() {

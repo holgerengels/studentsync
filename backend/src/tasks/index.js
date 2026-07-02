@@ -18,7 +18,9 @@ const registry = {
     'nextcloud-remnants-purge': new (require('../students/tasks/NextcloudRemnantsPurgeTask'))(),
     'fachnetz-profile-maintenance': new (require('../fachnetz/tasks/ProfileMaintenanceTask'))(),
     'fachnetz-arbeitsheft-diff': new (require('../fachnetz/tasks/FachnetzArbeitsheftDiffTask'))(),
-    'fachnetz-arbeitsheft-sync': new (require('../fachnetz/tasks/FachnetzArbeitsheftSyncTask'))()
+    'fachnetz-arbeitsheft-sync': new (require('../fachnetz/tasks/FachnetzArbeitsheftSyncTask'))(),
+    'matrix-create-classrooms': new (require('../students/tasks/MatrixCreateClassRoomsTask'))(),
+    'matrix-reconcile-users': new (require('../students/tasks/MatrixReconcileUsersTask'))()
 };
 
 // Dynamically register SyncTask and DiffTask instances from config

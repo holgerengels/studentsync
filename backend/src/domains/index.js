@@ -25,12 +25,14 @@ if (useMocks) {
         webuntis: tryCreate('webuntis', () => require('../students/domains/WebUntis')),
         nextcloud: tryCreate('nextcloud', () => require('../students/domains/Nextcloud')),
         dummy: tryCreate('dummy', () => new (require('../students/domains/DummyDomain'))()),
+        matrix: tryCreate('matrix', () => require('../students/domains/Matrix')),
         // Teachers
         'asv-teacher': tryCreate('asv-teacher', () => require('../teachers/domains/ASVTeacher')),
         'untis-teacher': tryCreate('untis-teacher', () => require('../teachers/domains/UntisTeacher')),
         'schulkonsole-teacher': tryCreate('schulkonsole-teacher', () => require('../teachers/domains/SchulkonsoleTeacher')),
         'mailcow-teacher': tryCreate('mailcow-teacher', () => require('../teachers/domains/MailCowTeacher')),
         'verwaltungsnetz-teacher': tryCreate('verwaltungsnetz-teacher', () => require('../teachers/domains/VerwaltungsnetzTeacher')),
+        'matrix-teacher': tryCreate('matrix-teacher', () => require('../teachers/domains/MatrixTeacher')),
         // Fachnetz
         fachnetz: tryCreate('fachnetz', () => require('../fachnetz/domains/Fachnetz')),
         arbeitsheft: tryCreate('arbeitsheft', () => require('../fachnetz/domains/Arbeitsheft')),
