@@ -378,6 +378,10 @@ nav a.router-link-active {
     padding-bottom: 0.75rem;
     margin-bottom: 0.75rem;
     border-bottom: 1px solid var(--wa-color-neutral-200);
+    position: sticky;
+    top: 0;
+    background-color: var(--wa-color-neutral-95);
+    z-index: 10;
 }
 .top-bar-title {
     margin: 0;

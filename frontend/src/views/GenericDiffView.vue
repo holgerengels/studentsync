@@ -1,5 +1,6 @@
 <template>
   <div :style="`--source-color: ${getBrandColor(diff.source, config)}; --target-color: ${getBrandColor(diff.target, config)};`">
+    <div class="view-header">
     <h2 style="border-bottom: 3px solid transparent; border-image: linear-gradient(to right, var(--source-color), var(--target-color)) 1; padding-bottom: 0.5rem; margin-bottom: 1rem;">
       <span style="color: var(--source-color);">{{ diff.source }}</span>
       <span style="color: var(--wa-color-neutral-500); margin: 0 0.5rem;">&rarr;</span>
@@ -33,6 +34,7 @@
                 Neu berechnen
             </wa-button>
         </div>
+    </div>
     </div>
 
     <!-- Action Report Dialog -->
@@ -354,5 +356,14 @@ function isTargetManagable() {
 }
 .old-val, .new-val {
     display: inline-block;
+}
+.view-header {
+    position: sticky;
+    top: 0;
+    background-color: color-mix(in srgb, var(--wa-color-neutral-95) 80%, transparent);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    z-index: 5;
+    padding-bottom: 0.25rem;
 }
 </style>

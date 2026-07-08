@@ -1,5 +1,6 @@
 <template>
   <div :style="`--view-brand-color: ${domain.color || getBrandColor(domain.name)};`">
+    <div class="view-header">
     <h2 style="border-bottom: 3px solid var(--view-brand-color); padding-bottom: 0.5rem; margin-bottom: 1rem;">
       {{ domain.titel || domain.name }}
     </h2>
@@ -26,6 +27,7 @@
                 Neu laden
             </wa-button>
         </div>
+    </div>
     </div>
 
     <!-- Action Report Dialog -->
@@ -244,5 +246,14 @@ const searchPlaceholder = computed(() => {
 
 .sortable-header:hover span:last-child {
     color: var(--wa-color-neutral-400) !important;
+}
+.view-header {
+    position: sticky;
+    top: 0;
+    background-color: color-mix(in srgb, var(--wa-color-neutral-95) 80%, transparent);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    z-index: 5;
+    padding-bottom: 0.25rem;
 }
 </style>

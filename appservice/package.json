@@ -1,0 +1,12 @@
+{
+  "name": "synx-appservice",
+  "version": "1.0.0",
+  "description": "Matrix Appservice for auto-promoting teachers to moderator in class spaces",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "dependencies": {
+    "express": "^4.19.2"
+  }
+}

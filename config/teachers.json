@@ -217,7 +217,7 @@
     {
       "name": "matrix-create-classrooms",
       "titel": "Matrix Klassenräume erstellen",
-      "description": "Erstellt pro Klasse einen Raum in Matrix, fügt die Schüler*innen und den Klassenlehrer hinzu (oder löscht Räume veralteter Klassen).",
+      "description": "Erstellt pro Klasse einen Space in Matrix, fügt die Schüler*innen und den Klassenlehrer hinzu (oder löscht Spaces veralteter Klassen). Lehrer können innerhalb des Space eigene Fachräume erstellen.",
       "class": "MatrixCreateClassRoomsTask"
     }
   ]
