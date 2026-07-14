@@ -57,8 +57,8 @@
       "category": "teachers",
       "actions": [
         {
-          "name": "Klassenräume erstellen",
-          "run": "matrix-create-classrooms",
+          "name": "Moodle-Kursräume",
+          "run": "matrix-moodle-courses",
           "icon": "chat-square-text"
         }
       ],
