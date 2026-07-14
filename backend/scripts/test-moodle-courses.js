@@ -64,14 +64,23 @@ async function main() {
         console.log(`${indent}📁 ${cat.name} (ID: ${cat.id}, parent: ${cat.parent}, ${cat.coursecount} Kurse)`);
     }
 
+    const enabledFieldShortname = moodleConfig.customFields?.enabled || 'matrix_enabled';
+    const roomNameFieldShortname = moodleConfig.customFields?.roomName || 'matrix_room_name';
+
     // 2. Load courses
     const allCourses = await moodleCall('core_course_get_courses');
-    const courses = allCourses.filter(c => c.id !== 1 && includedIds.has(c.categoryid));
-    console.log(`\nKurse in gefilterten Kategorien: ${courses.length}`);
+    const courses = allCourses.filter(c => {
+        if (c.id === 1 || !includedIds.has(c.categoryid)) return false;
+        const field = (c.customfields || []).find(f => f.shortname === enabledFieldShortname);
+        return field && (field.value === '1' || field.value === 1 || field.value === true || field.value === 'true');
+    });
+    console.log(`\nKurse in gefilterten Kategorien (mit Matrix aktiviert): ${courses.length}`);
     
     for (const c of courses) {
         const cat = categories.find(cat => cat.id === c.categoryid);
-        console.log(`  📖 ${c.fullname} (ID: ${c.id}, Kategorie: ${cat?.name || c.categoryid})`);
+        const customNameField = (c.customfields || []).find(f => f.shortname === roomNameFieldShortname);
+        const roomName = (customNameField && customNameField.value) ? customNameField.value.trim() : c.fullname;
+        console.log(`  📖 ${roomName} (Original: ${c.fullname}, ID: ${c.id}, Kategorie: ${cat?.name || c.categoryid})`);
     }
 
     // 3. Test enrolled users for first course

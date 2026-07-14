@@ -64,6 +64,9 @@ class MatrixMoodleCoursesTask extends Task {
         const includeCategories = moodleConfig.includeCategories || [];
         const includedCategoryIds = this.getIncludedCategoryIds(categories, includeCategories);
 
+        const enabledFieldShortname = moodleConfig.customFields?.enabled || 'matrix_enabled';
+        const roomNameFieldShortname = moodleConfig.customFields?.roomName || 'matrix_room_name';
+
         // Load courses per included category (avoids permission errors on inaccessible courses)
         console.log('[MoodleCourses] Loading courses from Moodle...');
         const filteredCourses = [];
@@ -73,12 +76,19 @@ class MatrixMoodleCoursesTask extends Task {
                     field: 'category', value: catId
                 });
                 const visible = (catCourses.courses || catCourses).filter(c => c.id !== 1);
-                filteredCourses.push(...visible);
+                
+                // Filter by custom field matrix_enabled
+                const matrixEnabledCourses = visible.filter(c => {
+                    const field = (c.customfields || []).find(f => f.shortname === enabledFieldShortname);
+                    return field && (field.value === '1' || field.value === 1 || field.value === true || field.value === 'true');
+                });
+                
+                filteredCourses.push(...matrixEnabledCourses);
             } catch (e) {
                 console.warn(`[MoodleCourses] Failed to load courses for category ${catId}: ${e.message}`);
             }
         }
-        console.log(`[MoodleCourses] Loaded ${filteredCourses.length} courses`);
+        console.log(`[MoodleCourses] Loaded ${filteredCourses.length} courses with Matrix enabled`);
 
         // Apply devMode limit
         const { items: coursesToProcess } = limitInDevMode(filteredCourses);
@@ -159,6 +169,10 @@ class MatrixMoodleCoursesTask extends Task {
                 const aliasLocalpart = `moodle_course_${course.id}`;
                 const fullAlias = `#${aliasLocalpart}:${homeserverDomain}`;
 
+                // Get custom room name if set, otherwise fallback to course fullname
+                const customNameField = (course.customfields || []).find(f => f.shortname === roomNameFieldShortname);
+                const roomName = (customNameField && customNameField.value) ? customNameField.value.trim() : course.fullname;
+
                 // Check if room exists
                 let roomId = await this.resolveAlias(homeserverUrl, token, fullAlias);
 
@@ -171,7 +185,7 @@ class MatrixMoodleCoursesTask extends Task {
                             'Content-Type': 'application/json'
                         },
                         body: JSON.stringify({
-                            name: course.fullname,
+                            name: roomName,
                             topic: course.summary ? course.summary.replace(/<[^>]*>/g, '') : '',
                             visibility: 'private',
                             room_alias_name: aliasLocalpart,
@@ -185,21 +199,21 @@ class MatrixMoodleCoursesTask extends Task {
 
                     if (createRes.ok) {
                         roomId = (await createRes.json()).room_id;
-                        roomsCreated.push(course.fullname);
-                        console.log(`[MoodleCourses] Created room "${course.fullname}" (${roomId})`);
+                        roomsCreated.push(roomName);
+                        console.log(`[MoodleCourses] Created room "${roomName}" (${roomId})`);
                     } else {
-                        errors.push(`Failed to create room for course "${course.fullname}": ${await createRes.text()}`);
+                        errors.push(`Failed to create room for course "${roomName}": ${await createRes.text()}`);
                         continue;
                     }
                 } else {
                     // Update room name if it changed
-                    await this.updateRoomName(homeserverUrl, token, roomId, course.fullname);
+                    await this.updateRoomName(homeserverUrl, token, roomId, roomName);
                 }
 
                 // Save to MongoDB
                 await MoodleRoomModel.updateOne(
                     { courseId: course.id },
-                    { $set: { courseId: course.id, courseName: course.fullname, roomId, categoryId: course.categoryid } },
+                    { $set: { courseId: course.id, courseName: roomName, roomId, categoryId: course.categoryid } },
                     { upsert: true }
                 );
 
@@ -248,7 +262,7 @@ class MatrixMoodleCoursesTask extends Task {
                     if (!joinedMembers.includes(mxid)) {
                         const joined = await this.joinUser(homeserverUrl, token, adminRoomId, roomId, mxid);
                         if (joined) usersJoinedCount++;
-                        else errors.push(`Failed to join ${mxid} to "${course.fullname}"`);
+                        else errors.push(`Failed to join ${mxid} to "${roomName}"`);
                     }
                 }
 
@@ -257,7 +271,7 @@ class MatrixMoodleCoursesTask extends Task {
                     await this.setUserPowerLevel(homeserverUrl, token, roomId, mxid, 50);
                 }
             } catch (e) {
-                errors.push(`Error processing course "${course.fullname}": ${e.message}`);
+                errors.push(`Error processing course "${roomName}": ${e.message}`);
             }
         }
 
