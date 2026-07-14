@@ -42,6 +42,8 @@ class MatrixMoodleCoursesTask extends Task {
         const token = await matrix.ensureAdminToken();
         const homeserverUrl = matrix.homeserverUrl;
         const homeserverDomain = matrix.homeserverDomainName;
+        const botMxid = `@${matrix.adminUsername}:${homeserverDomain}`;
+        const allMoodleCourseIds = new Set();
 
         // Resolve admin room for Tuwunel force-join commands
         let adminRoomId = null;
@@ -76,6 +78,11 @@ class MatrixMoodleCoursesTask extends Task {
                     field: 'category', value: catId
                 });
                 const visible = (catCourses.courses || catCourses).filter(c => c.id !== 1);
+                
+                // Track all existing course IDs
+                for (const c of visible) {
+                    allMoodleCourseIds.add(c.id);
+                }
                 
                 // Filter by custom field matrix_enabled
                 const matrixEnabledCourses = visible.filter(c => {
@@ -247,7 +254,6 @@ class MatrixMoodleCoursesTask extends Task {
 
                 // Get current room members
                 const joinedMembers = await this.getJoinedMembers(homeserverUrl, token, roomId);
-                const botMxid = `@${matrix.adminUsername}:${homeserverDomain}`;
 
                 // Kick users no longer enrolled (but not the bot)
                 for (const member of joinedMembers) {
@@ -280,15 +286,26 @@ class MatrixMoodleCoursesTask extends Task {
         let reconciledSpaces = 0;
         try {
             const allRoomDocs = await MoodleRoomModel.find({}).lean();
-            const activeCourseIds = new Set(filteredCourses.map(c => c.id));
             for (const doc of allRoomDocs) {
-                // Remove if course no longer in Moodle
-                if (!activeCourseIds.has(doc.courseId)) {
+                // Remove permanently if course no longer exists in Moodle (or is no longer in managed categories)
+                if (!allMoodleCourseIds.has(doc.courseId)) {
+                    console.log(`[MoodleCourses] Reconcile: course ${doc.courseId} ("${doc.courseName}") no longer exists in Moodle. Permanently deleting Matrix room ${doc.roomId}...`);
+                    await this.deleteMatrixRoom(homeserverUrl, token, adminRoomId, botMxid, doc.roomId);
                     await MoodleRoomModel.deleteOne({ _id: doc._id });
                     reconciledRooms++;
-                    console.log(`[MoodleCourses] Reconcile: removed stale room entry "${doc.courseName}" (course ${doc.courseId})`);
                     continue;
                 }
+
+                // If course exists in Moodle, but matrix_enabled is false/not present in filteredCourses
+                const isActive = filteredCourses.some(c => c.id === doc.courseId);
+                if (!isActive) {
+                    // Do NOT delete the room on Matrix, just remove the local cache record so we stop syncing members
+                    await MoodleRoomModel.deleteOne({ _id: doc._id });
+                    reconciledRooms++;
+                    console.log(`[MoodleCourses] Reconcile: Matrix sync disabled for "${doc.courseName}" (course ${doc.courseId}). Entry removed from cache.`);
+                    continue;
+                }
+
                 // Remove if room no longer exists on Matrix
                 const members = await this.getJoinedMembers(homeserverUrl, token, doc.roomId);
                 if (members.length === 0) {
@@ -506,6 +523,58 @@ class MatrixMoodleCoursesTask extends Task {
                 body: JSON.stringify({ name })
             });
         } catch (e) { /* ignore */ }
+    }
+
+    async deleteMatrixRoom(homeserverUrl, token, adminRoomId, botMxid, roomId) {
+        // 1. Bot joins room first to be able to kick
+        try {
+            await fetch(`${homeserverUrl}/_matrix/client/v3/join/${encodeURIComponent(roomId)}`, {
+                method: 'POST',
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+        } catch (e) { /* ignore */ }
+
+        // 2. Get and kick members
+        const members = await this.getJoinedMembers(homeserverUrl, token, roomId);
+        const toKick = members.filter(m => m !== botMxid);
+        for (const mxid of toKick) {
+            try {
+                const kickRes = await fetch(`${homeserverUrl}/_matrix/client/v3/rooms/${encodeURIComponent(roomId)}/kick`, {
+                    method: 'POST',
+                    headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ user_id: mxid, reason: 'Moodle course has been deleted' })
+                });
+                if (!kickRes.ok && adminRoomId) {
+                    // Try force-leave if direct kick fails
+                    await this.sendAdminCommand(homeserverUrl, token, adminRoomId, `!admin users force-leave-room ${mxid} ${roomId}`);
+                }
+            } catch (e) { /* ignore */ }
+        }
+
+        // 3. Bot leaves room
+        try {
+            await fetch(`${homeserverUrl}/_matrix/client/v3/rooms/${encodeURIComponent(roomId)}/leave`, {
+                method: 'POST',
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+        } catch (e) { /* ignore */ }
+
+        // 4. Delete the room via admin command
+        if (adminRoomId) {
+            try {
+                await this.sendAdminCommand(homeserverUrl, token, adminRoomId, `!admin rooms delete --force ${roomId}`);
+            } catch (e) { /* ignore */ }
+        }
+    }
+
+    async sendAdminCommand(homeserverUrl, token, adminRoomId, command) {
+        const txnId = `${Date.now()}_${Math.random().toString(36).substring(2, 11)}`;
+        await fetch(`${homeserverUrl}/_matrix/client/v3/rooms/${encodeURIComponent(adminRoomId)}/send/m.room.message/${txnId}`, {
+            method: 'PUT',
+            headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+            body: JSON.stringify({ msgtype: 'm.text', body: command })
+        });
+        await new Promise(r => setTimeout(r, 100));
     }
 }
 
