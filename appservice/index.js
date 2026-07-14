@@ -85,7 +85,7 @@ async function roomName(roomId) {
             roomDisplayNames.set(roomId, aliasData.alias);
             return aliasData.alias;
         }
-    } catch {}
+    } catch { }
     roomDisplayNames.set(roomId, roomId);
     return roomId;
 }
@@ -141,8 +141,13 @@ async function refreshTeachers() {
 
 async function isClassSpace(roomId) {
     try {
-        const data = await matrixGet(`/rooms/${encodeURIComponent(roomId)}/state/m.room.canonical_alias`);
-        return (data?.alias || '').startsWith('#class_');
+        const res = await fetch(
+            `${HOMESERVER_URL}/_matrix/client/v3/rooms/${encodeURIComponent(roomId)}/state/m.room.canonical_alias`,
+            { headers: { 'Authorization': `Bearer ${AS_TOKEN}` } }
+        );
+        if (!res.ok) return false;
+        const data = await res.json();
+        return (data.canonical_alias || data.alias || '').startsWith('#class_');
     } catch {
         return false;
     }
