@@ -67,6 +67,7 @@ class MatrixDomain extends ManagableDomain {
         }
 
         // 1. Try to log in
+        let loginError = null;
         try {
             const loginUrl = `${this.homeserverUrl}/_matrix/client/v3/login`;
             const loginRes = await fetch(loginUrl, {
@@ -93,11 +94,15 @@ class MatrixDomain extends ManagableDomain {
                 }
                 return this.adminToken;
             }
+
+            loginError = `Login failed for user '${this.adminUsername}': ${loginRes.status} ${await loginRes.text()}`;
+            console.warn(`[MatrixDomain] ${loginError}`);
         } catch (e) {
-            // Ignore error, try register
+            loginError = `Login request failed for user '${this.adminUsername}': ${e.message}`;
+            console.warn(`[MatrixDomain] ${loginError}`);
         }
 
-        // 2. Try to register
+        // 2. Try to register (only makes sense if user doesn't exist yet)
         try {
             await this.registerUser({
                 username: this.adminUsername,
@@ -121,7 +126,7 @@ class MatrixDomain extends ManagableDomain {
             });
 
             if (!loginRes.ok) {
-                throw new Error(`Admin login failed: ${loginRes.statusText}`);
+                throw new Error(`Admin login after registration failed: ${loginRes.status} ${await loginRes.text()}`);
             }
 
             const data = await loginRes.json();
@@ -134,6 +139,10 @@ class MatrixDomain extends ManagableDomain {
             }
             return this.adminToken;
         } catch (err) {
+            // If registration failed because user already exists, the real problem is the login failure
+            if (err.message.includes('M_USER_IN_USE') || err.message.includes('already exists')) {
+                throw new Error(`Matrix admin authentication failed: ${loginError || 'Login failed and user already exists'}`);
+            }
             throw new Error(`Matrix admin authentication failed: ${err.message}`);
         }
     }

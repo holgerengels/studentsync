@@ -222,10 +222,10 @@
       "schedule": "8 7-18 * * *"
     },
     {
-      "name": "matrix-create-classrooms",
-      "titel": "Matrix Klassenräume erstellen",
-      "description": "Erstellt pro Klasse einen Space in Matrix, fügt die Schüler*innen und den Klassenlehrer hinzu. Lehrer können innerhalb des Space eigene Fachräume erstellen.",
-      "class": "MatrixCreateClassRoomsTask"
+      "name": "matrix-moodle-courses",
+      "titel": "Matrix Moodle-Kursräume",
+      "description": "Synchronisiert Moodle-Kurse als Matrix-Räume. Kategorien werden als verschachtelte Spaces abgebildet, Kursteilnehmer werden als Mitglieder synchronisiert.",
+      "class": "MatrixMoodleCoursesTask"
     },
     {
       "name": "matrix-reconcile-users",
