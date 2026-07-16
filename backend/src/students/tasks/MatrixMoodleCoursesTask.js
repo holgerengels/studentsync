@@ -87,7 +87,7 @@ class MatrixMoodleCoursesTask extends Task {
                 // Filter by custom field matrix_enabled
                 const matrixEnabledCourses = visible.filter(c => {
                     const field = (c.customfields || []).find(f => f.shortname === enabledFieldShortname);
-                    return field && (field.value === '1' || field.value === 1 || field.value === true || field.value === 'true');
+                    return field && (field.valueraw === 1 || field.valueraw === '1' || field.valueraw === true);
                 });
                 
                 filteredCourses.push(...matrixEnabledCourses);
@@ -297,12 +297,13 @@ class MatrixMoodleCoursesTask extends Task {
                 }
 
                 // If course exists in Moodle, but matrix_enabled is false/not present in filteredCourses
+                // TODO: nach der einmaligen Aufräumaktion auf soft-delete umstellen (Raum behalten, nur Tracking entfernen)
                 const isActive = filteredCourses.some(c => c.id === doc.courseId);
                 if (!isActive) {
-                    // Do NOT delete the room on Matrix, just remove the local cache record so we stop syncing members
+                    console.log(`[MoodleCourses] Reconcile: matrix_enabled=false for "${doc.courseName}" (course ${doc.courseId}). Deleting Matrix room ${doc.roomId}...`);
+                    await this.deleteMatrixRoom(homeserverUrl, token, adminRoomId, botMxid, doc.roomId);
                     await MoodleRoomModel.deleteOne({ _id: doc._id });
                     reconciledRooms++;
-                    console.log(`[MoodleCourses] Reconcile: Matrix sync disabled for "${doc.courseName}" (course ${doc.courseId}). Entry removed from cache.`);
                     continue;
                 }
 
