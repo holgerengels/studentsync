@@ -67,7 +67,6 @@ class MatrixMoodleCoursesTask extends Task {
         const includedCategoryIds = this.getIncludedCategoryIds(categories, includeCategories);
 
         const enabledFieldShortname = moodleConfig.customFields?.enabled || 'matrix_enabled';
-        const roomNameFieldShortname = moodleConfig.customFields?.roomName || 'matrix_room_name';
 
         // Load courses per included category (avoids permission errors on inaccessible courses)
         console.log('[MoodleCourses] Loading courses from Moodle...');
@@ -84,10 +83,40 @@ class MatrixMoodleCoursesTask extends Task {
                     allMoodleCourseIds.add(c.id);
                 }
                 
+                if (visible.length === 0) continue;
+
+                // Load details with customfields (Fast path: fetch all details in a single batch)
+                const courseIds = visible.map(c => c.id);
+                let detailedCourses = [];
+                try {
+                    detailedCourses = await this.moodleCall(moodleConfig, 'core_course_get_courses', {
+                        options: { ids: courseIds }
+                    });
+                } catch (err) {
+                    console.warn(`[MoodleCourses] Batch load failed for category ${catId} (${err.message}). Falling back to individual course loading.`);
+                    // Slow path fallback: fetch course-by-course to isolate the broken course
+                    for (const c of visible) {
+                        try {
+                            const detail = await this.moodleCall(moodleConfig, 'core_course_get_courses', {
+                                options: { ids: [c.id] }
+                            });
+                            if (detail[0]) {
+                                detailedCourses.push(detail[0]);
+                            }
+                        } catch (singleErr) {
+                            console.warn(`[MoodleCourses] Failed to load details for course ID ${c.id} (${c.fullname}): ${singleErr.message}`);
+                        }
+                    }
+                }
+
                 // Filter by custom field matrix_enabled
-                const matrixEnabledCourses = visible.filter(c => {
+                const matrixEnabledCourses = detailedCourses.filter(c => {
                     const field = (c.customfields || []).find(f => f.shortname === enabledFieldShortname);
-                    return field && (field.valueraw === 1 || field.valueraw === '1' || field.valueraw === true);
+                    return field && (
+                        field.valueraw === 1 || field.valueraw === '1' || field.valueraw === true ||
+                        field.value === '1' || field.value === 1 || field.value === true || field.value === 'true' ||
+                        field.value === 'Ja' || field.value === 'Yes'
+                    );
                 });
                 
                 filteredCourses.push(...matrixEnabledCourses);
@@ -176,9 +205,7 @@ class MatrixMoodleCoursesTask extends Task {
                 const aliasLocalpart = `moodle_course_${course.id}`;
                 const fullAlias = `#${aliasLocalpart}:${homeserverDomain}`;
 
-                // Get custom room name if set, otherwise fallback to course fullname
-                const customNameField = (course.customfields || []).find(f => f.shortname === roomNameFieldShortname);
-                const roomName = (customNameField && customNameField.value) ? customNameField.value.trim() : course.fullname;
+                const roomName = course.fullname;
 
                 // Check if room exists
                 let roomId = await this.resolveAlias(homeserverUrl, token, fullAlias);
@@ -297,13 +324,12 @@ class MatrixMoodleCoursesTask extends Task {
                 }
 
                 // If course exists in Moodle, but matrix_enabled is false/not present in filteredCourses
-                // TODO: nach der einmaligen Aufräumaktion auf soft-delete umstellen (Raum behalten, nur Tracking entfernen)
                 const isActive = filteredCourses.some(c => c.id === doc.courseId);
                 if (!isActive) {
-                    console.log(`[MoodleCourses] Reconcile: matrix_enabled=false for "${doc.courseName}" (course ${doc.courseId}). Deleting Matrix room ${doc.roomId}...`);
-                    await this.deleteMatrixRoom(homeserverUrl, token, adminRoomId, botMxid, doc.roomId);
+                    // Do NOT delete the room on Matrix, just remove the local cache record so we stop syncing members
                     await MoodleRoomModel.deleteOne({ _id: doc._id });
                     reconciledRooms++;
+                    console.log(`[MoodleCourses] Reconcile: Matrix sync disabled for "${doc.courseName}" (course ${doc.courseId}). Entry removed from cache.`);
                     continue;
                 }
 
@@ -364,7 +390,21 @@ class MatrixMoodleCoursesTask extends Task {
         url.searchParams.set('wsfunction', wsfunction);
         url.searchParams.set('moodlewsrestformat', 'json');
 
-        for (const [key, value] of Object.entries(params)) {
+        const buildQuery = (params, prefix = '') => {
+            const query = [];
+            for (const [key, value] of Object.entries(params)) {
+                const paramName = prefix ? `${prefix}[${key}]` : key;
+                if (value !== null && typeof value === 'object') {
+                    query.push(...buildQuery(value, paramName));
+                } else if (value !== undefined) {
+                    query.push([paramName, value]);
+                }
+            }
+            return query;
+        };
+
+        const queryParams = buildQuery(params);
+        for (const [key, value] of queryParams) {
             url.searchParams.set(key, value);
         }
 

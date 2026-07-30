@@ -14,9 +14,25 @@ async function moodleCall(wsfunction, params = {}) {
     url.searchParams.set('wstoken', moodleConfig.token);
     url.searchParams.set('wsfunction', wsfunction);
     url.searchParams.set('moodlewsrestformat', 'json');
-    for (const [key, value] of Object.entries(params)) {
+
+    const buildQuery = (params, prefix = '') => {
+        const query = [];
+        for (const [key, value] of Object.entries(params)) {
+            const paramName = prefix ? `${prefix}[${key}]` : key;
+            if (value !== null && typeof value === 'object') {
+                query.push(...buildQuery(value, paramName));
+            } else if (value !== undefined) {
+                query.push([paramName, value]);
+            }
+        }
+        return query;
+    };
+
+    const queryParams = buildQuery(params);
+    for (const [key, value] of queryParams) {
         url.searchParams.set(key, value);
     }
+
     const res = await fetch(url.toString());
     const data = await res.json();
     if (data.exception) throw new Error(`${wsfunction}: ${data.message}`);
@@ -65,22 +81,64 @@ async function main() {
     }
 
     const enabledFieldShortname = moodleConfig.customFields?.enabled || 'matrix_enabled';
-    const roomNameFieldShortname = moodleConfig.customFields?.roomName || 'matrix_room_name';
 
-    // 2. Load courses
-    const allCourses = await moodleCall('core_course_get_courses');
-    const courses = allCourses.filter(c => {
-        if (c.id === 1 || !includedIds.has(c.categoryid)) return false;
-        const field = (c.customfields || []).find(f => f.shortname === enabledFieldShortname);
-        return field && (field.value === '1' || field.value === 1 || field.value === true || field.value === 'true');
-    });
+    // 2. Load courses per category
+    const courses = [];
+    for (const catId of includedIds) {
+        try {
+            const catCourses = await moodleCall('core_course_get_courses_by_field', {
+                field: 'category', value: catId
+            });
+            const rawCourses = (catCourses.courses || catCourses || []).filter(c => c.id !== 1);
+            if (rawCourses.length === 0) continue;
+
+            // Fetch detailed courses (Fast path: single batch request)
+            const courseIds = rawCourses.map(c => c.id);
+            let detailedCourses = [];
+            try {
+                detailedCourses = await moodleCall('core_course_get_courses', {
+                    options: { ids: courseIds }
+                });
+                for (const dc of detailedCourses) {
+                    console.log(`🔍 Course "${dc.fullname}" (ID: ${dc.id}) custom fields:`, JSON.stringify(dc.customfields || []));
+                }
+            } catch (err) {
+                console.warn(`  ⚠ Batch load failed for category ${catId} (${err.message}). Falling back to individual course loading.`);
+                // Slow path fallback: fetch course-by-course to isolate the broken course
+                for (const rc of rawCourses) {
+                    try {
+                        const detail = await moodleCall('core_course_get_courses', {
+                            options: { ids: [rc.id] }
+                        });
+                        const detailedCourse = detail[0];
+                        if (detailedCourse) {
+                            console.log(`🔍 Course "${detailedCourse.fullname}" (ID: ${detailedCourse.id}) custom fields:`, JSON.stringify(detailedCourse.customfields || []));
+                            detailedCourses.push(detailedCourse);
+                        }
+                    } catch (singleErr) {
+                        console.warn(`  ⚠ Failed to load details for course ID ${rc.id} (${rc.fullname}): ${singleErr.message}`);
+                    }
+                }
+            }
+
+            const visible = detailedCourses.filter(c => {
+                const field = (c.customfields || []).find(f => f.shortname === enabledFieldShortname);
+                return field && (
+                    field.valueraw === 1 || field.valueraw === '1' || field.valueraw === true ||
+                    field.value === '1' || field.value === 1 || field.value === true || field.value === 'true' ||
+                    field.value === 'Ja' || field.value === 'Yes'
+                );
+            });
+            courses.push(...visible);
+        } catch (e) {
+            console.warn(`  ⚠ Failed to load courses list for category ${catId}: ${e.message}`);
+        }
+    }
     console.log(`\nKurse in gefilterten Kategorien (mit Matrix aktiviert): ${courses.length}`);
     
     for (const c of courses) {
         const cat = categories.find(cat => cat.id === c.categoryid);
-        const customNameField = (c.customfields || []).find(f => f.shortname === roomNameFieldShortname);
-        const roomName = (customNameField && customNameField.value) ? customNameField.value.trim() : c.fullname;
-        console.log(`  📖 ${roomName} (Original: ${c.fullname}, ID: ${c.id}, Kategorie: ${cat?.name || c.categoryid})`);
+        console.log(`  📖 ${c.fullname} (ID: ${c.id}, Kategorie: ${cat?.name || c.categoryid})`);
     }
 
     // 3. Test enrolled users for first course

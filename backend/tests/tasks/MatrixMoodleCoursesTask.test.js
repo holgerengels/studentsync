@@ -113,6 +113,36 @@ describe('MatrixMoodleCoursesTask', () => {
                     };
                 }
             }
+            if (method === 'core_course_get_courses') {
+                const allMockCourses = [
+                    {
+                        id: 101,
+                        fullname: 'Math 101',
+                        categoryid: 10,
+                        customfields: [
+                            { shortname: 'matrix_enabled', value: '1' }
+                        ]
+                    },
+                    {
+                        id: 102,
+                        fullname: 'History 101',
+                        categoryid: 10,
+                        customfields: [
+                            { shortname: 'matrix_enabled', value: '0' }
+                        ]
+                    },
+                    {
+                        id: 201,
+                        fullname: 'Physics 101',
+                        categoryid: 11,
+                        customfields: [
+                            { shortname: 'matrix_enabled', value: '1' }
+                        ]
+                    }
+                ];
+                const requestedIds = params.options?.ids || [];
+                return allMockCourses.filter(c => requestedIds.includes(c.id));
+            }
             if (method === 'core_enrol_get_enrolled_users') {
                 return [
                     { username: 'student1', fullname: 'Student One', roles: [{ shortname: 'student' }] },
@@ -149,19 +179,17 @@ describe('MatrixMoodleCoursesTask', () => {
         expect(report.details.spacesCreated).toContain('Kursbereich');
         expect(report.details.spacesCreated).toContain('Fachbereiche');
         
-        // Math 101 room name should be the custom room name 'Custom Math Room'
-        // Physics 101 room name should default to 'Physics 101'
-        expect(report.details.roomsCreated).toContain('Custom Math Room');
+        expect(report.details.roomsCreated).toContain('Math 101');
         expect(report.details.roomsCreated).toContain('Physics 101');
         expect(report.details.roomsCreated).not.toContain('History 101');
-        expect(report.details.roomsCreated).not.toContain('Math 101'); // original name should not be used
-
+        expect(report.details.roomsCreated).not.toContain('Custom Math Room');
+ 
         // Verify updateOne was called with correctly updated names
         expect(mockMoodleRoomModel.updateOne).toHaveBeenCalledWith(
             { courseId: 101 },
             expect.objectContaining({
                 $set: expect.objectContaining({
-                    courseName: 'Custom Math Room'
+                    courseName: 'Math 101'
                 })
             }),
             { upsert: true }
