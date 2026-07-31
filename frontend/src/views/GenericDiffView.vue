@@ -244,11 +244,7 @@ async function runSync() {
 }
 
 async function runAction(act) {
-    if (act.download) {
-        window.open(`/api/execute/${act.download}`, '_blank');
-        return;
-    }
-    const actionKey = act.endpoint || act.run || act.task;
+    const actionKey = act.download || act.endpoint || act.run || act.task;
     if (!actionKey) return;
     
     actionLoading.value = act.name;
@@ -256,6 +252,19 @@ async function runAction(act) {
     
     try {
         const res = await axios.post(actionKey.startsWith('/') ? actionKey : `/api/execute/${actionKey}`);
+
+        // Handle Blob Downloads
+        if (act.download && res.data && res.data.report && res.data.report.csvData) {
+            const blob = new Blob([res.data.report.csvData], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement('a');
+            const url = URL.createObjectURL(blob);
+            link.href = url;
+            link.setAttribute('download', res.data.report.filename || 'export.csv');
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            setTimeout(() => URL.revokeObjectURL(url), 100);
+        }
 
         const msgHtml = res.data?.html || `Aktion ${act.name} ausgeführt`;
         toast.show(msgHtml, 'success');
