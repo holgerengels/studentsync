@@ -22,6 +22,10 @@
                     </wa-tooltip>
                 </template>
             </template>
+            <wa-button @click="downloadCsv" :loading="downloadingCsv" variant="neutral" size="small">
+                <wa-icon slot="prefix" name="download"></wa-icon>
+                CSV Export
+            </wa-button>
             <wa-button @click="refreshData" :loading="loading" variant="neutral" size="small">
                 <wa-icon slot="prefix" name="arrow-clockwise"></wa-icon>
                 Neu laden
@@ -101,6 +105,7 @@ function getActionDescription(act) {
 
 const identities = ref([]);
 const loading = ref(false);
+const downloadingCsv = ref(false);
 const actionLoading = ref('');
 const error = ref('');
 const dialogTitle = ref('');
@@ -109,6 +114,28 @@ const isDialogOpen = ref(false);
 const searchQuery = ref('');
 const sortKey = ref('');
 const sortAsc = ref(true);
+
+async function downloadCsv() {
+    downloadingCsv.value = true;
+    try {
+        const url = `/api/identities/${props.domain.name}/csv` + (searchQuery.value.trim() ? `?q=${encodeURIComponent(searchQuery.value.trim())}` : '');
+        const res = await axios.get(url, { responseType: 'blob' });
+        const blob = new Blob([res.data], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement('a');
+        const href = URL.createObjectURL(blob);
+        link.href = href;
+        link.setAttribute('download', `${props.domain.name}-identities.csv`);
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        setTimeout(() => URL.revokeObjectURL(href), 100);
+        toast.show(`CSV für ${props.domain.titel || props.domain.name} heruntergeladen`, 'success');
+    } catch(e) {
+        toast.danger(`CSV Export fehlgeschlagen: ${e.message}`);
+    } finally {
+        downloadingCsv.value = false;
+    }
+}
 const page = ref(1);
 const limit = ref(50);
 const total = ref(0);

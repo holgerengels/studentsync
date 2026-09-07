@@ -9,6 +9,7 @@
          :count="counts[d.name]" 
          :loading="loading[d.name]" 
          @run-action="runAction" 
+         @download-csv="downloadDomainCsv"
          @refresh="refreshDomain" />
       
       <!-- Visual Diff Cards for this category -->
@@ -271,6 +272,28 @@ async function runAction(act, contextName) {
         toast.danger(`Failed to execute ${act.name}: ${explanation}`);
     } finally {
         if (contextName) loading.value[contextName] = false;
+    }
+}
+
+async function downloadDomainCsv(domainName) {
+    loading.value[domainName] = true;
+    try {
+        const res = await axios.get(`/api/identities/${domainName}/csv`, { responseType: 'blob' });
+        const blob = new Blob([res.data], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement('a');
+        const href = URL.createObjectURL(blob);
+        link.href = href;
+        link.setAttribute('download', `${domainName}-identities.csv`);
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        setTimeout(() => URL.revokeObjectURL(href), 100);
+        toast.show(`CSV für ${domainName} heruntergeladen`, 'success');
+    } catch(e) {
+        const explanation = e.response?.data?.error || e.message;
+        toast.danger(`CSV Export fehlgeschlagen (${domainName}): ${explanation}`);
+    } finally {
+        loading.value[domainName] = false;
     }
 }
 </script>

@@ -26,6 +26,10 @@
       </template>
       <div style="flex-grow: 1" v-if="!domain.actions || !domain.actions.length"></div>
       
+      <wa-button title="CSV Download" variant="text" size="small" @click="$emit('download-csv', domain.name)">
+        <wa-icon name="download" style="font-size: 1rem; stroke: currentColor; stroke-width: 0.5px;"></wa-icon>
+      </wa-button>
+      
       <wa-button title="Details ansehen" variant="text" size="small" @click="$router.push('/domain/'+domain.name)">
         <wa-icon name="list" style="font-size: 1rem; stroke: currentColor; stroke-width: 0.5px;"></wa-icon>
       </wa-button>
@@ -46,7 +50,7 @@ const props = defineProps({
   count: { type: [Number, String], default: '-' },
   loading: { type: Boolean, default: false }
 });
-defineEmits(['run-action', 'refresh']);
+defineEmits(['run-action', 'refresh', 'download-csv']);
 
 const config = inject('synxConfig', { tasks: [] });
 

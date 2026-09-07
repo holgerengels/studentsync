@@ -31,7 +31,7 @@ const addRefreshSubscriber = (callback) => {
 axios.interceptors.response.use(
     response => response,
     async error => {
-        if (error.response && error.response.status === 401 && !error.config.url.endsWith('/login') && !error.config.url.endsWith('/refresh')) {
+        if (error.response && error.response.status === 401 && !error.config?.url?.endsWith('/login') && !error.config?.url?.endsWith('/refresh')) {
             const auth = useAuthStore();
             const requestQueue = useRequestQueueStore();
             const originalRequest = error.config;
@@ -50,7 +50,7 @@ axios.interceptors.response.use(
                 try {
                     const res = await axios.post('/api/refresh', { refreshToken: auth.refreshToken });
                     const { token, user } = res.data;
-                    auth.login(token, user);
+                    auth.login(token, user, auth.refreshToken);
                     isRefreshing = false;
                     onRefreshed(token);
 
@@ -59,11 +59,18 @@ axios.interceptors.response.use(
                 } catch (refreshError) {
                     isRefreshing = false;
                     onRefreshFailed();
+                    auth.logout();
                 }
+            } else {
+                auth.logout();
             }
 
-            // Fallback to login overlay
             auth.triggerLogin();
+
+            if (originalRequest.skipAuthQueue) {
+                return Promise.reject(error);
+            }
+
             return new Promise((resolve, reject) => {
                 requestQueue.add((token) => {
                     if (token instanceof Error) {
@@ -76,6 +83,13 @@ axios.interceptors.response.use(
             });
         }
         
+        if (error.response && error.response.status === 403 && error.config?.url?.endsWith('/config/ui')) {
+            const auth = useAuthStore();
+            auth.logout();
+            auth.triggerLogin();
+            return Promise.reject(error);
+        }
+
         return Promise.reject(error);
     }
 );

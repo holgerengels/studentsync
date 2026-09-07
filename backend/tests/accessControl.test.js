@@ -142,20 +142,9 @@ describe('GET /api/config/ui — Access Control', () => {
                 .set('Authorization', `Bearer ${token}`);
         });
 
-        it('should return 200', () => {
-            expect(res.status).toBe(200);
-        });
-
-        it('should see no categories', () => {
-            expect(res.body.categories).toEqual([]);
-        });
-
-        it('should see no domains', () => {
-            expect(res.body.domains).toEqual([]);
-        });
-
-        it('should see no diffs', () => {
-            expect(res.body.diffs).toEqual([]);
+        it('should return 403 Forbidden when user has no category permissions', () => {
+            expect(res.status).toBe(403);
+            expect(res.body.error).toContain('Zugriff verweigert');
         });
     });
 
@@ -216,10 +205,9 @@ describe('GET /api/config/ui — Access Control', () => {
                 .set('Authorization', `Bearer ${token}`);
         });
 
-        it('should see nothing', () => {
-            expect(res.body.categories).toEqual([]);
-            expect(res.body.domains).toEqual([]);
-            expect(res.body.diffs).toEqual([]);
+        it('should return 403 Forbidden', () => {
+            expect(res.status).toBe(403);
+            expect(res.body.error).toContain('Zugriff verweigert');
         });
     });
 
@@ -235,5 +223,55 @@ describe('GET /api/config/ui — Access Control', () => {
             expect(cat).toHaveProperty('label');
             expect(cat).not.toHaveProperty('access');
         });
+    });
+});
+
+describe('GET /api/identities/:domainName/csv — Generic CSV Export', () => {
+    let app;
+    const { getDomain } = require('../src/domains/registry');
+
+    beforeAll(() => {
+        app = createTestApp();
+        getDomain.mockImplementation((domainName) => {
+            if (domainName === 'asv') {
+                return {
+                    getIdentities: jest.fn().mockResolvedValue([
+                        { userId: '1001', firstName: 'Max', lastName: 'Mustermann', clazz: '10A' },
+                        { userId: '1002', firstName: 'Erika', lastName: 'Muster', clazz: '10B' }
+                    ]),
+                    invalidate: jest.fn()
+                };
+            }
+            return null;
+        });
+    });
+
+    it('should return 401 without token', async () => {
+        const res = await request(app).get('/api/identities/asv/csv');
+        expect(res.status).toBe(401);
+    });
+
+    it('should return 404 for unregistered domain', async () => {
+        const token = tokenFor('holger_engels', ['Netzwerkteam']);
+        const res = await request(app)
+            .get('/api/identities/unknown-domain/csv')
+            .set('Authorization', `Bearer ${token}`);
+        expect(res.status).toBe(404);
+    });
+
+    it('should return 200 and formatted CSV content for valid domain', async () => {
+        const token = tokenFor('holger_engels', ['Netzwerkteam']);
+        const res = await request(app)
+            .get('/api/identities/asv/csv')
+            .set('Authorization', `Bearer ${token}`);
+
+        expect(res.status).toBe(200);
+        expect(res.headers['content-type']).toContain('text/csv');
+        expect(res.headers['content-disposition']).toContain('attachment; filename="asv-identities.csv"');
+
+        const csv = res.text;
+        expect(csv).toContain('userId,firstName,lastName,clazz');
+        expect(csv).toContain('1001,Max,Mustermann,10A');
+        expect(csv).toContain('1002,Erika,Muster,10B');
     });
 });

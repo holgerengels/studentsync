@@ -48,10 +48,12 @@ async function bootstrap() {
     const storedToken = localStorage.getItem('token');
     if (storedToken) {
         try {
-            const res = await axios.get('/api/config/ui');
+            const res = await axios.get('/api/config/ui', { skipAuthQueue: true });
             remoteConfig = res.data;
         } catch (e) {
             console.error("Failed to load config", e);
+            const auth = useAuthStore();
+            auth.logout();
         }
     }
 

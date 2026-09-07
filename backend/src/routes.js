@@ -21,6 +21,11 @@ router.post('/login', async (req, res) => {
         const result = await login(username, password, true);
         if (!result) return res.status(401).json({ error: 'Invalid credentials' });
 
+        if (!userHasAnyCategoryAccess(result.user)) {
+            console.log(`[Auth Route] REJECTED: User ${username} has no access to any category.`);
+            return res.status(403).json({ error: 'Zugriff verweigert: Ihr Account besitzt keine Berechtigungen.' });
+        }
+
         res.json(result);
     } catch (e) {
         console.error('[Auth Route] Login Error:', e.message);
@@ -35,6 +40,10 @@ router.post('/refresh', (req, res) => {
     const result = refreshAccessToken(refreshToken);
     if (!result) return res.status(401).json({ error: 'Refresh token invalid or expired' });
 
+    if (!userHasAnyCategoryAccess(result.user)) {
+        return res.status(403).json({ error: 'Zugriff verweigert: Ihr Account besitzt keine Berechtigungen.' });
+    }
+
     res.json(result);
 });
 
@@ -45,12 +54,19 @@ router.post('/refresh', (req, res) => {
 // Check if a user matches any of the access rules for a category
 function userHasAccess(user, accessRules) {
     if (!accessRules || !Array.isArray(accessRules) || accessRules.length === 0) return true;
+    if (!user) return false;
     const userGroups = user.groups || [];
     return accessRules.some(rule => {
         if (rule.group) return userGroups.includes(rule.group);
         if (rule.user) return user.username === rule.user;
         return false;
     });
+}
+
+function userHasAnyCategoryAccess(user) {
+    const allCategories = config.categories || [];
+    if (allCategories.length === 0) return true;
+    return allCategories.some(cat => userHasAccess(user, cat.access));
 }
 
 // Expose configuration for frontend dynamic rendering (filtered by user access)
@@ -60,6 +76,10 @@ router.get('/config/ui', verifyToken, (req, res) => {
 
     // Filter categories by user access
     const accessibleCategories = allCategories.filter(cat => userHasAccess(req.user, cat.access));
+    if (allCategories.length > 0 && accessibleCategories.length === 0) {
+        return res.status(403).json({ error: 'Zugriff verweigert: Ihr Account besitzt keine Berechtigungen.' });
+    }
+
     const accessibleNames = new Set(accessibleCategories.map(c => c.name));
 
     res.json({
@@ -155,6 +175,68 @@ router.get('/identities/:domainName', verifyToken, async (req, res) => {
         });
     } catch (e) {
         console.error(`[Route] GET /identities/${req.params.domainName} failed:`, e.message);
+        res.status(500).json({ error: e.message });
+    }
+});
+
+// CSV Export for any registered domain
+router.get('/identities/:domainName/csv', verifyToken, async (req, res) => {
+    try {
+        const domain = getDomain(req.params.domainName);
+        if (!domain) {
+            return res.status(404).json({ error: `Domain ${req.params.domainName} not found or not registered` });
+        }
+        if (req.query.refresh === 'true') {
+            domain.invalidate();
+        }
+        let identities = await domain.getIdentities();
+
+        // Filter if query is provided
+        const q = (req.query.q || '').trim().toLowerCase();
+        if (q) {
+            identities = identities.filter(ident =>
+                Object.values(ident).some(val => String(val || '').toLowerCase().includes(q))
+            );
+        }
+
+        const fileName = `${req.params.domainName}-identities.csv`;
+        res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+        res.setHeader('Content-Disposition', `attachment; filename="${fileName}"`);
+
+        if (identities.length === 0) {
+            return res.send('\uFEFF');
+        }
+
+        const ignoredKeys = new Set(['_id', '__v']);
+        const headerSet = new Set();
+        identities.forEach(ident => {
+            Object.keys(ident).forEach(k => {
+                if (!ignoredKeys.has(k)) headerSet.add(k);
+            });
+        });
+        const headers = Array.from(headerSet);
+
+        const formatCsvField = (val) => {
+            if (val === null || val === undefined) return '';
+            const str = String(val);
+            if (str.includes(',') || str.includes('"') || str.includes('\n') || str.includes('\r')) {
+                return `"${str.replace(/"/g, '""')}"`;
+            }
+            return str;
+        };
+
+        const csvRows = [];
+        csvRows.push(headers.map(formatCsvField).join(','));
+
+        for (const ident of identities) {
+            const row = headers.map(h => formatCsvField(ident[h]));
+            csvRows.push(row.join(','));
+        }
+
+        const csvContent = '\uFEFF' + csvRows.join('\n');
+        res.send(csvContent);
+    } catch (e) {
+        console.error(`[Route] GET /identities/${req.params.domainName}/csv failed:`, e.message);
         res.status(500).json({ error: e.message });
     }
 });
